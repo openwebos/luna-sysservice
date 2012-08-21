@@ -1,0 +1,18 @@
+BUILD_TYPE := debug
+PLATFORM   := x86
+MACHINE := x86
+LUNA_STAGING := $(HOME)/luna-desktop-binaries/staging
+
+NOVA_TOP_DIR_REL = ../
+NOVA_TOP_DIR_ABS = $(shell cd $(NOVA_TOP_DIR_REL); pwd)
+
+INCLUDE_DIR := $(LUNA_STAGING)/include
+
+
+LIBS := -L$(LUNA_STAGING)/lib\
+##	 -lmjson
+
+ARCH_CFLAGS := -DDESKTOP=1
+
+include Makefile.inc
+

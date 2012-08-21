@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=com.palm.systemservice;com.palm.image
+Exec=/usr/bin/LunaSysService
+Type=static

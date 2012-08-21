@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=com.palm.systemservice
+Exec=/opt/PalmSDK/Current/bin/luna-dbus run /opt/PalmSDK/Current/bin/LunaSysService
+
