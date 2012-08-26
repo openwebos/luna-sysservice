@@ -47,11 +47,6 @@ pkg_check_modules(CJSON REQUIRED cjson)
 include_directories(CJSON_INCLUDE_DIRS)
 webos_add_compiler_flags(ALL ${CJSON_CFLAGS})
 
-# -- check for mjson
-pkg_check_modules(MJSON REQUIRED mjson)
-include_directories(MJSON_INCLUDE_DIRS)
-webos_add_compiler_flags(ALL ${MJSON_CFLAGS})
-
 # -- check for pbnjson
 pkg_check_modules(PBNJSON REQUIRED pbnjson)
 include_directories(PBNJSON_INCLUDE_DIRS)
