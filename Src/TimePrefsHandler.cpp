@@ -40,8 +40,8 @@
 #include "Utils.h"
 #include "JSONUtils.h"
 
+#include <cjson/json.h>
 #include <cjson/json_util.h>
-#include <json_utils.h>
 
 static const char*	  s_tzFile	=	"/usr/palm/ext-timezones.json";
 static const char*    s_tzFilePath = "/var/luna/preferences/localtime";
@@ -108,6 +108,20 @@ tz_exists(const char* tz_name) {
     g_free(path);
     return ret;
 }
+
+static const char *
+_json_get_string(struct json_object *object, const char *label)
+{
+    struct json_object *label_obj = NULL;
+
+    if (!json_object_object_get_ex(object, label, &label_obj))
+    {
+        return NULL;
+    }
+
+    return json_object_get_string(label_obj);
+}
+
 
 class TimeZoneInfo
 {
@@ -3333,27 +3347,28 @@ bool TimePrefsHandler::cbConvertDate(LSHandle* pHandle, LSMessage* pMessage, voi
                                pMessage,
                                SCHEMA_3(REQUIRED(date, string), REQUIRED(source_tz, string), REQUIRED(dest_tz, string)));
 
-	json_t* json_o = json_parse_document(str);
+    //json_t* json_o = json_parse_document(str);
+    struct json_object *json_o = json_tokener_parse(str);
 
 	if (!json_o) {
 		error_text = g_strdup("bad payload (no json)");
 		goto respond;
 	}
 
-	ret = json_get_string(json_o, "date", &date);
-	if (!ret) {
+	date = _json_get_string(json_o, "date");
+	if (!date) {
 		error_text = g_strdup("no date in payload");
 		goto respond;
 	}
 
-	ret = json_get_string(json_o, "source_tz", &source_tz);
-	if (!ret) {
+	source_tz = _json_get_string(json_o, "source_tz");
+	if (!source_tz) {
 		error_text = g_strdup("no source_tz in payload");
 		goto respond;
 	}
 
-	ret = json_get_string(json_o, "dest_tz", &dest_tz);
-	if (!ret) {
+	dest_tz = _json_get_string(json_o, "dest_tz");
+	if (!dest_tz) {
 		error_text = g_strdup("no dest_tz in payload");
 		goto respond;
 	}
@@ -3416,7 +3431,7 @@ respond:
 	g_free(status);
 
 	if (json_o)
-		json_free_value(&json_o);
+        json_object_put(json_o);
 	
 	LSErrorFree (&lserror);
 	return ret;
