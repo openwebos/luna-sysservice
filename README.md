@@ -1,7 +1,12 @@
 Summary
 ========
-The LunaSysService repository contains the system Service Component supporting luna-sysmgr.
+The System Service component supporting luna-sysmgr and other webOS components.
 
+How to Build on Linux
+=====================
+
+This is built when you build the Desktop version of webOS:  
+       openwebos/build-desktop
 
 # Copyright and License Information
 
