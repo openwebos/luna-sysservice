@@ -28,6 +28,13 @@ static bool cbAddRingtone(LSHandle* lsHandle, LSMessage *message,
 static bool cbDeleteRingtone(LSHandle* lsHandle, LSMessage *message,
 							void *user_data);
 
+/*! \page com_palm_systemservice_ringtone Service API com.palm.systemservice/ringtone/
+ *
+ *  Public methods:
+ *   - \ref systemservice_ringtone_add_ringtone
+ *   - \ref systemservice_ringtone_remove_ringtone
+ */
+
 static LSMethod s_methods[]  = {
 	{ "addRingtone",     cbAddRingtone},
 	{ "deleteRingtone",	 cbDeleteRingtone},
@@ -115,6 +122,56 @@ void RingtonePrefsHandler::restoreToDefault()
 	SystemRestore::instance()->restoreDefaultRingtoneSetting();
 }
 
+/*! \page com_palm_systemservice_ringtone
+\n
+\section systemservice_ringtone_add_ringtone addRingtone
+
+\e Public.
+
+com.palm.systemservice/ringtone/addRingtone
+
+Add a ringtone.
+
+\subsection systemservice_ringtone_add_ringtone_syntax Syntax:
+\code
+{
+    "filePath": string
+}
+\endcode
+
+\param filePath Absolute path to the ringtone file. Required.
+
+\subsection systemservice_ringtone_add_ringtone_returns Returns:
+\code
+{
+    "returnValue": boolean,
+    "errorText": string
+}
+\endcode
+
+\param returnValue Indicates if the call was succesful.
+\param errorText Description of the error if call was not succesful.
+
+\subsection systemservice_ringtone_add_ringtone_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/ringtone/addRingtone '{"filePath": "/usr/palm/sounds/ringtone.mp3" }'
+\endcode
+
+Example response for a succesful call:
+\code
+{
+    "returnValue": true
+}
+\endcode
+
+Example response for a failed call:
+\code
+{
+    "returnValue": false,
+    "errorText": "source file missing"
+}
+\endcode
+*/
 static bool cbAddRingtone(LSHandle* lsHandle, LSMessage *message,void *user_data)
 {
     // {"filePath": string}
@@ -233,6 +290,56 @@ static bool cbAddRingtone(LSHandle* lsHandle, LSMessage *message,void *user_data
 	return true;
 }
 
+/*! \page com_palm_systemservice_ringtone
+\n
+\section systemservice_ringtone_remove_ringtone removeRingtone
+
+\e Public.
+
+com.palm.systemservice/ringtone/removeRingtone
+
+Delete a ringtone.
+
+\subsection systemservice_ringtone_remove_ringtone_syntax Syntax:
+\code
+{
+    "filePath": string
+}
+\endcode
+
+\param filePath Absolute path to the ringtone file. Required.
+
+\subsection systemservice_ringtone_remove_ringtone_returns Returns:
+\code
+{
+    "returnValue": boolean,
+    "errorText": string
+}
+\endcode
+
+\param returnValue Indicates if the call was succesful.
+\param errorText Description of the error if call was not succesful.
+
+\subsection systemservice_ringtone_remove_ringtone_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/ringtone/deleteRingtone '{"filePath": "/media/internal/ringtones/ringtone.mp3" }'
+\endcode
+
+Example response for a succesful call:
+\code
+{
+    "returnValue": true
+}
+\endcode
+
+Example response for a failed call:
+\code
+{
+    "returnValue": false,
+    "errorText": "Unable to delete."
+}
+\endcode
+*/
 static bool cbDeleteRingtone(LSHandle* lsHandle, LSMessage *message, void *user_data)
 {
     // {"filePath": string}

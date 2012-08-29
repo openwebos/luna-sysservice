@@ -42,6 +42,14 @@ do { \
 #define IMS_TRACE(...) (void)0
 #endif
 
+/*! \page com_palm_image_service Service API com.palm.image/
+ *
+ *  Public methods:
+ *   - \ref image_service_convert
+ *   - \ref image_service_ez_resize
+ *   - \ref image_service_image_info
+ */
+
 ImageServices * ImageServices::s_instance = NULL;
 
 static LSMethod s_methods_public[] = {
@@ -66,6 +74,73 @@ ImageServices * ImageServices::instance(MainLoopProvider *p)
 	return s_instance;
 }
 
+/*! \page com_palm_image_service
+\n
+\section image_service_convert convert
+
+\e Public.
+
+com.palm.image/convert
+
+Converts an image.
+
+\subsection com_palm_image_convert_syntax Syntax:
+\code
+{
+    "src": string,
+    "dest": string,
+    "destType": string,
+    "focusX": double,
+    "focusY": double,
+    "scale": double,
+    "cropW": double,
+    "cropH": double
+}
+\endcode
+
+\param src Absolute path to source file. Required.
+\param dest Absolute path for output file. Required.
+\param destType Type of the output file. Required.
+\param focusX The horizontal coordinate of the new center of the image, from 0.0 (left edge) to 1.0 (right edge). A value of 0.5 preserves the current horizontal center of the image.
+\param focusY The vertical coordinate of the new center of the image, from 0.0 (top edge) to 1.0 (bottom edge). A value of 0.5 preserves the current vertical center of the image.
+\param scale Scale factor for the image, must be greater than zero.
+\param cropW Crop the image to this width.
+\param cropH Crop the image to this width height.
+
+\subsection com_palm_image_convert_return Returns:
+\code
+{
+    "subscribed": boolean,
+    "returnValue": boolean,
+    "errorCode": string
+}
+\endcode
+
+\param subscribed Always false.
+\param returnValue Indicates if the call was succesful.
+\param errorCode Description of the error if call was not succesful.
+
+\subsection com_palm_image_convert_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.image/convert '{"src": "/usr/lib/luna/system/luna-systemui/images/opensearch-small-icon.png", "dest": "/tmp/convertedimage.png", "destType": "jpg"  }'
+\endcode
+
+Example response for a succesful call:
+\code
+{
+    "subscribed": false,
+    "returnValue": true
+}
+\endcode
+Example response for a failed call:
+\code
+{
+    "subscribed": false,
+    "returnValue": false,
+    "errorCode": "'destType' parameter missing"
+}
+\endcode
+*/
 //static 
 bool ImageServices::lsConvertImage(LSHandle* lsHandle, LSMessage* message,void* user_data)
 {
@@ -219,6 +294,68 @@ Done_lsConvertImage:
 	return true;
 }
 
+/*! \page com_palm_image_service
+\n
+\section image_service_ez_resize ezResize
+
+\e Public.
+
+com.palm.image/ezResize
+
+Resize an image.
+
+\subsection image_service_ez_resize_syntax Syntax:
+\code
+{
+    "src": string,
+    "dest": string,
+    "destType": string,
+    "destSizeW": integer,
+    "destSizeH": integer
+}
+\endcode
+
+\param src Absolute path to source file. Required.
+\param dest Absolute path for output file. Required.
+\param destType Type of the output file. Required.
+\param destSizeW Width of the resized image. Required.
+\param destSizeH Height of the resized image. Required.
+
+\subsection image_service_ez_resize_returns Returns:
+\code
+{
+    "subscribed": boolean,
+    "returnValue": boolean,
+    "errorCode": string
+}
+\endcode
+
+\param subscribed Always false.
+\param returnValue Indicates if the call was succesful.
+\param errorCode Description of the error if call was not succesful.
+
+\subsection image_service_ez_resize_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.image/ezResize '{"src": "/usr/lib/luna/system/luna-systemui/images/opensearch-small-icon.png", "dest": "/tmp/convertedimage", "destType": "jpg", "destSizeW": 6, "destSizeH": 6 }'
+\endcode
+
+Example response for a succesful call:
+\code
+{
+    "subscribed": false,
+    "returnValue": true
+}
+\endcode
+
+Example response for a failed call:
+\code
+{
+    "subscribed": false,
+    "returnValue": false,
+    "errorCode": "'destSizeH' missing"
+}
+\endcode
+*/
 //static
 bool ImageServices::lsEzResize(LSHandle* lsHandle, LSMessage* message,void* user_data)
 {
@@ -320,6 +457,72 @@ Done_ezResize:
 	return true;
 }
 
+/*! \page com_palm_image_service
+\n
+\section image_service_image_info imageInfo
+
+\e Public.
+
+com.palm.image/imageInfo
+
+Get information for an image.
+
+\subsection image_service_image_info_syntax Syntax:
+\code
+{
+    "src": string
+}
+\endcode
+
+\param src Absolute path to source file. Required.
+
+\subsection image_service_image_info_returns Returns:
+\code
+{
+    "subscribed": boolean,
+    "returnValue": boolean,
+    "errorCode": string,
+    "width": int,
+    "height": int,
+    "bpp": int,
+    "type": "string
+}
+\endcode
+
+\param subscribed Always false.
+\param returnValue Indicates if the call was succesful or not.
+\param errorCode Description of the error if call was not succesful.
+\param with Width of the image.
+\param height Height of the image.
+\param bpp Color depth, bits per pixel.
+\param type Type of the image file.
+
+\subsection image_service_image_info_examples Examples:
+
+\code
+luna-send -n 1 -f  luna://com.palm.image/imageInfo '{"src":"/usr/lib/luna/system/luna-systemui/images/opensearch-small-icon.png"}'
+\endcode
+Example response for a successful call:
+\code
+{
+    "subscribed": false,
+    "returnValue": true,
+    "width": 24,
+    "height": 24,
+    "bpp": 8,
+    "type": "png"
+}
+\endcode
+
+Example response in case of a failure:
+\code
+{
+    "subscribed": false,
+    "returnValue": false,
+    "errorCode": "source file does not exist"
+}
+\endcode
+*/
 //static
 bool ImageServices::lsImageInfo(LSHandle* lsHandle, LSMessage* message,void* user_data)
 {
