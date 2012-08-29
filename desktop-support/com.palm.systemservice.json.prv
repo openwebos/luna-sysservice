@@ -1,0 +1,19 @@
+{
+    "role": {
+        "exeName":"/usr/lib/luna/LunaSysService",
+        "type": "regular",
+        "allowedNames": ["com.palm.image", "com.palm.systemservice"]
+    },
+    "permissions": [
+        {
+            "service":"com.palm.image",
+            "inbound":["*"],
+            "outbound":["*"]
+        },
+        {
+            "service":"com.palm.systemservice",
+            "inbound":["*"],
+            "outbound":["*"]
+        }
+    ]
+}
