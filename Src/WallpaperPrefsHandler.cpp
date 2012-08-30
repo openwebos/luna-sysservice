@@ -89,6 +89,15 @@ static bool _dbg_cbReadFile(LSHandle* lsHandle, LSMessage *message,
 							  void *user_data);
 */
 
+/*! \page com_palm_systemservice_wallpaper Service API com.palm.systemservice/wallpaper/
+ *
+ * Public methods:
+ * - \ref com_palm_systemservice_wallpaper_import_wallpaper
+ * - \ref com_palm_systemservice_wallpaper_refresh
+ * - \ref com_palm_systemservice_wallpaper_info
+ * - \ref com_palm_systemservice_wallpaper_delete_wallpaper
+ * - \ref com_palm_systemservice_wallpaper_convert
+ */
 static LSMethod s_methods[]  = {
 	{ "importWallpaper",     cbImportWallpaper},
 	{ "refresh"		 	,	 cbRefreshWallpaperIndex},
@@ -1156,6 +1165,86 @@ bool WallpaperPrefsHandler::getWallpaperSpecFromFilename(std::string& wallpaperN
 	return makeLocalPathnamesFromWallpaperName(wallpaperFile,wallpaperThumbFile,wallpaperName);
 }
 
+/*!
+\page com_palm_systemservice_wallpaper
+\n
+\section com_palm_systemservice_wallpaper_import_wallpaper importWallpaper
+
+\e Public.
+
+com.palm.systemservice/wallpaper/importWallpaper
+
+Converts an image to a wallpaper for the device. The image is either re-centered and cropped, or scaled:
+
+\li If no focus or scale parameters are passed, importWallpaper scales the image to fill the screen.
+\li If focus parameters are passed but scale is not specified, the image is re-centered at the point specified by the focus parameters and cropped. Black is added anywhere the image does not reach the edge of the screen.
+\li If scale is passed but focus is not specified, then the image is scaled and then cropped.
+\li If focus and scale parameters are passed, the image is first scaled and then re-centered and cropped.
+
+The focusX and focusY parameters are the coordinates of the new center of the image. The scale parameter determines the new size of the image.
+
+Once the image has been converted, the wallpaper is stored in the internal list of wallpapers on the device, and is available until deleted using deleteWallpaper.
+
+\subsection com_palm_systemservice_wallpaper_import_wallpaper_syntax Syntax:
+\code
+{
+    "target": string,
+    "focusX": double,
+    "focusY": double,
+    "scale": double
+}
+\endcode
+
+\param target Path to the image file. Required.
+\param focusX The horizontal coordinate of the new center of the image, from 0.0 (left edge) to 1.0 (right edge). A value of 0.5 preserves the current horizontal center of the image.
+\param focusY The vertical coordinate of the new center of the image, from 0.0 (top edge) to 1.0 (bottom edge). A value of 0.5 preserves the current vertical center of the image.
+\param scale Scale factor for the image, must be greater than zero.
+
+\subsection com_palm_systemservice_wallpaper_import_wallpaper_returns Returns:
+\code
+{
+    "returnValue": boolean,
+    "wallpaper": {
+        "wallpaperName": string,
+        "wallpaperFile": string,
+        "wallpaperThumbFile": string
+    },
+    "errorText": string
+}
+\endcode
+
+\param returnValue Indicates if the call was succesful or not.
+\param wallpaper A wallpaper object that can be passed to setPreferences to set the wallpaper key. See fields below.
+\param wallpaperName Name of wallpaper file.
+\param wallpaperFile Path to wallpaper file.
+\param wallpaperThumbFile Path to wallpaper thumb file.
+\param errorText Description of the error if call was not succesful.
+
+\subsection com_palm_systemservice_wallpaper_import_wallpaper_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/wallpaper/importWallpaper '{ "src": "/media/internal/.wallpapers/flowers.png" }'
+\endcode
+
+Example response for a succesful call:
+\code
+{
+    "returnValue": true,
+    "wallpaper": {
+        "wallpaperName": "flowers.png",
+        "wallpaperFile": "\/media\/internal\/.wallpapers\/flowers.png",
+        "wallpaperThumbFile": "\/media\/internal\/.wallpapers\/thumbs\/flowers.png"
+    }
+}
+\endcode
+
+Example response for a failed call:
+\code
+{
+    "returnValue": false,
+    "errorText": ""
+}
+\endcode
+*/
 static bool cbImportWallpaper(LSHandle* lsHandle, LSMessage *message,
 							void *user_data)
 {
@@ -1324,6 +1413,81 @@ Done:
 	return true;
 }
 
+/*!
+\page com_palm_systemservice_wallpaper
+\n
+\section com_palm_systemservice_wallpaper_convert convert
+
+\e Public.
+
+com.palm.systemservice/wallpaper/convert
+
+Converts an image. The type, scaling and centering of the image may be changed. If the resulting image is would be smaller than the original, black is added to the edges so that the resulting image is the same size as the original. If the resulting image would be bigger than the original, the image is cropped.
+
+\subsection com_palm_systemservice_wallpaper_convert_syntax Syntax:
+\code
+{
+    "source": string,
+    "destType": string,
+    "dest": string,
+    "focusX": double,
+    "focusY": double,
+    "scale": double
+}
+\endcode
+
+\param source Path to the source file. Required.
+\param source destType Type for the destination file. Can be "jpg", "png" or "bmp". Required.
+\param source dest Path for the destination file.
+\param focusX The horizontal coordinate of the new center of the image, from 0.0 (left edge) to 1.0 (right edge). A value of 0.5 preserves the current horizontal center of the image.
+\param focusY The vertical coordinate of the new center of the image, from 0.0 (top edge) to 1.0 (bottom edge). A value of 0.5 preserves the current vertical center of the image.
+\param scale Scale factor for the image, must be greater than zero.
+
+\subsection com_palm_systemservice_wallpaper_convert_returns Returns:
+\code
+{
+    "returnValue": boolean,
+    "conversionResult": {
+        "source": string,
+        "dest": string,
+        "destType": string
+    },
+    "errorText": string
+}
+\endcode
+
+\param returnValue Indicates if the call was succesful.
+\param conversionResult Object containing information of the converted image. See fields below.
+\param source Path to the original file.
+\param dest Path to the output file.
+\param destType Type of the output file.
+\param errorText Description of the error if call was not succesful.
+
+\subsection com_palm_systemservice_wallpaper_convert_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/wallpaper/convert '{ "source": "/usr/lib/luna/system/luna-systemui/images/flowers.png", "destType": "jpg", "dest": "/usr/lib/luna/system/luna-systemui/images/scaled_flowers.jpg", "focusX": 0.75, "focusY": 0.75, "scale" : 2 }'
+\endcode
+
+Example response for a succesful call:
+\code
+{
+    "returnValue": true,
+    "conversionResult": {
+        "source": "\/\/usr\/lib\/luna\/system\/luna-systemui\/images\/flowers.png",
+        "dest": "\/\/usr\/lib\/luna\/system\/luna-systemui\/images\/scaled_flowers.jpg",
+        "destType": "jpg"
+    }
+}
+\endcode
+
+Example response for a failed call:
+\code
+{
+    "returnValue": false,
+    "errorText": "no output type ( jpg , png , bmp ) specified"
+}
+\endcode
+*/
 static bool cbConvertImage(LSHandle* lsHandle, LSMessage *message,
 							  void *user_data)
 {
@@ -1508,6 +1672,46 @@ static bool cbConvertImage(LSHandle* lsHandle, LSMessage *message,
 	return true;
 }
 
+/*!
+\page com_palm_systemservice_wallpaper
+\n
+\section com_palm_systemservice_wallpaper_refresh refresh
+
+\e Public.
+
+com.palm.systemservice/wallpaper/refresh
+
+Refreshes the internal list of available wallpapers. Under normal circumstances, there is no need to call refresh directly.
+
+\subsection com_palm_systemservice_wallpaper_refresh_syntax Syntax:
+\code
+{
+}
+\endcode
+
+\subsection com_palm_systemservice_wallpaper_refresh_returns Returns:
+\code
+{
+    "returnValue": boolean,
+    "errorText": string
+}
+\endcode
+
+\param returnValue Indicates if the call was succesful.
+\param errorText Description of the error if call was not succesful.
+
+\subsection com_palm_systemservice_wallpaper_refresh_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/wallpaper/refresh '{}'
+\endcode
+
+Example response for a succesful call:
+\code
+{
+    "returnValue": true
+}
+\endcode
+*/
 static bool cbRefreshWallpaperIndex(LSHandle* lsHandle, LSMessage *message,
 							void *user_data) 
 {
@@ -1550,6 +1754,76 @@ static bool cbRefreshWallpaperIndex(LSHandle* lsHandle, LSMessage *message,
 	return true;
 }
 
+/*!
+\page com_palm_systemservice_wallpaper
+\n
+\section com_palm_systemservice_wallpaper_info info
+
+\e Public.
+
+com.palm.systemservice/wallpaper/info
+
+Retrieves a wallpaper object using either the wallpaperName or wallpaperFile parameter.
+
+\subsection com_palm_systemservice_wallpaper_info_syntax Syntax:
+\code
+{
+    "wallpaperName": string,
+    "wallpaperFile": string
+}
+\endcode
+
+\param wallpaperName Wallpaper name. Either this, or "wallpaperFile" is required.
+\param wallpaperFile Wallpaper's full path and file name. Either this, or "wallpaperName" is required.
+
+\subsection com_palm_systemservice_wallpaper_info_returns Returns:
+\code
+{
+   "returnValue" : boolean,
+   "wallpaper"   : {
+      "wallpaperName"      : string,
+      "wallpaperFile"      : string,
+      "wallpaperThumbFile" : string
+   }
+   "errorText" : string
+}
+\endcode
+
+\param returnValue Indicates if the call was succesful or not.
+\param wallpaper A wallpaper object that can be passed to setPreferences to set the wallpaper key. See fields below.
+\param wallpaperName Name of wallpaper file.
+\param wallpaperFile Path to wallpaper file.
+\param wallpaperThumbFile Path to wallpaper thumb file.
+\param errorText Description of the error if call was not succesful.
+
+\subsection com_palm_systemservice_wallpaper_info_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/wallpaper/info '{ "wallpaperName": "flowers.png" }'
+\endcode
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/wallpaper/info '{ "wallpaperFile": "/media/internal/.wallpapers/flowers.png" }'
+\endcode
+
+Example response for a succesful call:
+\code
+{
+    "returnValue": true,
+    "wallpaper": {
+        "wallpaperName": "flowers.png",
+        "wallpaperFile": "\/media\/internal\/.wallpapers\/flowers.png",
+        "wallpaperThumbFile": "\/media\/internal\/.wallpapers\/thumbs\/flowers.png"
+    }
+}
+\endcode
+
+Example response for a failed call:
+\code
+{
+    "returnValue": false,
+    "errorText": "invalid wallpaper name specified (perhaps it doesn't exist in the wallpaper dir; was it imported?"
+}
+\endcode
+*/
 static bool cbGetWallpaperSpec(LSHandle* lsHandle, LSMessage *message,
 							void *user_data) 
 {
@@ -1645,6 +1919,67 @@ Done:
 	return true;
 }
 
+/*!
+\page com_palm_systemservice_wallpaper
+\n
+\section com_palm_systemservice_wallpaper_delete_wallpaper deleteWallpaper
+
+\e Public.
+
+com.palm.systemservice/wallpaper/deleteWallpaper
+
+Deletes the specified wallpaper from the list of available wallpapers on the device.
+
+\subsection com_palm_systemservice_wallpaper_delete_wallpaper_syntax Syntax:
+\code
+{
+    "wallpaperName": string
+}
+\endcode
+
+\param wallpaperName The wallpaperName attribute of the wallpaper object to delete.
+
+\subsection com_palm_systemservice_wallpaper_delete_wallpaper_returns Returns:
+\code
+{
+    "returnValue" : boolean,
+    "wallpaper"  : {
+        "wallpaperName" : string
+    },
+    "errorText": string
+}
+\endcode
+
+\param returnValue Indicates if the call was succesful or not.
+\param wallpaper A wallpaper object. See field below.
+\param wallpaperName The wallpaperName that was passed to the method.
+\param errorText Description of the error if call was not succesful.
+
+\subsection com_palm_systemservice_wallpaper_delete_wallpaper_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/wallpaper/deleteWallpaper '{ "wallpaperName": "record-large.png" }'
+\endcode
+
+Example response for a succesful call:
+\code
+{
+    "returnValue": true,
+    "wallpaper": {
+        "wallpaperName": "record-large.png"
+    }
+}
+\endcode
+
+\note The call will be succesful even if there is no wallpaper to match the wallpaperName that was passed as parameter.
+
+Example response for a failed call:
+\code
+{
+    "returnValue": false,
+    "errorText": "must specify wallpaperName"
+}
+\endcode
+*/
 static bool cbDeleteWallpaper(LSHandle* lsHandle, LSMessage *message,
 		void *user_data) {
 
