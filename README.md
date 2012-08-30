@@ -5,43 +5,55 @@ Provides image manipulation, preference, timezone and ringtone services for webO
 LunaSysService
 ==============
 
-This service supports the following methods:  
+This service supports the following methods, which are described in detail in the generated documentation:  
 
-* com.palm.image/convert  
-* com.palm.image/exResize  
-* com.palm.image/image_info  
+*  com.palm.image/convert
+*  com.palm.image/exResize
+*  com.palm.image/imageInfo
 
-* com.palm.systemservice/getPreferences  
-* com.palm.systemservice/getPreferenceValues  
-* com.palm.systemservice/setPreferences  
+*  com.palm.systemservice/getPreferences
+*  com.palm.systemservice/getPreferenceValues
+*  com.palm.systemservice/setPreferences
 
-* com.palm.systemservice/ringtone/addRingtone  
-* com.palm.systemservice/ringtone/deleteRingtone  
+*  com.palm.systemservice/backup/preBackup
+*  com.palm.systemservice/backup/postRestore
 
-* com.palm.systemservice/time/convertDate  
-* com.palm.systemservice/time/getNTPTime  
-* com.palm.systemservice/time/getSystemTime  
-* com.palm.systemservice/time/getSystemTimezoneFile  
-* com.palm.systemservice/time/launchTimeChangeApps  
-* com.palm.systemservice/time/setSystemNetworkTime  
-* com.palm.systemservice/time/setSystemTime  
-* com.palm.systemservice/time/setTimeChangeLaunch  
-* com.palm.systemservice/time/setTimeWithNTP  
+*  com.palm.systemservice/ringtone/addRingtone
+*  com.palm.systemservice/ringtone/deleteRingtone
 
-* com.palm.systemservice/timezone/getTimeZoneFromEasData  
-* com.palm.systemservice/timezone/getTimeZoneRules  
+*  com.palm.systemservice/time/convertDate
+*  com.palm.systemservice/time/getNTPTime
+*  com.palm.systemservice/time/getSystemTime
+*  com.palm.systemservice/time/getSystemTimezoneFile
+*  com.palm.systemservice/time/launchTimeChangeApps
+*  com.palm.systemservice/time/setSystemNetworkTime
+*  com.palm.systemservice/time/setSystemTime
+*  com.palm.systemservice/time/setTimeChangeLaunch
+*  com.palm.systemservice/time/setTimeWithNTP
 
-* com.palm.systemservice/wallpaper/convert  
-* com.palm.systemservice/wallpaper/deleteWallpaper  
-* com.palm.systemservice/wallpaper/importWallpaper  
-* com.palm.systemservice/wallpaper/info    
-* com.palm.systemservice/wallpaper/refresh  
+* com.palm.systemservice/timezone/getTimeZoneFromEasData
+* com.palm.systemservice/timezone/getTimeZoneRules
+
+* com.palm.systemservice/wallpaper/convert
+* com.palm.systemservice/wallpaper/deleteWallpaper
+* com.palm.systemservice/wallpaper/importWallpaper
+* com.palm.systemservice/wallpaper/info
+* com.palm.systemservice/wallpaper/refresh
+
 
 How to Build on Linux
 =====================
 
 This is built when you build the Desktop version of webOS:  
        openwebos/build-desktop
+
+## Generating documentation
+
+The tools required to generate the documentation are:
+
+* doxygen 1.6.3
+* graphviz 2.20.2
+
 
 # Copyright and License Information
 
