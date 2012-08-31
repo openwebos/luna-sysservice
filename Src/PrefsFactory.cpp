@@ -54,6 +54,15 @@ static bool cbGetPreferences(LSHandle* lsHandle, LSMessage* message,
 static bool cbGetPreferenceValues(LSHandle* lsHandle, LSMessage* message,
 								  void* user_data);
 
+/*!
+ * \page com_palm_systemservice Service API com.palm.systemservice/
+ *
+ * Public methods:
+ * - \ref com_palm_systemservice_set_preferences
+ * - \ref com_palm_systemservice_get_preferences
+ * - \ref com_palm_systemservice_get_preference_values
+ */
+
 static LSMethod s_methods[] = {
 	{ "setPreferences", cbSetPreferences },
 	{ "getPreferences", cbGetPreferences },
@@ -287,6 +296,57 @@ void PrefsFactory::runConsistencyChecksOnAllHandlers()
 	}
 }
 
+/*!
+\page com_palm_systemservice
+\n
+\section com_palm_systemservice_set_preferences setPreferences
+
+\e Public.
+
+com.palm.systemservice/setPreferences
+
+Sets preference keys to specified values.
+
+\subsection com_palm_systemservice_set_preferences_syntax Syntax:
+\code
+{
+    "params" : object
+}
+\endcode
+
+\param params An object containing one or more key-value pairs or other objects.
+
+\subsection com_palm_systemservice_set_preferences_returns Returns:
+\code
+{
+    "returnValue": boolean,
+    "errorText": string
+}
+\endcode
+
+\param returnValue Indicates if the call was succesful.
+\param errorText Description of the error if call was not succesful.
+
+\subsection com_palm_systemservice_set_preferences_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/setPreferences '{ "params": {"food":"pizza"} }'
+\endcode
+
+Example response for a succesful call:
+\code
+{
+    "returnValue": true
+}
+\endcode
+
+Example response for a failed call:
+\code
+{
+    "returnValue": false,
+    "errorText": "couldn't parse json"
+}
+\endcode
+*/
 static bool cbSetPreferences(LSHandle* lsHandle, LSMessage* message,
 							 void* user_data)
 {
@@ -393,6 +453,69 @@ Done:
 	return true;
 }
 
+/*!
+\page com_palm_systemservice
+\n
+\section com_palm_systemservice_get_preferences getPreferences
+
+\e Public.
+
+com.palm.systemservice/getPreferences
+
+Retrieves the values for keys specified in a passed array. If subscribe is set to true, then getPreferences sends an update if the key values change.
+
+\subsection com_palm_systemservice_get_preferences_syntax Syntax:
+\code
+{
+    "subscribe" : boolean,
+    "keys"      : string array
+}
+\endcode
+
+\param subscribe If true, getPreferences sends an update whenever the value of one of the keys changes.
+\param keys An array of key names. Required.
+
+\subsection com_palm_systemservice_get_preferences_returns Returns:
+\code
+{
+   "[no name]"   : object,
+   "returnValue" : boolean
+}
+\endcode
+
+\param "[no name]" Key-value pairs containing the values for the requested preferences. If the requested preferences key or keys do not exist, the object is empty.
+\param returnValue Indicates if the call was succesful.
+
+\subsection com_palm_systemservice_get_preferences_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/getPreferences '{"subscribe": false, "keys":["wallpaper", "ringtone"]}'
+\endcode
+
+Example response for a succesful call:
+\code
+{
+    "ringtone": {
+        "fullPath": "\/usr\/lib\/luna\/customization\/copy_binaries\/media\/internal\/ringtones\/Pre.mp3",
+        "name": "Prē"
+    },
+    "wallpaper": {
+        "wallpaperName": "flowers.png",
+        "wallpaperFile": "\/usr\/lib\/luna\/system\/luna-systemui\/images\/flowers.png",
+        "wallpaperThumbFile": ""
+    },
+    "returnValue": true
+}
+\endcode
+
+Example response for a failed call:
+\code
+{
+    "returnValue": false,
+    "subscribed": false,
+    "errorCode": "no keys specified"
+}
+\endcode
+*/
 static bool cbGetPreferences(LSHandle* lsHandle, LSMessage* message,
 							 void* user_data)
 {
@@ -524,6 +647,72 @@ Done:
 	return true;
 }
 
+/*!
+\page com_palm_systemservice
+\n
+\section com_palm_systemservice_get_preference_values getPreferenceValues
+
+\e Public.
+
+com.palm.systemservice/getPreferenceValues
+
+Retrieve the list of valid values for the specified key. If the key is of a type that takes one of a discrete set of valid values, getPreferenceValues returns that set. Otherwise, getPreferenceValues returns nothing for the key.
+
+\subsection com_palm_systemservice_get_preference_values_syntax Syntax:
+\code
+{
+    "key": string
+}
+\endcode
+
+\param key Key name.
+
+\subsection com_palm_systemservice_get_preference_value_returns Returns:
+\code
+{
+    "[no name]"   : object,
+    "returnValue" : boolean
+}
+\endcode
+
+\param "[no name]" The key and the valid values.
+\param returnValue Indicates if the call was succesful.
+
+\subsection com_palm_systemservice_get_preference_value_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/getPreferenceValues '{"key": "wallpaper" }'
+\endcode
+
+Example responses for succesful calls:
+\code
+{
+    "wallpaper": [
+        {
+            "wallpaperName": "flowers.png",
+            "wallpaperFile": "\/media\/internal\/.wallpapers\/flowers.png",
+            "wallpaperThumbFile": "\/media\/internal\/.wallpapers\/thumbs\/flowers.png"
+        }
+    ],
+    "returnValue": true
+}
+\endcode
+\code
+{
+    "timeFormat": [
+        "HH12",
+        "HH24"
+    ],
+    "returnValue": true
+}
+\endcode
+
+Example response for a failed call:
+\code
+{
+    "returnValue": false
+}
+\endcode
+*/
 static bool cbGetPreferenceValues(LSHandle* lsHandle, LSMessage* message,
 								  void* user_data)
 {
