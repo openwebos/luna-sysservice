@@ -31,23 +31,41 @@ This service supports the following methods, which are described in detail in th
 *  com.palm.systemservice/time/setTimeChangeLaunch
 *  com.palm.systemservice/time/setTimeWithNTP
 
-* com.palm.systemservice/timezone/getTimeZoneFromEasData
-* com.palm.systemservice/timezone/getTimeZoneRules
+*  com.palm.systemservice/timezone/getTimeZoneFromEasData
+*  com.palm.systemservice/timezone/getTimeZoneRules
 
-* com.palm.systemservice/wallpaper/convert
-* com.palm.systemservice/wallpaper/deleteWallpaper
-* com.palm.systemservice/wallpaper/importWallpaper
-* com.palm.systemservice/wallpaper/info
-* com.palm.systemservice/wallpaper/refresh
+*  com.palm.systemservice/wallpaper/convert
+*  com.palm.systemservice/wallpaper/deleteWallpaper
+*  com.palm.systemservice/wallpaper/importWallpaper
+*  com.palm.systemservice/wallpaper/info
+*  com.palm.systemservice/wallpaper/refresh
 
 
 How to Build on Linux
 =====================
 
-This is built when you build the Desktop version of webOS:  
-       openwebos/build-desktop
+### Building the latest "stable" version
 
-## Generating documentation
+Clone the repository openwebos/build-desktop and follow the instructions in the README file.
+
+### Building your local clone
+
+First follow the directions to build the latest "stable" version.
+
+To build your local clone of luna-sysservice instead of the "stable" version installed with the build-webos-desktop script:  
+* Open the build-webos-desktop.sh script with a text editor
+* Locate the function build_luna-sysservice
+* Change the line "cd $BASE/luna-sysservice" to use the folder containing your clone, for example "cd ~/github/luna-sysservice"
+* Close the text editor
+* Remove the file ~/luna-desktop-binaries/luna-sysservice/luna-desktop-build.stamp
+* Start the build
+
+Cautions:
+* When you re-clone openwebos/build-desktop, you'll have to overwrite your changes and reapply them
+* Components often advance in parallel with each other, so be prepared to keep your cloned repositories updated
+* Fetch and rebase frequently
+
+### Generating documentation
 
 The tools required to generate the documentation are:
 
