@@ -37,6 +37,13 @@ static LSMethod s_methods[]  = {
     { 0, 0 },
 };
 
+/*! \page com_palm_systemservice_timezone Service API com.palm.systemservice/timezone/
+ *
+ * Public methods:
+ * - \ref com_palm_systemservice_timezone_get_time_zone_rules
+ * - \ref com_palm_systemservice_timezone_get_time_zone_from_eas_data
+ */
+
 TimeZoneService* TimeZoneService::instance()
 {
 	static TimeZoneService* s_instance = 0;
@@ -81,6 +88,118 @@ LSPalmService* TimeZoneService::serviceHandle() const
 	return m_service;    
 }
 
+/*!
+\page com_palm_systemservice_timezone
+\n
+\section com_palm_systemservice_timezone_get_time_zone_rules getTimeZoneRules
+
+\e Public.
+
+com.palm.systemservice/timezone/getTimeZoneRules
+
+\subsection com_palm_systemservice_timezone_get_time_zone_rules_syntax Syntax:
+\code
+[
+    {
+        "tz": string
+        "years": [int array]
+    }
+]
+\endcode
+
+\param tz The timezone for which to get information. Required.
+\param years Array of years for which to get information. If not specified, information for the current year is returned.
+
+\subsection com_palm_systemservice_timezone_get_time_zone_rules_returns Returns:
+\code
+{
+    "returnValue": true,
+    "results": [
+        {
+            "tz": string,
+            "year": int,
+            "hasDstChange": false,
+            "utcOffset": int,
+            "dstOffset": int,
+            "dstStart": int,
+            "dstEnd": int
+        }
+    ]
+    "errorText": string
+}
+\endcode
+
+\param returnValue Indicates if the call was succesful.
+\param results Object array for the results, see fields below.
+\param tz The timezone.
+\param year The year.
+\param hasDstChange True if daylight saving time is in use in this timezone.
+\param utcOffset Time difference from UTC time in seconds.
+\param dstOffset Time difference from UTC time in seconds during daylight saving time. -1 if daylight saving time is not used.
+\param dstStart The time when daylight saving time starts during the \c year, presented in Unix time. -1 if daylight saving time is not used.
+\param dstEnd The time when daylight saving time ends during the \c year, presented in Unix time. -1 if daylight saving time is not used.
+\param errorText Description of the error if call was not succesful.
+
+\subsection com_palm_systemservice_timezone_get_time_zone_rules_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/timezone/getTimeZoneRules '[ {"tz": "Europe/Helsinki", "years": [2012, 2010]} ]'
+\endcode
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/timezone/getTimeZoneRules '[ {"tz": "Europe/Moscow"} ]'
+\endcode
+
+Example responses for succesful calls:
+\code
+{
+    "returnValue": true,
+    "results": [
+        {
+            "tz": "Europe\/Helsinki",
+            "year": 2012,
+            "hasDstChange": true,
+            "utcOffset": 7200,
+            "dstOffset": 10800,
+            "dstStart": 1332637200,
+            "dstEnd": 1351386000
+        },
+        {
+            "tz": "Europe\/Helsinki",
+            "year": 2010,
+            "hasDstChange": true,
+            "utcOffset": 7200,
+            "dstOffset": 10800,
+            "dstStart": 1269738000,
+            "dstEnd": 1288486800
+        }
+    ]
+}
+\endcode
+
+\code
+{
+    "returnValue": true,
+    "results": [
+        {
+            "tz": "Europe\/Moscow",
+            "year": 2012,
+            "hasDstChange": false,
+            "utcOffset": 14400,
+            "dstOffset": -1,
+            "dstStart": -1,
+            "dstEnd": -1
+        }
+    ]
+}
+\endcode
+
+Example response for a failed call:
+\code
+{
+    "returnValue": false,
+    "errorText": "Missing tz entry"
+}
+\endcode
+*/
 bool TimeZoneService::cbGetTimeZoneRules(LSHandle* lsHandle, LSMessage *message,
 										 void *user_data)
 {
@@ -306,6 +425,95 @@ TimeZoneService::TimeZoneResultList TimeZoneService::getTimeZoneRuleOne(const Ti
     return results;
 }
 
+/*!
+\page com_palm_systemservice_timezone
+\n
+\section com_palm_systemservice_timezone_get_time_zone_from_eas_data getTimeZoneFromEasData
+
+\e Public.
+
+com.palm.systemservice/timezone/getTimeZoneFromEasData
+
+\subsection com_palm_systemservice_timezone_get_time_zone_from_eas_data_syntax Syntax:
+\code
+{
+    "bias": integer,
+    "standardDate": {   "year": integer,
+                        "month": integer,
+                        "dayOfWeek": integer,
+                        "day": integer,
+                        "hour": integer,
+                        "minute": integer,
+                        "second": integer
+                    },
+    "standardBias": integer,
+    "daylightDate": {   "year": integer,
+                        "month": integer,
+                        "dayOfWeek": integer,
+                        "day": integer,
+                        "hour": integer,
+                        "minute": integer,
+                        "second": integer
+                    },
+    "daylightBias": integer
+}
+\endcode
+
+\param bias Number of minutes that a time zone is offset from Coordinated Universal Time (UTC). Required.
+\param standardDate Object containing date and time information in standard time. See fields below.
+\param year Year in standard time.
+\param month Month of year in standard time, 1 - 12.
+\param dayOfWeek Day of the week in standard time, 0 - 6.
+\param day The occurrence of the day of the week within the month in standard time, 1 - 5, where 5 indicates the final occurrence during the month if that day of the week does not occur 5 times.
+\param hour Hour in standard time, 0 - 23.
+\param minute Minutes in standard time 0 - 59.
+\param second Seconds in standard time, 0 - 59.
+\param standardBias The bias value to be used during local time translations that occur during standard time. This value is added to the value of the Bias member to form the bias used during standard time. In most time zones, the value is zero.
+\param daylightDate Object containing date and time information in US daylight time. See fields below.
+\param year Year in daylight time.
+\param month Month of year in daylight time, 1 - 12.
+\param dayOfWeek Day of the week in daylight time, 0 - 6.
+\param day The occurrence of the day of the week within the month in daylight time, 1 - 5, where 5 indicates the final occurrence during the month if that day of the week does not occur 5 times.
+\param hour Hour in daylight time, 0 - 23.
+\param minute Minutes in daylight time 0 - 59.
+\param second Seconds in daylight time, 0 - 59.
+\param daylightBias The bias value to be used during local time translations that occur during daylight saving time. This value is added to the value of the Bias member to form the bias used during daylight saving time. In most time zones, the value is –60.
+
+
+\subsection com_palm_systemservice_timezone_get_time_zone_from_eas_data_returns Returns:
+\code
+{
+    "returnValue": boolean,
+    "timeZone": string,
+    "errorText": string
+}
+\endcode
+
+\param returnValue Indicates if the call was succesful.
+\param timeZone The timezone matching the given parameters.
+\param errorText Description of the error if call was not succesful.
+
+\subsection com_palm_systemservice_timezone_get_time_zone_from_eas_data_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/timezone/getTimeZoneFromEasData '{ "bias": -60  }'
+\endcode
+
+Example response for a succesful call:
+\code
+{
+    "returnValue": true,
+    "timeZone": "Europe\/Tirane"
+}
+\endcode
+
+Example response for a failed call:
+\code
+{
+    "returnValue": false,
+    "errorText": "Failed to find any timezones with specified bias value"
+}
+\endcode
+*/
 // http://msdn.microsoft.com/en-us/library/ms725481.aspx
 bool TimeZoneService::cbGetTimeZoneFromEasData(LSHandle* lsHandle, LSMessage *message,
 											   void *user_data)

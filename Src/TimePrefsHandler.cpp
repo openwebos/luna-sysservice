@@ -260,6 +260,19 @@ static json_object * presetValues_boolean();
 
 static void tzsetWorkaround(const char * newTZ) __attribute__((unused));
 
+/*!
+ * \page com_palm_systemservice_time Service API com.palm.systemservice/time/
+ *  Public methods:
+ *   - \ref com_palm_systemservice_time_set_system_time
+ *   - \ref com_palm_systemservice_time_set_system_network_time
+ *   - \ref com_palm_systemservice_time_get_system_time
+ *   - \ref com_palm_systemservice_time_get_system_timezone_file
+ *   - \ref com_palm_systemservice_time_set_time_change_launch
+ *   - \ref com_palm_systemservice_time_launch_time_change_apps
+ *   - \ref com_palm_systemservice_time_get_ntp_time
+ *   - \ref com_palm_systemservice_time_set_time_with_ntp
+ *   - \ref com_palm_systemservice_time_convert_date
+ */
 static LSMethod s_methods[]  = {
 	{ "setSystemTime",     TimePrefsHandler::cbSetSystemTime },
 	{ "setSystemNetworkTime", TimePrefsHandler::cbSetSystemNetworkTime},
@@ -1867,8 +1880,60 @@ bool TimePrefsHandler::isCountryAcrossMultipleTimeZones(const TimeZoneInfo& tzin
 	return ((tzinfo.howManyZonesForCountry) > 1);
 }
 
-/**
-	setSystemTime: Set System time. 
+/*!
+\page com_palm_systemservice_time
+\n
+\section com_palm_systemservice_time_set_system_time setSystemTime
+
+\e Public.
+
+com.palm.systemservice/time/setSystemTime
+
+Set system time.
+
+\subsection com_palm_systemservice_time_set_system_time_syntax Syntax:
+\code
+{
+    "utc": string
+}
+\endcode
+
+\param utc The number of milliseconds since Epoch (midnight of January 1, 1970 UTC), aka - Unix time. Required.
+
+\subsection com_palm_systemservice_time_set_system_time_returns Returns:
+\code
+{
+    "returnValue": boolean,
+    "errorText": string,
+    "errorCode": string
+}
+\endcode
+
+\param returnValue Indicates if the call was succesful.
+\param errorText Description of the error if call was not succesful.
+\param errorCode Description of the error if call was not succesful.
+
+\subsection com_palm_systemservice_time_set_system_time_examples Examples:
+
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/time/setSystemTime '{"utc": "1346149624" }'
+\endcode
+
+Example response for a succesful call:
+\code
+{
+    "returnValue": true
+}
+\endcode
+
+Example response for a failed call:
+\code
+{
+    "returnValue": false,
+    "errorText": "malformed json",
+    "errorCode": "FAIL"
+}
+\endcode
 */
 //static 
 bool TimePrefsHandler::cbSetSystemTime(LSHandle* lshandle, LSMessage *message,
@@ -1983,6 +2048,96 @@ bool TimePrefsHandler::cbPowerDActivityStatus(LSHandle* lshandle, LSMessage *mes
 	return true;
 }
 
+/*!
+\page com_palm_systemservice_time
+\n
+\section com_palm_systemservice_time_set_system_network_time setSystemNetworkTime
+
+\e Public.
+
+com.palm.systemservice/time/setSystemNetworkTime
+
+Used to send NITZ messages to Luna System Service.
+
+Current date and time can be checked with: <tt>date && ls -l /var/luna/preferences/localtime</tt>
+
+Location of supported timezones (on device): <tt>/usr/palm/ext-timezones.json</tt>
+
+While Airplanmode is off, if Device's timezone setting is off and user manually select the timezone, then when NITZ message arrives, it will use the timezone specified by the device to calculate for times.  Time is always the unix time in seconds.
+
+If Airplane mode is off and both device's Networktimezone & NetworkTime are off, then NITZ message is ignored.
+
+If Airplane mode is off and NetworkTime is off and NetworkTimezone is on then time is calculated based on current device time offset by current NetworkTimezone.  (i.e device is 3pm pacific time with NetworkTime off, then device is traveled to NewYork while in Airplanemode; once arrive in Newyork, turnoff Airplanemode, time is calculated by taking device current time offset by NewYork timezone (it ignores networktime)).
+
+\note Prior using this service to send a fake nitz message to LunaSysService, device must be in AirplaneMode and NetworkTime and Network TimeZone must be turned on.
+
+\subsection com_palm_systemservice_time_set_system_time_syntax Syntax:
+\code
+{
+    "sec": string,
+    "min": string,
+    "hour": string,
+    "mday": string,
+    "mon": string,
+    "year": string,
+    "offset": string,
+    "mcc": string,
+    "mnc": string,
+    "tzvalid": boolean,
+    "timevalid": boolean,
+    "dstvalid": boolean,
+    "dst": integer,
+    "timestamp": string,
+    "tilIgnore": boolean
+}
+\endcode
+
+\param sec GMT sec.
+\param min GMT min.
+\param hour GMT hour.
+\param mday Day of the month.
+\param mon Month of the year, 0 - 11.
+\param year Year calculated from 1900, for example 2012 - 1900 = 112.
+\param offset Offset from GMT time in minutes.
+\param mcc Country code.
+\param mnc Network code assign to carrier within a country
+\param tzvalid Is timezone valid. If false, \c mcc and \c offset are used to calculate for time.
+\param timevalid Is time valid.
+\param dstvalid Is daylight saving time in use.
+\param dst If this is 1, month needs to set within the timeframe of DaylightSavingTime (~April - ~Septermber). If this is 0, months needs to be specified outside of DTS( ~november - Feb).
+\param timestamp Timestamp.
+\param tilIgnore Set as true if you wish to test this service with a fake NITZ message.
+
+\subsection com_palm_systemservice_time_set_system_time_returns Returns:
+\code
+{
+    "returnValue": boolean,
+    "errorText": string
+}
+\endcode
+
+\param returnValue Indicates if the call was succesful.
+\param errorText Description of the error if call was not succesful.
+
+\subsection com_palm_systemservice_time_set_system_time_examples Examples:
+\code
+luna-send -f -n 1 luna://com.palm.systemservice/time/setSystemNetworkTime '{"sec":"30","min":"15","offset":"-480","hour":"2","dst":"1","tzvalid":true,"dstvalid":true,"mon":"6","year":"111","timevalid":true,"mday":"1","mcc":"310","mnc":"26", "tilIgnore":true}'
+\endcode
+
+Example response for a succesful call:
+\code
+{
+    "returnValue": true
+}
+\endcode
+Example response for a failed call:
+\code
+{
+    "returnValue": false,
+    "errorText": "unable to parse json"
+}
+\endcode
+*/
 //static 
 bool TimePrefsHandler::cbSetSystemNetworkTime(LSHandle * lshandle, LSMessage *message, void * user_data)
 {
@@ -2866,6 +3021,28 @@ void TimePrefsHandler::dbg_time_dstvalidOverride(bool& dstvalid)
 	g_warning("%s: dstvalid <--- %s",__FUNCTION__,(dstvalid ? "true" : "false"));
 }
 	
+/*!
+\page com_palm_systemservice_time
+\n
+\section com_palm_systemservice_time_set_time_with_ntp setTimeWithNTP
+
+\e Public.
+
+com.palm.systemservice/time/setTimeWithNTP
+
+Set system time with NTP.
+
+\subsection com_palm_systemservice_time_set_time_with_ntp_syntax Syntax:
+\code
+{
+}
+\endcode
+
+\subsection com_palm_systemservice_time_get_ntp_time_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/time/setTimeWithNTP '{}'
+\endcode
+*/
 //static
 bool TimePrefsHandler::cbSetPeriodicWakeupPowerDResponse(LSHandle* lsHandle, LSMessage *message,
 							void *user_data)
@@ -2999,6 +3176,82 @@ bool TimePrefsHandler::cbServiceStateTracker(LSHandle* lsHandle, LSMessage *mess
 	
 }
 
+/*!
+\page com_palm_systemservice_time
+\n
+\section com_palm_systemservice_time_get_system_time getSystemTime
+
+\e Public.
+
+com.palm.systemservice/time/getSystemTime
+
+Get system time.
+
+\subsection com_palm_systemservice_time_get_system_time_syntax Syntax:
+\code
+{
+}
+\endcode
+
+\subsection com_palm_systemservice_time_get_system_time_returns Returns:
+\code
+{
+   "utc" : int,
+   "localtime" : {
+      "year"   : int,
+      "month"  : int,
+      "day"    : int,
+      "hour"   : int,
+      "minute" : int,
+      "second" : int
+   },
+   "offset"       : int,
+   "timezone"     : string,
+   "TZ"           : string,
+   "timeZoneFile" : string,
+   "NITZValid"    : boolean
+}
+\endcode
+
+\param utc The number of milliseconds since Epoch (midnight of January 1, 1970 UTC), aka - Unix time.
+\param localtime Object, see fields below.
+\param year The year, i.e., 2009.
+\param month The month, 1-12.
+\param day The day, 1-31
+\param hour The hour, 0-23
+\param minute The minute, 0-59
+\param second The second, 0-59
+\param offset The number of minutes from UTC. This can be negative for time zones west of UTC and positive for time zones east of UTC.
+\param timezone The current system time zone. It has the same format as the " TZ " environment variable. For information, see http://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html .
+\param TZ The time zone abbreviation in standard Unix format that corresponds to the current time zone (e.g., PDT (Pacific Daylight Time)).
+\param timeZoneFile Path to file with Linux zone information file for the currently set zone. For more information, see: http://linux.die.net/man/5/tzfile
+\param NITZValid Deprecated. Formerly used to alert the UI whether or not it managed to set the time correctly using NITZ. Currently, it does not indicate anything meaningful
+
+\subsection com_palm_systemservice_time_get_system_time_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/time/getSystemTime {}
+\endcode
+
+Example response:
+\code
+{
+    "utc": 1346149236,
+    "localtime": {
+        "year": 2012,
+        "month": 8,
+        "day": 28,
+        "hour": 3,
+        "minute": 20,
+        "second": 36
+    },
+    "offset": -420,
+    "timezone": "America\/Los_Angeles",
+    "TZ": "PDT",
+    "timeZoneFile": "\/var\/luna\/preferences\/localtime",
+    "NITZValid": true
+}
+\endcode
+*/
 //static 
 bool TimePrefsHandler::cbGetSystemTime(LSHandle* lsHandle, LSMessage *message,
 							void *user_data)
@@ -3093,6 +3346,47 @@ Done:
 	return true;
 }
 
+/*!
+\page com_palm_systemservice_time
+\n
+\section com_palm_systemservice_time_get_system_timezone_file getSystemTimezoneFile
+
+\e Public.
+
+com.palm.systemservice/time/getSystemTimezoneFile
+
+Get the path to Linux zone information file for the currently set zone. For more information, see: http://linux.die.net/man/5/tzfile
+
+\subsection com_palm_systemservice_time_get_system_timezone_file_syntax Syntax:
+\code
+{
+}
+\endcode
+
+\subsection com_palm_systemservice_time_get_system_timezone_file_returns Returns:
+\code
+{
+    "timeZoneFile": string,
+    "subscribed": boolean
+}
+\endcode
+
+\param timeZoneFile Path to system timezone file.
+\param subscribed Always false.
+
+\subsection com_palm_systemservice_time_get_system_time_zone_file_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/time/getSystemTimezoneFile {}
+\endcode
+
+Example response
+\code
+{
+    "timeZoneFile": "\/var\/luna\/preferences\/localtime",
+    "subscribed": false
+}
+\endcode
+*/
 //static 
 bool TimePrefsHandler::cbGetSystemTimezoneFile(LSHandle* lsHandle, LSMessage *message,
 							void *user_data)
@@ -3120,6 +3414,65 @@ bool TimePrefsHandler::cbGetSystemTimezoneFile(LSHandle* lsHandle, LSMessage *me
 	return true;
 }
 
+/*!
+\page com_palm_systemservice_time
+\n
+\section com_palm_systemservice_time_set_time_change_launch setTimeChangeLaunch
+
+com.palm.systemservice/time/setTimeChangeLaunch
+
+Add an application to, or remove it from the timeChangeLaunch list.
+
+You can check what's on the list with: \code luna-send -n 1 -f luna://com.palm.systemservice/getPreferences '{"subscribe": false, "keys":["timeChangeLaunch"]}' \endcode
+
+\subsection com_palm_systemservice_time_set_time_change_launch_syntax Syntax:
+\code
+{
+    "appId": string,
+    "active": boolean
+    "parameters": object
+}
+\endcode
+
+\param appId Application ID. required.
+\param active If true, adds the application to the launch list. If false, the application is removed. True by default.
+\param parameters Launch parameters for the application.
+
+\subsection com_palm_systemservice_time_set_time_change_launch_returns Returns:
+\code
+{
+    "subscribed": boolean,
+    "errorCode": string,
+    "returnValue": boolean
+}
+\endcode
+
+\param subscribed Always false.
+\param errorCode Description of the error if call was not succesful.
+\param returnValue Indicates if the call was succesful.
+
+\subsection com_palm_systemservice_time_set_time_change_launch_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/time/setTimeChangeLaunch '{ "appId": "com.palm.app.someApp", "active": true, "parameters": { "param1": "foo", "param2": "bar" } } }'
+\endcode
+
+Example response for a succesful call:
+\code
+{
+    "subscribed": false,
+    "returnValue": true
+}
+\endcode
+
+Example response for a failed call:
+\code
+{
+    "subscribed": false,
+    "errorCode": "missing required parameter appId",
+    "returnValue": false
+}
+\endcode
+*/
 //static 
 bool TimePrefsHandler::cbSetTimeChangeLaunch(LSHandle* lsHandle, LSMessage *message,
 							void *user_data)
@@ -3302,7 +3655,50 @@ Done:
 	return true;
 }
 
+/*!
+\page com_palm_systemservice_time
+\n
+\section com_palm_systemservice_time_get_ntp_time getNTPTime
 
+\e Public.
+
+com.palm.systemservice/time/getNTPTime
+
+Get NTP time.
+
+\subsection com_palm_systemservice_time_get_ntp_time_syntax Syntax:
+\code
+{
+}
+\endcode
+
+\subsection com_palm_systemservice_time_get_ntp_time_returns Returns:
+\code
+{
+    "subscribed": boolean,
+    "returnValue": true,
+    "utc": int
+}
+\endcode
+
+\param subscribed Always false.
+\param returnValue Indicates if the call was succesful.
+\param utc The number of milliseconds since Epoch (midnight of January 1, 1970 UTC), aka - Unix time.
+
+\subsection com_palm_systemservice_time_get_ntp_time_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/time/getNTPTime '{ }'
+\endcode
+
+Example response for a succesful call:
+\code
+{
+    "subscribed": false,
+    "returnValue": true,
+    "utc": 1346156673
+}
+\endcode
+*/
 bool TimePrefsHandler::cbGetNTPTime(LSHandle* lsHandle, LSMessage *message,
 							void *user_data) 
 {
@@ -3327,6 +3723,64 @@ bool TimePrefsHandler::cbGetNTPTime(LSHandle* lsHandle, LSMessage *message,
 		
 }
 
+/*!
+\page com_palm_systemservice_time
+\n
+\section com_palm_systemservice_time_convert_date convertDate
+
+\e Public.
+
+com.palm.systemservice/time/convertDate
+
+Converts a date from one timezone to another.
+
+\subsection com_palm_systemservice_time_convert_date_syntax Syntax:
+\code
+{
+    "date": string,
+    "source_tz": string,
+    "dest_tz": string
+}
+\endcode
+
+\param date Date to convert as a string in format: "Y-m-d H:M:S". Required.
+\param source_tz Source timezone. Required.
+\param dest_tz Destination timezone. Required.
+
+\subsection com_palm_systemservice_time_convert_date_returns Returns:
+\code
+{
+    "returnValue": boolean,
+    "date": string,
+    "errorText": string
+}
+\endcode
+
+\param returnValue Indicates if the call was succesful.
+\param date The date in the new destination timezone if call was succesful.
+\param errorText Description of the error if call was not succesful.
+
+\subsection com_palm_systemservice_time_convert_date_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/time/convertDate '{ "date": "1982-12-06 17:25:33", "source_tz": "America/Los_Angeles", "dest_tz":"America/New_York" }'
+\endcode
+
+Example response for a succesful call:
+\code
+{
+    "returnValue": true,
+    "date": "Mon Dec  6 20:25:33 1982\n"
+}
+\endcode
+
+Example response for a failed call:
+\code
+{
+    "returnValue": false,
+    "errorText": "timezone not found: 'Finland'"
+}
+\endcode
+*/
 bool TimePrefsHandler::cbConvertDate(LSHandle* pHandle, LSMessage* pMessage, void* pUserData)
 {
 	const char* date = NULL;
@@ -3473,6 +3927,48 @@ void TimePrefsHandler::source_periodic_destroy(gpointer userData)
 	TimePrefsHandler::s_inst->timeout_destroy(userData);
 }
 
+/*!
+\page com_palm_systemservice_time
+\n
+\section com_palm_systemservice_time_launch_time_change_apps launchTimeChangeApps
+
+\e Public.
+
+com.palm.systemservice/time/launchTimeChangeApps
+
+Launch all applications on the timeChangeLaunch list. You can check what's on the list with: \code luna-send -n 1 -f luna://com.palm.systemservice/getPreferences '{"subscribe": false, "keys":["timeChangeLaunch"]}' \endcode
+
+
+\subsection com_palm_systemservice_time_launch_time_change_apps_syntax Syntax:
+\code
+{
+}
+\endcode
+
+\subsection com_palm_systemservice_time_launch_time_change_apps_returns Returns:
+\code
+{
+    "subscribed": boolean,
+    "returnValue": boolean
+}
+\endcode
+
+\param subscribed Always false.
+\param returnValue Always true.
+
+\subsection com_palm_systemservice_time_launch_time_change_apps_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/time/launchTimeChangeApps '{}'
+\endcode
+
+Example response:
+\code
+{
+    "subscribed": false,
+    "returnValue": true
+}
+\endcode
+*/
 //static
 bool TimePrefsHandler::cbLaunchTimeChangeApps(LSHandle* lsHandle, LSMessage *message,
 							void *user_data) 

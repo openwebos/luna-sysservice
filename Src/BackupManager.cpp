@@ -37,6 +37,15 @@ BackupManager* BackupManager::s_instance = NULL;
 
 std::string BackupManager::s_backupKeylistFilename = "/etc/palm/sysservice-backupkeys.json";
 
+/*!
+ * \page com_palm_systemservice_backup Service API com.palm.systemservice/backup/
+ *
+ * Public methods:
+ *
+ * - \ref com_palm_systemservice_pre_backup
+ * - \ref com_palm_systemservice_post_restore
+ */
+
 /**
  * These are the methods that the backup service can call when it's doing a 
  * backup or restore.
@@ -174,6 +183,58 @@ BackupManager* BackupManager::instance()
 	return s_instance;
 }
 
+/*! \page com_palm_systemservice_backup
+\n
+\section com_palm_systemservice_pre_backup preBackup
+
+\e Public.
+
+com.palm.systemservice/backup/preBackup
+
+Make a backup of LunaSysService preferences.
+
+\subsection com_palm_systemservice_pre_backup_syntax Syntax:
+\code
+{
+    "incrementalKey": object,
+    "maxTempBytes":   int,
+    "tempDir":        string
+}
+\endcode
+
+\param incrementalKey This is used primarily for mojodb, backup service will handle other incremental backups.
+\param maxTempBytes The allowed size of upload, currently 10MB (more than enough for our backups).
+\param tempDir Directory to store temporarily generated files.
+
+\subsection com_palm_systemservice_pre_backup_returns Returns:
+\code
+{
+    "description": string,
+    "version": string,
+    "files": string array
+}
+\endcode
+
+\param description Describes the backup.
+\param version Version of the backup.
+\param files List of files included in the backup.
+
+\subsection com_palm_systemservice_pre_backup_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/backup/preBackup '{}'
+\endcode
+
+Example response for a succesful call:
+\code
+{
+    "description": "Backup of LunaSysService, containing the systemprefs sqlite3 database",
+    "version": "1.0",
+    "files": [
+        "\/var\/luna\/preferences\/systemprefs_backup.db"
+    ]
+}
+\endcode
+*/
 /**
  * Called by the backup service for all four of our callback functions: preBackup, 
  * postBackup, preRestore, postRestore.
@@ -257,6 +318,48 @@ bool BackupManager::preBackupCallback( LSHandle* lshandle, LSMessage *message, v
 	return (pThis->sendPreBackupResponse(lshandle,message,pThis->m_backupFiles));
 }
 
+/*! \page com_palm_systemservice_backup
+\n
+\section com_palm_systemservice_post_restore postRestore
+
+\e Public.
+
+com.palm.systemservice/backup/postRestore
+
+Restore a LunaSysService backup.
+
+\subsection com_palm_systemservice_post_restore_syntax Syntax:
+\code
+{
+    "tempDir": string,
+    "files":   string array
+}
+\endcode
+
+\param tempDir Directory to store temporarily generated files. Required.
+\param files List of files to restore. Required.
+
+\subsection com_palm_systemservice_post_restore_returns Returns:
+\code
+{
+    "returnValue": boolean
+}
+\endcode
+
+\param returnValue Indicates if the call was succesful.
+
+\subsection com_palm_systemservice_post_restore_examples Examples:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/backup/postRestore '{"tmpDir": "/tmp/", "files": ["/var/luna/preferences/systemprefs_backup.db"] }'
+\endcode
+
+Example response for a succesful call:
+\code
+{
+    "returnValue": true
+}
+\endcode
+*/
 bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message, void *user_data)
 {
     // {"tempDir": string, "files": array}

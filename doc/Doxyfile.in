@@ -651,6 +651,9 @@ WARN_LOGFILE           =
 INPUT                  = ../Src/ImageServices.cpp \
                          ../Src/RingtonePrefsHandler.cpp \
                          ../Src/WallpaperPrefsHandler.cpp \
+                         ../Src/BackupManager.cpp \
+                         ../Src/TimePrefsHandler.cpp \
+                         ../Src/TimeZoneService.cpp \
 			 ../Src/PrefsFactory.cpp
 
 # This tag can be used to specify the character encoding of the source files
