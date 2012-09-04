@@ -671,7 +671,7 @@ void PrefsDb::synchronizeDefaults() {
 
 		if (val == NULL)
 			continue;		//TODO: really should delete this key if it is in the database
-		char * p_cDbv = json_object_to_json_string(val);
+		const char * p_cDbv = json_object_to_json_string(val);
 		if (p_cDbv == NULL)
 			continue;
 		//check the key to see if it exists in the db already
@@ -734,7 +734,7 @@ void PrefsDb::synchronizePlatformDefaults() {
 
 		if (val == NULL)
 			continue;		//TODO: really should delete this key if it is in the database
-		char * p_cDbv = json_object_to_json_string(val);
+		const char * p_cDbv = json_object_to_json_string(val);
 		if (p_cDbv == NULL)
 			continue;
 		//check the key to see if it exists in the db already
@@ -789,7 +789,7 @@ void PrefsDb::synchronizeCustomerCareInfo() {
 
 		if (val == NULL)
 			continue;		//TODO: really should delete this key if it is in the database
-		char * p_cDbv = json_object_to_json_string(val);
+		const char * p_cDbv = json_object_to_json_string(val);
 		if (p_cDbv == NULL)
 			continue;
 		
@@ -898,7 +898,7 @@ void PrefsDb::loadDefaultPrefs()
 	std::string ccstring;
 	int ret;
 	gchar* queryStr;
-	char * p_cDbv;
+	const char * p_cDbv;
 	
 	root = json_tokener_parse(jsonStr);
 	if (!root || is_error(root)) {

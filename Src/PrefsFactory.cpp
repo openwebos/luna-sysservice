@@ -441,7 +441,7 @@ Done:
 	if (!success)
 		json_object_object_add(result_object,(char *)"errorText",json_object_new_string((char*) errorText.c_str()));
 	
-	char * r = json_object_to_json_string(result_object);
+	const char * r = json_object_to_json_string(result_object);
 	result = LSMessageReply(lsHandle, message, r, &lsError);
 	if (!result)
 		LSErrorFree (&lsError);
