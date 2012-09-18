@@ -24,7 +24,7 @@
 #include "PrefsHandler.h"
 #include "SignalSlot.h"
 
-#define		DEFAULT_NTP_SERVER	"ntp0.palmws.com"
+#define		DEFAULT_NTP_SERVER	"us.pool.ntp.org"
 
 class TimeZoneInfo;
 class PreferredZones;
