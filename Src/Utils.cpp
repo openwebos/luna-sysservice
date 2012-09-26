@@ -49,6 +49,7 @@
 #include <sys/stat.h>
 #include <sys/statfs.h>
 #include <stdarg.h>
+#include <unistd.h>
 #include "UrlRep.h"
 #include "Utils.h"
 #include <cstdlib>

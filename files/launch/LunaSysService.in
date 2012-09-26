@@ -5,5 +5,5 @@ start on started filecache
 # uses upstart to restart jobs when the installation is complete.
 stop on started start_update
 
-exec /usr/bin/LunaSysService
+exec @WEBOS_INSTALL_SBINDIR@/LunaSysService
 respawn

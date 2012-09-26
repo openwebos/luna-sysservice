@@ -21,7 +21,7 @@
 #include "PrefsHandler.h"
 
 #include <cjson/json.h>
-#include <QImage>
+#include <QtGui/QImage>
 
 class WallpaperPrefsHandler : public PrefsHandler {
 	

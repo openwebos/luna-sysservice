@@ -24,10 +24,10 @@
 #include "JSONUtils.h"
 
 #include "ImageServices.h"
-#include <QImageReader>
-#include <QImage>
-#include <QPainter>
-#include <QtGlobal>
+#include <QtGui/QImageReader>
+#include <QtGui/QImage>
+#include <QtGui/QPainter>
+#include <QtCore/QtGlobal>
 
 #include "ImageHelpers.h"
 

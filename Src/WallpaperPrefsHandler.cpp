@@ -34,14 +34,14 @@
 #include <glib.h>
 #include "JSONUtils.h"
 
-#include <QDebug>
-#include <QString>
-#include <QFile>
-#include <QImage>
-#include <QImageReader>
-#include <QImageWriter>
-#include <QPainter>
-#include <QtGlobal>
+#include <QtCore/QDebug>
+#include <QtCore/QString>
+#include <QtCore/QFile>
+#include <QtGui/QImage>
+#include <QtGui/QImageReader>
+#include <QtGui/QImageWriter>
+#include <QtGui/QPainter>
+#include <QtCore/QtGlobal>
 
 #include "ImageHelpers.h"
 

@@ -20,6 +20,7 @@
 #include <glib.h>
 #include <string.h>
 #include <strings.h>
+#include <unistd.h>
 
 #include "Logging.h"
 #include "PrefsDb.h"

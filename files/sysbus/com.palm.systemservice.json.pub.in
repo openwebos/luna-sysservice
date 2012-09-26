@@ -1,6 +1,6 @@
 {
     "role": {
-        "exeName":"/usr/bin/LunaSysService",
+        "exeName":"@WEBOS_INSTALL_SBINDIR@/LunaSysService",
         "type": "regular",
         "allowedNames": ["com.palm.image", "com.palm.systemservice"]
     },

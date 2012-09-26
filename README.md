@@ -54,7 +54,7 @@ First follow the directions to build the latest "stable" version.
 
 To build your local clone of luna-sysservice instead of the "stable" version installed with the build-webos-desktop script:  
 * Open the build-webos-desktop.sh script with a text editor
-* Locate the function build_luna-sysservice
+* Locate the function build\_luna-sysservice
 * Change the line "cd $BASE/luna-sysservice" to use the folder containing your clone, for example "cd ~/github/luna-sysservice"
 * Close the text editor
 * Remove the file ~/luna-desktop-binaries/luna-sysservice/luna-desktop-build.stamp

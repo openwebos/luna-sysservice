@@ -31,10 +31,10 @@
 #include "SystemRestore.h"
 #include "JSONUtils.h"
 
-#include <QDebug>
-#include <QtGlobal> //qWarning
-#include <QString>
-#include <QImageReader>
+#include <QtCore/QDebug>
+#include <QtCore/QtGlobal> //qWarning
+#include <QtCore/QString>
+#include <QtGui/QImageReader>
 
 SystemRestore * SystemRestore::s_instance = 0;
 
