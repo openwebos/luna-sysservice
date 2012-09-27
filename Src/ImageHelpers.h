@@ -14,8 +14,8 @@
  *  limitations under the License.
  */
 
-#include <QImageReader>
-#include <QImage>
+#include <QtGui/QImageReader>
+#include <QtGui/QImage>
 
 bool readImageWithPrescale(QImageReader& reader, QImage& image, double& prescaleFactor);
 
