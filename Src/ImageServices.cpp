@@ -719,13 +719,23 @@ bool ImageServices::ezResize(const std::string& pathToSourceFile,
     
     QImage result(widthFinal, heightFinal, image.format());
 
+    if(result.isNull()) {
+        r_errorText = "ezResize: unable to allocate memory for QImage";
+        return false;
+    }
+
     QPainter p(&result);
     p.setRenderHint(QPainter::SmoothPixmapTransform);
     p.drawImage(QRect(0,0,widthFinal, heightFinal), image);
     p.end();
 //    image = image.scaled(widthFinal, heightFinal, Qt::KeepAspectRatioByExpanding);
 
-    result.save(QString::fromStdString(pathToDestFile), destType, 100);
+    if(!result.save(QString::fromStdString(pathToDestFile), destType, 100)) {
+        r_errorText = "ezResize: failed to save destination file";
+        return false;
+    }
+
+    return true;
 }
 
 bool ImageServices::convertImage(const std::string& pathToSourceFile,
