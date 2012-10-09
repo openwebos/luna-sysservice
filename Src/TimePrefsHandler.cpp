@@ -4005,14 +4005,24 @@ static void tzsetWorkaround(const char * newTZ) {
 	tzset();
 	setenv("TZ",newTZ, 1);
 	tzset();
-	//exec the tzset busybox executable
-#if defined (__arm__)
-    gchar* cmdline = g_find_program_in_path("tzset");
-    if (cmdline) {
-        system(cmdline);
-        free(cmdline); cmdline = (gchar *) 0;
-    } else
-        g_warning("Couldn't find tzset in PATH");
+
+// Link the /etc/localtime data to the correct file in /usr/share/zoneinfo.
+// Only do this when not on Desktop, since desktop will prob default to the system timezone.
+
+#if !defined(DESKTOP)
+    gchar* cmdline = g_find_program_in_path("ln");
+    if(cmdline) {
+        gchar *fullcmd = g_strdup_printf("%s -sf /usr/share/zoneinfo/%s /etc/localtime", cmdline, newTZ);
+        int err = system(fullcmd);
+        if(err != 0) {
+            g_warning("Error %d linking zoneinfo file from /usr/share/zoneinfo/%s to /etc/localtime", err, newTZ);
+        } 
+        g_free(cmdline); 
+        cmdline = NULL;
+        g_free(fullcmd);
+    } else {
+        g_warning("Couldn't find ln in PATH to set timezone file");
+    }
 #endif
 }
 
