@@ -21,6 +21,8 @@
 #include <map>
 #include <list>
 
+#include <glib.h>
+
 #include "PrefsHandler.h"
 #include "SignalSlot.h"
 
