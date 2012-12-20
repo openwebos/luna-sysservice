@@ -37,7 +37,7 @@
 #include "Settings.h"
 #include "JSONUtils.h"
 
-#include <QtGui/QApplication>
+#include <QApplication>
 
 static void logFilter(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message, gpointer unused_data);
 

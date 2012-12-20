@@ -65,6 +65,10 @@ webos_add_compiler_flags(ALL ${QTCORE_CFLAGS})
 pkg_check_modules(QTGUI REQUIRED QtGui)
 webos_add_compiler_flags(ALL ${QTGUI_CFLAGS})
 
+# -- check for QtWidgets
+pkg_check_modules(QTWIDGETS QtWidgets)
+webos_add_compiler_flags(ALL ${QTWIDGETS_CFLAGS})
+
 # -- check for uriparser
 pkg_check_modules(URIPARSER REQUIRED liburiparser)
 webos_add_compiler_flags(ALL ${URIPARSER_CFLAGS})
@@ -72,7 +76,7 @@ webos_add_compiler_flags(ALL ${URIPARSER_CFLAGS})
 webos_config_build_doxygen(doc Doxyfile)
 
 # -- no way to disable warn_unused_result right now.
-webos_add_compiler_flags(ALL -g -O3 -Wall -Wno-unused-but-set-variable -Wno-unused-variable -fno-exceptions -fno-rtti)
+webos_add_compiler_flags(ALL -g -O3 -Wall -Wno-unused-but-set-variable -Wno-unused-variable -fno-exceptions -fno-rtti -fPIC)
 webos_add_linker_options(ALL --no-undefined)
 
 # -- add local include paths
@@ -114,6 +118,7 @@ target_link_libraries(LunaSysService
                       ${QTCORE_LDFLAGS}
                       ${QTGUI_LDFLAGS}
                       ${URIPARSER_LDFLAGS}
+                      ${QTWIDGETS_LDFLAGS}
                       )
 
 
