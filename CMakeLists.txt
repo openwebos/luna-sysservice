@@ -57,17 +57,21 @@ webos_add_compiler_flags(ALL ${PBNJSON_CPP_CFLAGS})
 pkg_check_modules(LS2 REQUIRED luna-service2)
 webos_add_compiler_flags(ALL ${LS2_CFLAGS})
 
-# -- check for QtCore 
-pkg_check_modules(QTCORE REQUIRED QtCore)
-webos_add_compiler_flags(ALL ${QTCORE_CFLAGS})
-
-# -- check for QtGui
-pkg_check_modules(QTGUI REQUIRED QtGui)
-webos_add_compiler_flags(ALL ${QTGUI_CFLAGS})
-
-# -- check for QtWidgets
-pkg_check_modules(QTWIDGETS QtWidgets)
-webos_add_compiler_flags(ALL ${QTWIDGETS_CFLAGS})
+find_package(Qt5Widgets)
+if (NOT Qt5Widgets_FOUND)
+    message(STATUS "Using Qt4")
+    # -- We need to only check for QtGui, it will pull
+    # -- in necessary dependencies
+    pkg_check_modules(QTGUI REQUIRED QtGui)
+    webos_add_compiler_flags(ALL ${QTGUI_CFLAGS})
+    set(QT_LDFLAGS ${QTWIDGETS_LDFLAGS} ${QTGUI_LDFLAGS} ${QTCORE_LDFLAGS})
+else (NOT Qt5Widgets_FOUND)
+    # -- check for Qt5Widgets will suffice as it will pull in
+    # -- necessary other Qt5 dependencies
+    message(STATUS "Using Qt5")
+    include_directories(${Qt5Widgets_INCLUDE_DIRS})
+    set(QT_LDFLAGS ${Qt5Widgets_LIBRARIES})
+endif (NOT Qt5Widgets_FOUND)
 
 # -- check for uriparser
 pkg_check_modules(URIPARSER REQUIRED liburiparser)
@@ -115,10 +119,8 @@ target_link_libraries(LunaSysService
                       ${PBNJSON_C_LDFLAGS}
                       ${PBNJSON_CPP_LDFLAGS}
                       ${LS2_LDFLAGS}
-                      ${QTCORE_LDFLAGS}
-                      ${QTGUI_LDFLAGS}
+                      ${QT_LDFLAGS}
                       ${URIPARSER_LDFLAGS}
-                      ${QTWIDGETS_LDFLAGS}
                       )
 
 
