@@ -37,7 +37,7 @@
 #include "Settings.h"
 #include "JSONUtils.h"
 
-#include <QApplication>
+#include <QCoreApplication>
 
 static void logFilter(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message, gpointer unused_data);
 
@@ -151,7 +151,7 @@ int main(int argc, char ** argv)
 {
     setenv("QT_PLUGIN_PATH","/usr/plugins",1);
     setenv("QT_QPA_PLATFORM", "minimal",1);
-    QApplication app(argc, argv);
+    QCoreApplication app(argc, argv);
 
 	parseCommandlineOptions(argc, argv);
 	setLoglevel(Settings::settings()->m_logLevel.c_str());
