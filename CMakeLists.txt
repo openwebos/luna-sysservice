@@ -1,6 +1,6 @@
 # @@@LICENSE
 #
-# Copyright (c) 2012 Hewlett-Packard Development Company, L.P.
+# Copyright (c) 2012 - 2013 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -57,22 +57,22 @@ webos_add_compiler_flags(ALL ${PBNJSON_CPP_CFLAGS})
 pkg_check_modules(LS2 REQUIRED luna-service2)
 webos_add_compiler_flags(ALL ${LS2_CFLAGS})
 
-pkg_check_modules(Qt5Widgets Qt5Widgets)
-if (NOT Qt5Widgets_FOUND)
+pkg_check_modules(Qt5Gui Qt5Gui)
+if (NOT Qt5Gui_FOUND)
     message(STATUS "Using Qt4")
     # -- We need to only check for QtGui, it will pull
     # -- in necessary dependencies
     pkg_check_modules(QTGUI REQUIRED QtGui)
     webos_add_compiler_flags(ALL ${QTGUI_CFLAGS})
     set(QT_LDFLAGS ${QTWIDGETS_LDFLAGS} ${QTGUI_LDFLAGS} ${QTCORE_LDFLAGS})
-else (NOT Qt5Widgets_FOUND)
-    pkg_check_modules(Qt5Widgets REQUIRED Qt5Widgets)
+else (NOT Qt5Gui_FOUND)
     pkg_check_modules(Qt5Gui REQUIRED Qt5Gui)
     pkg_check_modules(Qt5Core REQUIRED Qt5Core)
     message(STATUS "Using Qt5")
-    include_directories(${Qt5Widgets_INCLUDE_DIRS})
-    set(QT_LDFLAGS ${Qt5Widgets_LDFLAGS} ${Qt5Gui_LDFLAGS} ${Qt5Core_LDFLAGS})
-endif (NOT Qt5Widgets_FOUND)
+    include_directories(${Qt5Gui_INCLUDE_DIRS})
+    include_directories(${Qt5Core_INCLUDE_DIRS})
+    set(QT_LDFLAGS ${Qt5Gui_LDFLAGS} ${Qt5Core_LDFLAGS})
+endif (NOT Qt5Gui_FOUND)
 
 # -- check for uriparser
 pkg_check_modules(URIPARSER REQUIRED liburiparser)
