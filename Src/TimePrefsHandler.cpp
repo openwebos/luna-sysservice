@@ -4048,6 +4048,7 @@ int TimePrefsHandler::getUTCTimeFromNTP(time_t& adjustedTime)
 	}
 	gchar * g_stdoutBuffer = NULL;
 	gchar * g_stderrBuffer = NULL;
+
 	int rc=0;
 	char * pFoundStr;
 	double offsetValue;
@@ -4058,14 +4059,13 @@ int TimePrefsHandler::getUTCTimeFromNTP(time_t& adjustedTime)
 	if (ntpServer.empty()) {
 		ntpServer = DEFAULT_NTP_SERVER;
 	}
-	
-	gchar *argv[4];
-	argv[0] = (gchar *)"ntpdate";
-	argv[1] = (gchar *)"-bqu";
-	argv[2] = (gchar *)ntpServer.c_str();
-	argv[3] = 0;
-	
-	g_warning("%s: [NITZ , NTP] running ntpdate on %s",__FUNCTION__,ntpServer.c_str());
+
+    gchar *argv[3];
+    argv[0] = (gchar *)"sntp";
+    argv[1] = (gchar *)ntpServer.c_str();
+    argv[2] = 0;
+
+    g_debug("%s: [NITZ , NTP] running sntp on %s",__FUNCTION__,ntpServer.c_str());
 	GError * gerr = NULL;
 	gint exit_status=0;
 	GSpawnFlags flags = (GSpawnFlags)(G_SPAWN_SEARCH_PATH);
@@ -4099,9 +4099,8 @@ int TimePrefsHandler::getUTCTimeFromNTP(time_t& adjustedTime)
 		goto Done_getUTCTimeFromNTP;
 	}
 
-	//success, maybe...parse the output
-	
-	pFoundStr = strstr(g_stdoutBuffer,"step time server");
+    //success, maybe...parse the output
+    pFoundStr = strstr(g_stdoutBuffer,")");
 	if (pFoundStr == NULL) {
 		//the query failed in some way
 		rc = -1;
@@ -4109,12 +4108,15 @@ int TimePrefsHandler::getUTCTimeFromNTP(time_t& adjustedTime)
 		goto Done_getUTCTimeFromNTP;
 	}
 
-	if (sscanf(pFoundStr,"step time server %*s offset %lf sec",&offsetValue) != 1) {
-		//parse error...couldn't find the time offset in the string
-		rc = -1;
-		g_warning("%s: Failed in specific (offset) output parse: raw output was: %s\n",__FUNCTION__,g_stdoutBuffer);
-		goto Done_getUTCTimeFromNTP;
-	}
+    //sntp us.pool.ntp.org returns below offset.
+    //2013-08-01 22:28:54.492765 (+0800) -0.000243 +/- 0.062927 secs
+    //get time offset from sntp's return output.
+    if (sscanf(pFoundStr,") %lf +/-",&offsetValue) != 1) {
+        //parse error...couldn't find the time offset in the string
+        rc = -1;
+        g_warning("%s: Failed in specific (offset) output parse: raw output was: %s\n",__FUNCTION__,g_stdoutBuffer);
+        goto Done_getUTCTimeFromNTP;
+    }
 	
 	/*
 	 * Note the following works only if the system clock is set to UTC, or in other words only 1 system time is maintained.
