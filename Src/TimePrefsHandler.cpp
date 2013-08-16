@@ -4060,10 +4060,11 @@ int TimePrefsHandler::getUTCTimeFromNTP(time_t& adjustedTime)
 		ntpServer = DEFAULT_NTP_SERVER;
 	}
 
-    gchar *argv[3];
+    gchar *argv[4];
     argv[0] = (gchar *)"sntp";
-    argv[1] = (gchar *)ntpServer.c_str();
-    argv[2] = 0;
+    argv[1] = (gchar *)"-d";
+    argv[2] = (gchar *)ntpServer.c_str();
+    argv[3] = 0;
 
     g_debug("%s: [NITZ , NTP] running sntp on %s",__FUNCTION__,ntpServer.c_str());
 	GError * gerr = NULL;
@@ -4100,18 +4101,25 @@ int TimePrefsHandler::getUTCTimeFromNTP(time_t& adjustedTime)
 	}
 
     //success, maybe...parse the output
-    pFoundStr = strstr(g_stdoutBuffer,")");
+    pFoundStr = strstr(g_stdoutBuffer,"offset:");
 	if (pFoundStr == NULL) {
 		//the query failed in some way
 		rc = -1;
 		g_warning("%s: Failed in general output parse: raw output was: %s\n",__FUNCTION__,g_stdoutBuffer);
 		goto Done_getUTCTimeFromNTP;
-	}
+    }
 
-    //sntp us.pool.ntp.org returns below offset.
-    //2013-08-01 22:28:54.492765 (+0800) -0.000243 +/- 0.062927 secs
-    //get time offset from sntp's return output.
-    if (sscanf(pFoundStr,") %lf +/-",&offsetValue) != 1) {
+    //sntp -d us.pool.ntp.org returns below offset.
+    //
+    //15 Aug 21:41:33 sntp[5529]: Started sntp
+    //Starting to read KoD file /var/db/ntp-kod...
+    //sntp sendpkt: Sending packet to 173.49.198.27... Packet sent.
+    //sntp recvpkt: packet received from 173.49.198.27 is not authentic. Authentication not enforced.
+    //sntp handle_pkt: Received 48 bytes from 173.49.198.27
+    //sntp offset_calculation:	t21: 0.099049		 t34: -0.110320
+    //        delta: 0.209369	 offset: -0.005636
+    //get time offset from sntp's return output : "offset: -0.005636"
+    if (sscanf(pFoundStr,"offset: %lf",&offsetValue) != 1) {
         //parse error...couldn't find the time offset in the string
         rc = -1;
         g_warning("%s: Failed in specific (offset) output parse: raw output was: %s\n",__FUNCTION__,g_stdoutBuffer);
