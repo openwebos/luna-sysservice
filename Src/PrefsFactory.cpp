@@ -622,6 +622,7 @@ static bool cbGetPreferences(LSHandle* lsHandle, LSMessage* message,
 			goto Done;
 		}
 	}
+        json_object_object_add(replyRoot,"subscribed",json_object_new_boolean(subscription));
 	json_object_object_add(replyRoot,"returnValue",json_object_new_boolean(true));
 	success = true;
 		
