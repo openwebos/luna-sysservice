@@ -568,23 +568,37 @@ bool TimeZoneService::cbGetTimeZoneFromEasData(LSHandle* lsHandle, LSMessage *me
 
 	// standard date
 	label = json_object_object_get(root, "standardDate");
-	if (label && json_object_is_type(label, json_type_object))
+        if (!label || !json_object_is_type(label, json_type_object)) {
+                reply = "{\"returnValue\": false, "
+                                " \"errorText\": \"standardDate value missing or type mismatch\"}";
+                goto Done;
+        }
 		readEasDate(label, easStandardDate);
-
 	// standard bias
 	label = json_object_object_get(root, "standardBias");
-	if (label && json_object_is_type(label, json_type_int))
-		easStandardBias = json_object_get_int(label);
+        if (!label || !json_object_is_type(label, json_type_int)) {
+                reply = "{\"returnValue\": false, "
+                                " \"errorText\": \"standardBias value missing or type mismatch\"}";
+                goto Done;
+        }
+	easStandardBias = json_object_get_int(label);
 
 	// daylight date
 	label = json_object_object_get(root, "daylightDate");
-	if (label && json_object_is_type(label, json_type_object))
-		readEasDate(label, easDaylightDate);
-
+        if (!label || !json_object_is_type(label, json_type_object)) {
+                reply = "{\"returnValue\": false, "
+                                " \"errorText\": \"daylightDate value missing or type mismatch\"}";
+                goto Done;
+        }
+	readEasDate(label, easDaylightDate);
 	// daylight bias
 	label = json_object_object_get(root, "daylightBias");
-	if (label && json_object_is_type(label, json_type_int))
-		easDaylightBias = json_object_get_int(label);
+        if (!label || !json_object_is_type(label, json_type_int)) {
+                reply = "{\"returnValue\": false, "
+                                " \"errorText\": \"daylightBias value missing or type mismatch\"}";
+                goto Done;
+        }
+	easDaylightBias = json_object_get_int(label);
 
 	// Both standard and daylight bias need to specified together,
 	// otherwise both are invalid
