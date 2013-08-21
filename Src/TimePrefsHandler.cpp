@@ -3524,18 +3524,18 @@ bool TimePrefsHandler::cbSetTimeChangeLaunch(LSHandle* lsHandle, LSMessage *mess
 	appId = json_object_get_string(label);
 	
 	label = Utils::JsonGetObject(jsonInput,"active");
-	if (label) {
-		active = json_object_get_boolean(label);
-	}
-	else
-		active = true;
-	
-	params = Utils::JsonGetObject(jsonInput,"parameters");
-	if (params)
-		params = json_object_get(params);
-	else
-		params = json_object_new_object();
-	
+        if (label == NULL) {
+                errorText = "missing required parameter active";
+                goto Done;
+        }
+        active = json_object_get_boolean(label);
+
+        params = Utils::JsonGetObject(jsonInput,"parameters");
+        if (params == NULL) {
+                errorText = "missing required parameter 'parameters'";
+                goto Done;
+        }
+        params = json_object_get(params);
 	/*
 	 * 
 	 * Format of the stored app launch list
