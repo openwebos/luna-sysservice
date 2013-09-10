@@ -362,6 +362,9 @@ Example response for a succesful call:
 */
 bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message, void *user_data)
 {
+        LSError lserror;
+        LSErrorInit(&lserror);
+        json_object* response = json_object_new_object();
     // {"tempDir": string, "files": array}
     VALIDATE_SCHEMA_AND_RETURN(lshandle,
                                message,
@@ -376,23 +379,53 @@ bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message,
     const char* str = LSMessageGetPayload(message);
     if (!str)
     {
-    	g_warning("%s: LScallback didn't have any text in the payload! (returning false)",__FUNCTION__);
-    	return false;
+        g_warning("%s: LScallback didn't have any text in the payload! (returning false)",__FUNCTION__);
+        json_object_object_add (response, "returnValue", json_object_new_boolean(false));
+        json_object_object_add (response, "errorText", json_object_new_string("Required Arguments Missing."));
+        if (!LSMessageReply (lshandle, message, json_object_to_json_string(response), &lserror )) {
+                g_warning("Can't send reply to postRestoreCallback error: %s", lserror.message);
+                LSErrorFree (&lserror);
+        }
+
+        json_object_put (response);
+        return true;
     }
 
     json_object* root = json_tokener_parse(str);
     if (!root || is_error(root))
     {
-    	g_warning("%s: text payload didn't contain valid json [message was: [%s] ]",__FUNCTION__,str);
-    	return true;
+        g_warning("%s: text payload didn't contain valid json [message was: [%s] ]",__FUNCTION__,str);
+        json_object_object_add (response, "returnValue", json_object_new_boolean(false));
+        json_object_object_add (response, "errorText", json_object_new_string("Required Arguments Missing"));
+
+        g_message ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
+        if (!LSMessageReply (lshandle, message, json_object_to_json_string(response), &lserror )) {
+                g_warning("Can't send reply to postRestoreCallback error: %s", lserror.message);
+                LSErrorFree (&lserror);
+        }
+
+        json_object_put (response);
+        return true;
     }
 
     json_object* tempDirLabel = json_object_object_get (root, "tempDir");
     std::string tempDir;
     if ((!tempDirLabel) || is_error(tempDirLabel))
     {
-    	g_warning ("%s: No tempDir specified in postRestore message",__FUNCTION__);
-    	tempDir = "";		//try and ignore it...hopefully all the files will have abs. paths
+        g_warning ("%s: No tempDir specified in postRestore message",__FUNCTION__);
+        tempDir = "";		//try and ignore it...hopefully all the files will have abs. paths
+        json_object_object_add (response, "returnValue", json_object_new_boolean(false));
+        json_object_object_add (response, "errorText", json_object_new_string("invalid arguments"));
+
+        g_message ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
+        if (!LSMessageReply (lshandle, message, json_object_to_json_string(response), &lserror )) {
+                g_warning("Can't send reply to postRestoreCallback error: %s", lserror.message);
+                LSErrorFree (&lserror);
+        }
+
+
+        json_object_put (response);
+        return true;
     }
     else
     {
@@ -403,15 +436,35 @@ bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message,
     json_object* files = json_object_object_get (root, "files");
     if (!files || is_error(files))
     {
-    	g_warning ("%s: No files specified in postRestore message",__FUNCTION__);
-    	return true;
+        g_warning ("%s: No files specified in postRestore message",__FUNCTION__);
+        json_object_object_add (response, "returnValue", json_object_new_boolean(false));
+        json_object_object_add (response, "errorText", json_object_new_string("Required Arguments Missing"));
+
+        g_message ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
+        if (!LSMessageReply (lshandle, message, json_object_to_json_string(response), &lserror )) {
+                g_warning("Can't send reply to postRestoreCallback error: %s", lserror.message);
+                LSErrorFree (&lserror);
+        }
+
+        json_object_put (response);
+        return true;
     }
 
     array_list* fileArray = json_object_get_array(files);
     if (!fileArray || is_error(fileArray))
     {
-    	g_warning ("%s: json value for key 'files' is not an array",__FUNCTION__);
-    	return true;
+        g_warning ("%s: json value for key 'files' is not an array",__FUNCTION__);
+        json_object_object_add (response, "returnValue", json_object_new_boolean(false));
+        json_object_object_add (response, "errorText", json_object_new_string("Required Arguments Missing"));
+
+        g_message ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
+        if (!LSMessageReply (lshandle, message, json_object_to_json_string(response), &lserror )) {
+                g_warning("Can't send reply to postRestoreCallback error: %s", lserror.message);
+                LSErrorFree (&lserror);
+        }
+
+        json_object_put (response);
+        return true;
     }
 
 
