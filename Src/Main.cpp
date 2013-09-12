@@ -20,6 +20,9 @@
 #include <strings.h>
 #include <time.h>
 #include <syslog.h>
+
+#include <QCoreApplication>
+
 #include <luna-service2/lunaservice.h>
 
 #include "PrefsDb.h"
@@ -37,7 +40,6 @@
 #include "Settings.h"
 #include "JSONUtils.h"
 
-#include <QCoreApplication>
 
 static void logFilter(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message, gpointer unused_data);
 
@@ -151,13 +153,15 @@ int main(int argc, char ** argv)
 {
     setenv("QT_PLUGIN_PATH","/usr/plugins",1);
     setenv("QT_QPA_PLATFORM", "minimal",1);
+
+    qInstallMessageHandler(outputQtMessages);
     QCoreApplication app(argc, argv);
 
 	parseCommandlineOptions(argc, argv);
 	setLoglevel(Settings::settings()->m_logLevel.c_str());
 
 	g_log_set_default_handler(logFilter, NULL);
-	g_warning("Started");
+    __qMessage("Started");
 
 	SystemRestore::createSpecialDirectories();
 	
@@ -183,7 +187,7 @@ int main(int argc, char ** argv)
 	// Register the service
 	result = LSRegisterPalmService("com.palm.systemservice", &serviceHandle, &lsError);
 	if (!result) {
-		g_warning("Failed to register service: com.palm.sysservice");
+        qCritical() << "Failed to register service: com.palm.sysservice";
 		return -1;
 	}
 
@@ -192,7 +196,7 @@ int main(int argc, char ** argv)
 		
 	result = LSGmainAttachPalmService(serviceHandle, g_gmainLoop, &lsError);
 	if (!result) {
-		g_warning("Failed to attach service handle to main loop");
+        qCritical() << "Failed to attach service handle to main loop";
 		return -1;
 	}
 
@@ -254,7 +258,7 @@ int main(int argc, char ** argv)
 	//init the image service
 	ImageServices * imgSvc = ImageServices::instance(mainLoopObj);
 	if (!imgSvc) {
-		g_warning("Image service failed init!");
+        qCritical() << "Image service failed init!";
 	}
 
 	//init the timezone service;
@@ -275,7 +279,7 @@ static void turnNovacomOn(LSHandle * lshandle)
 			"{\"isEnabled\":true, \"bypassFirstUse\":false}",
 			NULL,NULL,NULL, &lserror)))
 	{
-		g_message("%s: failed to force novacom to On state",__FUNCTION__);
+        qCritical() << "failed to force novacom to On state";
 		LSErrorFree(&lserror);
 	}
 }

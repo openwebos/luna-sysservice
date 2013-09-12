@@ -48,11 +48,12 @@ RingtonePrefsHandler::RingtonePrefsHandler(LSPalmService* service) : PrefsHandle
 
 RingtonePrefsHandler::~RingtonePrefsHandler()
 {
-	
+
 }
 
 void RingtonePrefsHandler::init() {
-	luna_log(s_logChannel,"RingtonePrefsHandler::init()");
+    //luna_log(s_logChannel,"RingtonePrefsHandler::init()");
+    __qMessage("start");
 	bool result;
 	LSError lsError;
 	LSErrorInit(&lsError);
@@ -60,7 +61,8 @@ void RingtonePrefsHandler::init() {
 	result = LSPalmServiceRegisterCategory( m_service, "/ringtone", s_methods, NULL,
 			NULL, this, &lsError);
 	if (!result) {
-		luna_critical(s_logChannel, "Failed in registering ringtone handler method: %s", lsError.message);
+        //luna_critical(s_logChannel, "Failed in registering ringtone handler method: %s", lsError.message);
+        qCritical() << "Failed in registering ringtone handler method:" << lsError.message;
 		LSErrorFree(&lsError);
 		return;
 	}
@@ -71,18 +73,20 @@ void RingtonePrefsHandler::init() {
 	    
 	result = LSCategorySetData(m_serviceHandlePublic, "/ringtone", this, &lsError);
 	if (!result) {
-		luna_critical(s_logChannel, "Failed in LSCategorySetData: %s", lsError.message);
+        //luna_critical(s_logChannel, "Failed in LSCategorySetData: %s", lsError.message);
+        qCritical() << "Failed in LSCategorySetData:" << lsError.message;
 		LSErrorFree(&lsError);
 		return;
 	}
 	
 	result = LSCategorySetData(m_serviceHandlePrivate, "/ringtone", this, &lsError);
 	if (!result) {
-		luna_critical(s_logChannel, "Failed in LSCategorySetData: %s", lsError.message);
+        //luna_critical(s_logChannel, "Failed in LSCategorySetData: %s", lsError.message);
+        qCritical() << "Failed in LSCategorySetData:" << lsError.message;
 		LSErrorFree(&lsError);
 		return;
 	}
-	
+
 }
 
 std::list<std::string> RingtonePrefsHandler::keys() const 
@@ -430,6 +434,7 @@ static bool cbDeleteRingtone(LSHandle* lsHandle, LSMessage *message, void *user_
 		
 		if (!success) {
 			json_object_object_add(response,(char*) "errorText",json_object_new_string(const_cast<char*>(errorText.c_str())));
+            qWarning() << errorText.c_str();
 		}
 		
 		if (!LSMessageReply(lsHandle, message, json_object_to_json_string (response), &lsError )) 	{

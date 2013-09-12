@@ -26,6 +26,7 @@
 #include "PrefsDb.h"
 #include "PrefsFactory.h"
 
+#include "Logging.h"
 #include "Utils.h"
 #include "Settings.h"
 #include "JSONUtils.h"
@@ -83,7 +84,8 @@ void BackupManager::setServiceHandle(LSPalmService* service)
 	result = LSPalmServiceRegisterCategory( m_service, "/backup", s_BackupServerMethods, NULL,
 			NULL, this, &lsError);
 	if (!result) {
-		g_critical("%s: Failed to register backup methods",__FUNCTION__);
+        //g_critical("%s: Failed to register backup methods",__FUNCTION__);
+        qCritical() << "Failed to register backup methods";
 		LSErrorFree(&lsError);
 		return;
 	}
@@ -111,7 +113,8 @@ void BackupManager::copyKeysToBackupDb()
 	array_list* fileArray = json_object_get_array(backupKeysJson);
 	if (!fileArray || is_error(fileArray))
 	{
-		g_warning ("%s: file does not contain an array of string keys",__FUNCTION__);
+        //g_warning ("%s: file does not contain an array of string keys",__FUNCTION__);
+        qWarning () << "file does not contain an array of string keys";
 		return;
 	}
 
@@ -119,24 +122,28 @@ void BackupManager::copyKeysToBackupDb()
 	int fileArrayLength = array_list_length (fileArray);
 	int index = 0;
 
-	g_message("%s: fileArrayLength = %d",__FUNCTION__, fileArrayLength);
+    //g_message("%s: fileArrayLength = %d",__FUNCTION__, fileArrayLength);
+    __qMessage("fileArrayLength = %d", fileArrayLength);
 
 	for (index = 0; index < fileArrayLength; ++index)
 	{
 		json_object* obj = (json_object*) array_list_get_idx (fileArray, index);
 		if ((!obj) || is_error(obj))
 		{
-			g_warning("%s: array object [%d] isn't valid (skipping)",__FUNCTION__,index);
+            //g_warning("%s: array object [%d] isn't valid (skipping)",__FUNCTION__,index);
+            qWarning() << "array object [" << index << "] isn't valid (skipping)";
 			continue;
 		}
 
 		const char * ckey = json_object_get_string(obj);
 		std::string key = ( ckey ? ckey : "");
-		g_message("%s: array[%d] file: %s",__FUNCTION__,index,key.c_str());
+        //g_message("%s: array[%d] file: %s",__FUNCTION__,index,key.c_str());
+        __qMessage("array[%d] file: %s",index,key.c_str());
 
 		if (key.empty())
 		{
-			g_warning("%s: array object [%d] is a key that is empty (skipping)",__FUNCTION__,index);
+            //g_warning("%s: array object [%d] is a key that is empty (skipping)",__FUNCTION__,index);
+            qWarning() << "array object [" << index << "] is a key that is empty (skipping)";
 			continue;
 		}
 		keylist.push_back(key);
@@ -241,11 +248,13 @@ Example response for a succesful call:
  */
 bool BackupManager::preBackupCallback( LSHandle* lshandle, LSMessage *message, void *user_data)
 {
-    g_message ("%s: starting",__FUNCTION__);
+    //g_message ("%s: starting",__FUNCTION__);
+    __qMessage ("starting");
     BackupManager* pThis = static_cast<BackupManager*>(user_data);
     if (pThis == NULL)
     {
-    	g_warning("%s: LScallback didn't preserve user_data ptr! (returning false)",__FUNCTION__);
+        //g_warning("%s: LScallback didn't preserve user_data ptr! (returning false)",__FUNCTION__);
+        qWarning() << "LScallback didn't preserve user_data ptr! (returning false)";
     	return false;
     }
 
@@ -263,14 +272,17 @@ bool BackupManager::preBackupCallback( LSHandle* lshandle, LSMessage *message, v
     const char* str = LSMessageGetPayload(message);
     if (!str)
     {
-    	g_warning("%s: LScallback didn't have any text in the payload! (returning false)",__FUNCTION__);
+        //g_warning("%s: LScallback didn't have any text in the payload! (returning false)",__FUNCTION__);
+        qWarning() << "LScallback didn't have any text in the payload! (returning false)";
     	return false;
     }
-    g_message("%s: received %s", __FUNCTION__, str);
+    //g_message("%s: received %s", __FUNCTION__, str);
+    __qMessage("received %s", str);
     json_object* root = json_tokener_parse(str);
     if (!root || is_error(root))
     {
-    	g_warning("%s: text payload didn't contain valid json [message was: [%s] ]",__FUNCTION__,str);
+        //g_warning("%s: text payload didn't contain valid json [message was: [%s] ]",__FUNCTION__,str);
+        qWarning() << "text payload didn't contain valid json message, was: [" << str << "]";
     	return false;
     }
     json_object* tempDirLabel = json_object_object_get (root, "tempDir");
@@ -278,7 +290,8 @@ bool BackupManager::preBackupCallback( LSHandle* lshandle, LSMessage *message, v
     bool myTmp = false;
     if ((!tempDirLabel) || is_error(tempDirLabel))
     {
-    	g_warning ("%s: No tempDir specified in preBackup message",__FUNCTION__);
+        //g_warning ("%s: No tempDir specified in preBackup message",__FUNCTION__);
+        qWarning () << "No tempDir specified in preBackup message";
     	tempDir = PrefsDb::s_prefsPath;
     	myTmp = true;
     }
@@ -300,7 +313,8 @@ bool BackupManager::preBackupCallback( LSHandle* lshandle, LSMessage *message, v
     if (!pThis->m_p_backupDb)
     {
     	//failed to create temp db
-    	g_warning("%s: unable to create a temporary backup db at [%s]...aborting!",__FUNCTION__,dbfile.c_str());
+        //g_warning("%s: unable to create a temporary backup db at [%s]...aborting!",__FUNCTION__,dbfile.c_str());
+        qWarning() << "unable to create a temporary backup db at [" << dbfile.c_str() << "]...aborting!";
     	return pThis->sendPreBackupResponse(lshandle,message,std::list<std::string>());
     }
 
@@ -311,7 +325,8 @@ bool BackupManager::preBackupCallback( LSHandle* lshandle, LSMessage *message, v
 
 	if (!(pThis->m_doBackupFiles))
 	{
-		g_warning("%s: opted not to do a backup at this time due to doBackup internal var",__FUNCTION__);
+        //g_warning("%s: opted not to do a backup at this time due to doBackup internal var",__FUNCTION__);
+        qWarning() << "opted not to do a backup at this time due to doBackup internal var";
 		return (pThis->sendPreBackupResponse(lshandle,message,std::list<std::string>()));
 	}
 
@@ -373,17 +388,20 @@ bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message,
 	BackupManager* pThis = static_cast<BackupManager*>(user_data);
 	if (pThis == NULL)
 	{
-		g_warning("%s: LScallback didn't preserve user_data ptr! (returning false)",__FUNCTION__);
+        //g_warning("%s: LScallback didn't preserve user_data ptr! (returning false)",__FUNCTION__);
+        qWarning() << "LScallback didn't preserve user_data ptr! (returning false)";
 		return false;
 	}
     const char* str = LSMessageGetPayload(message);
     if (!str)
     {
-        g_warning("%s: LScallback didn't have any text in the payload! (returning false)",__FUNCTION__);
+        //g_warning("%s: LScallback didn't have any text in the payload! (returning false)",__FUNCTION__);
+        qWarning() << "LScallback didn't have any text in the payload! (returning false)";
         json_object_object_add (response, "returnValue", json_object_new_boolean(false));
         json_object_object_add (response, "errorText", json_object_new_string("Required Arguments Missing."));
         if (!LSMessageReply (lshandle, message, json_object_to_json_string(response), &lserror )) {
-                g_warning("Can't send reply to postRestoreCallback error: %s", lserror.message);
+                //g_warning("Can't send reply to postRestoreCallback error: %s", lserror.message);
+                qWarning() << "Can\'t send reply to postRestoreCallback error:" << lserror.message;
                 LSErrorFree (&lserror);
         }
 
@@ -394,13 +412,16 @@ bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message,
     json_object* root = json_tokener_parse(str);
     if (!root || is_error(root))
     {
-        g_warning("%s: text payload didn't contain valid json [message was: [%s] ]",__FUNCTION__,str);
+        //g_warning("%s: text payload didn't contain valid json [message was: [%s] ]",__FUNCTION__,str);
+        qWarning() << "text payload didn't contain valid json [message was: [" << str << "] ]";
         json_object_object_add (response, "returnValue", json_object_new_boolean(false));
         json_object_object_add (response, "errorText", json_object_new_string("Required Arguments Missing"));
 
-        g_message ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
+        //g_message ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
+        __qMessage ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
         if (!LSMessageReply (lshandle, message, json_object_to_json_string(response), &lserror )) {
-                g_warning("Can't send reply to postRestoreCallback error: %s", lserror.message);
+                //g_warning("Can't send reply to postRestoreCallback error: %s", lserror.message);
+                qWarning() << "Can't send reply to postRestoreCallback error:" <<lserror.message;
                 LSErrorFree (&lserror);
         }
 
@@ -412,14 +433,17 @@ bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message,
     std::string tempDir;
     if ((!tempDirLabel) || is_error(tempDirLabel))
     {
-        g_warning ("%s: No tempDir specified in postRestore message",__FUNCTION__);
+        //g_warning ("%s: No tempDir specified in postRestore message",__FUNCTION__);
+        qWarning () << "No tempDir specified in postRestore message";
         tempDir = "";		//try and ignore it...hopefully all the files will have abs. paths
         json_object_object_add (response, "returnValue", json_object_new_boolean(false));
         json_object_object_add (response, "errorText", json_object_new_string("invalid arguments"));
 
-        g_message ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
+        //g_message ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
+        __qMessage ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
         if (!LSMessageReply (lshandle, message, json_object_to_json_string(response), &lserror )) {
-                g_warning("Can't send reply to postRestoreCallback error: %s", lserror.message);
+                //g_warning("Can't send reply to postRestoreCallback error: %s", lserror.message);
+                qWarning() << "Can't send reply to postRestoreCallback error:" << lserror.message;
                 LSErrorFree (&lserror);
         }
 
@@ -436,13 +460,16 @@ bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message,
     json_object* files = json_object_object_get (root, "files");
     if (!files || is_error(files))
     {
-        g_warning ("%s: No files specified in postRestore message",__FUNCTION__);
+        //g_warning ("%s: No files specified in postRestore message",__FUNCTION__);
+        qWarning () << "No files specified in postRestore message";
         json_object_object_add (response, "returnValue", json_object_new_boolean(false));
         json_object_object_add (response, "errorText", json_object_new_string("Required Arguments Missing"));
 
-        g_message ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
+        //g_message ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
+        __qMessage ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
         if (!LSMessageReply (lshandle, message, json_object_to_json_string(response), &lserror )) {
-                g_warning("Can't send reply to postRestoreCallback error: %s", lserror.message);
+                //g_warning("Can't send reply to postRestoreCallback error: %s", lserror.message);
+                qWarning() << "Can't send reply to postRestoreCallback error:" << lserror.message;
                 LSErrorFree (&lserror);
         }
 
@@ -453,13 +480,16 @@ bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message,
     array_list* fileArray = json_object_get_array(files);
     if (!fileArray || is_error(fileArray))
     {
-        g_warning ("%s: json value for key 'files' is not an array",__FUNCTION__);
+        //g_warning ("%s: json value for key 'files' is not an array",__FUNCTION__);
+        qWarning () << "json value for key 'files' is not an array";
         json_object_object_add (response, "returnValue", json_object_new_boolean(false));
         json_object_object_add (response, "errorText", json_object_new_string("Required Arguments Missing"));
 
-        g_message ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
+        //g_message ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
+        __qMessage ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
         if (!LSMessageReply (lshandle, message, json_object_to_json_string(response), &lserror )) {
-                g_warning("Can't send reply to postRestoreCallback error: %s", lserror.message);
+                //g_warning("Can't send reply to postRestoreCallback error: %s", lserror.message);
+                qWarning() <<"Can't send reply to postRestoreCallback error:" << lserror.message;
                 LSErrorFree (&lserror);
         }
 
@@ -471,33 +501,38 @@ bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message,
     int fileArrayLength = array_list_length (fileArray);
     int index = 0;
 
-    g_message("%s: fileArrayLength = %d",__FUNCTION__, fileArrayLength);
+    //g_message("%s: fileArrayLength = %d",__FUNCTION__, fileArrayLength);
+    __qMessage("fileArrayLength = %d", fileArrayLength);
 
     for (index = 0; index < fileArrayLength; ++index)
     {
     	json_object* obj = (json_object*) array_list_get_idx (fileArray, index);
     	if ((!obj) || is_error(obj))
     	{
-    		g_warning("%s: array object [%d] isn't valid (skipping)",__FUNCTION__,index);
-    		continue;
+            //g_warning("%s: array object [%d] isn't valid (skipping)",__FUNCTION__,index);
+            qWarning() << "array object [%d] isn't valid (skipping)";
+     		continue;
     	}
 
     	const char * cpath = json_object_get_string(obj);
     	std::string path = ( cpath ? cpath : "");
-    	g_message("%s: array[%d] file: %s",__FUNCTION__,index,path.c_str());
+        //g_message("%s: array[%d] file: %s",__FUNCTION__,index,path.c_str());
+        __qMessage("array[%d] file: %s", index,path.c_str());
 
     	if (path.empty())
     	{
-    		g_warning("%s: array object [%d] is a file path that is empty (skipping)",__FUNCTION__,index);
+            //g_warning("%s: array object [%d] is a file path that is empty (skipping)",__FUNCTION__,index);
+            qWarning() << "array object [" << index << "] is a file path that is empty (skipping)";
     		continue;
     	}
     	if (path.find("/") != 0)
     	{
     		//not an absolute path apparently...try taking on tempdir
     		path = tempDir + std::string("/") + path;
-    		g_warning("%s: array object [%d] is a file path that seems to be relative...trying to absolute-ize it by adding tempDir, like so: [%s]",
-    				__FUNCTION__,index,
-    				path.c_str());
+            //g_warning("%s: array object [%d] is a file path that seems to be relative...trying to absolute-ize it by adding tempDir, like so: [%s]",
+                //__FUNCTION__,index, path.c_str());
+            qWarning() << "array object [" << index <<
+                    "] is a file path that seems to be relative...trying to absolute-ize it by adding tempDir, like so: [" << path.c_str() << "]";
     	}
 
     	///PROCESS SPECIFIC FILES HERE....
@@ -516,8 +551,9 @@ bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message,
     		int rc = PrefsDb::instance()->merge(path);
     		if (rc == 0)
     		{
-    			g_warning("%s: merge() from [%s] didn't merge anything...could be an error or just an empty backup db",
-    					__FUNCTION__,path.c_str());
+                //g_warning("%s: merge() from [%s] didn't merge anything...could be an error or just an empty backup db",
+                    //__FUNCTION__,path.c_str());
+                qWarning() << "merge() from [" << path.c_str() << "] didn't merge anything...could be an error or just an empty backup db";
     		}
     	}
     }
@@ -540,7 +576,8 @@ bool BackupManager::sendPreBackupResponse(LSHandle* lshandle, LSMessage *message
 	// version - version of the service
 	json_object* response = json_object_new_object();
 	if (!response || is_error(response)) {
-		g_warning("%s: Unable to allocate json object",__FUNCTION__);
+        //g_warning("%s: Unable to allocate json object",__FUNCTION__);
+        qWarning() << "Unable to allocate json object";
 		return false;
 	}
 
@@ -558,12 +595,14 @@ bool BackupManager::sendPreBackupResponse(LSHandle* lshandle, LSMessage *message
 		std::list<std::string>::const_iterator i;
 		for (i = fileList.begin(); i != fileList.end(); ++i) {
 				json_object_array_add (files, json_object_new_string(i->c_str()));
-				g_message("%s: added file %s to the backup list",__FUNCTION__,i->c_str());
+                //g_message("%s: added file %s to the backup list",__FUNCTION__,i->c_str());
+                __qMessage("added file %s to the backup list", i->c_str());
 		}
 	}
 	else
 	{
-		g_warning("%s: opted not to do a backup at this time due to doBackup internal var",__FUNCTION__);
+        //g_warning("%s: opted not to do a backup at this time due to doBackup internal var",__FUNCTION__);
+        qWarning() << "opted not to do a backup at this time due to doBackup internal var";
 	}
 
 	json_object_object_add (response, "files", files);
@@ -571,9 +610,11 @@ bool BackupManager::sendPreBackupResponse(LSHandle* lshandle, LSMessage *message
 	LSError lserror;
 	LSErrorInit(&lserror);
 
-	g_message ("%s: Sending response to preBackupCallback: %s", __FUNCTION__,json_object_to_json_string (response));
+    //g_message ("%s: Sending response to preBackupCallback: %s", __FUNCTION__,json_object_to_json_string (response));
+    __qMessage ("Sending response to preBackupCallback: %s", json_object_to_json_string (response));
 	if (!LSMessageReply (lshandle, message, json_object_to_json_string(response), &lserror )) {
-		g_warning("%s: Can't send reply to preBackupCallback error: %s",__FUNCTION__, lserror.message);
+        //g_warning("%s: Can't send reply to preBackupCallback error: %s",__FUNCTION__, lserror.message);
+        qWarning() << "Can't send reply to preBackupCallback error:" << lserror.message;
 		LSErrorFree (&lserror);
 	}
 
@@ -591,9 +632,11 @@ bool BackupManager::sendPostRestoreResponse(LSHandle* lshandle, LSMessage *messa
 
 	json_object_object_add (response, "returnValue", json_object_new_boolean(true));
 
-	g_message ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
+    //g_message ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
+    __qMessage ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
 	if (!LSMessageReply (lshandle, message, json_object_to_json_string(response), &lserror )) {
-		g_warning("Can't send reply to postRestoreCallback error: %s", lserror.message);
+        //g_warning("Can't send reply to postRestoreCallback error: %s", lserror.message);
+        qWarning() << "Can't send reply to postRestoreCallback error:" << lserror.message;
 		LSErrorFree (&lserror);
 	}
 

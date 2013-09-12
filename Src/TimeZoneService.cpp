@@ -29,6 +29,7 @@
 #include "PrefsFactory.h"
 #include "TimePrefsHandler.h"
 #include "TzParser.h"
+#include "Logging.h"
 #include "JSONUtils.h"
 
 static LSMethod s_methods[]  = {
@@ -55,7 +56,7 @@ TimeZoneService* TimeZoneService::instance()
 
 TimeZoneService::TimeZoneService()
 	: m_service(0)
-{    
+{
 }
 
 TimeZoneService::~TimeZoneService()
@@ -74,7 +75,8 @@ void TimeZoneService::setServiceHandle(LSPalmService* service)
 												s_methods, NULL,
 												NULL, this, &lsError);
     if (!result) {
-		g_critical("Failed in registering timezone handler method: %s", lsError.message);
+        //g_critical("Failed in registering timezone handler method: %s", lsError.message);
+        qCritical() << "Failed in registering timezone handler method:" << lsError.message;
     	LSErrorFree(&lsError);
     	return;
     }

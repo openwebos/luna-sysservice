@@ -19,6 +19,8 @@
 #ifndef JSONUTILS_H
 #define JSONUTILS_H
 
+#include "Logging.h"
+
 #include "Settings.h"
 
 #include <luna-service2/lunaservice.h>
@@ -89,7 +91,8 @@ extern const char * STANDARD_JSON_SUCCESS;
 #define OBJECT_OPTIONAL_7(objName, p1, type1, p2, type2, p3, type3, p4, type4, p5, type5, p6, type6, p7, type7)         "{\"" #objName "\":{\"type\":\"object\",\"properties\":{" OPTIONAL(p1, type1) "," OPTIONAL(p2, type2) "," OPTIONAL(p3, type3) "," OPTIONAL(p4, type4) "," OPTIONAL(p5, type5) "," OPTIONAL(p6, type6) "," OPTIONAL(p7, type7) "," SYSTEM_PARAMETERS "},\"additionalProperties\":false}}"
 
 // Deprecated Macro comments
-#define DEPRECATED_SERVICE_MSG() g_critical("THIS METHOD IS DEPRECATED. PLEASE REVISIT THE CODE.")
+//#define DEPRECATED_SERVICE_MSG() g_critical("THIS METHOD IS DEPRECATED. PLEASE REVISIT THE CODE.")
+#define DEPRECATED_SERVICE_MSG() qCritical("THIS METHOD IS DEPRECATED. PLEASE REVISIT THE CODE.")
 
 class JsonValue
 {

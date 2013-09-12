@@ -19,46 +19,42 @@
 #define LOGGING_H
 
 #include <stdio.h>
+#include <glib.h>
+#include <QtDebug>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-bool LunaChannelEnabled(const char* channel);
 
-#ifndef NO_LOGGING
+void outputQtMessages(QtMsgType type,
+                    const QMessageLogContext &context,
+                    const QString &msg);
 
-#define luna_log(channel, ...)                                              \
-do {                                                                                \
-    if (LunaChannelEnabled(channel)) {                                              \
-	   fprintf(stdout, "LOG<%s>:(%s:%d) ", channel, __PRETTY_FUNCTION__, __LINE__);  \
-       fprintf(stdout, __VA_ARGS__);                                        \
-       fprintf(stdout, "\n");                                                       \
-    }                                                                               \
+#ifdef USE_PMLOG
+#include "PmLogLib.h"
+#define SYSSERVICELOG_MESSAGE_MAX 500
+inline void sysServiceFmtMsg(char *logMsg, char *fmt, ...)
+{
+  va_list args;
+  va_start (args, fmt);
+  vsnprintf(logMsg, SYSSERVICELOG_MESSAGE_MAX, fmt, args);
+  va_end (args);
+}
+extern void sysServiceLogInfo(const char * fileName, guint32 lineNbr,const char* funcName, const char *logMsg);
+
+//  __qMessage() is a simpler version of a logging function which should exist in QDEBUG, but doesn't
+
+#define __qMessage(...)  do { \
+      char logMsg[SYSSERVICELOG_MESSAGE_MAX+1]; \
+      sysServiceFmtMsg(logMsg, __VA_ARGS__); \
+      sysServiceLogInfo(__FILE__, __LINE__, __func__, logMsg); \
 } while(0)
 
-#define luna_warn(channel, ...)                                             \
-do {                                                                                \
-    if (LunaChannelEnabled(channel)) {                                              \
-	   fprintf(stdout, "WARN<%s>:(%s:%d) ", channel, __PRETTY_FUNCTION__, __LINE__); \
-       fprintf(stdout, __VA_ARGS__);                                        \
-       fprintf(stdout, "\n");                                                       \
-    }                                                                               \
-} while(0)
-	
-#else // NO_LOGGING
+#else
+#define __qMessage(...)  do { g_message(__VA_ARGS__); } while (0)
 
-#define luna_log(channel, ...) (void)0
-#define luna_warn(channel, ...) (void)0
-
-#endif // NO_LOGGING
-
-#define luna_critical(channel, ...)                                         \
-do {                                                                                \
-   fprintf(stdout, "CRITICAL<%s>:(%s:%d) ", channel, __PRETTY_FUNCTION__, __LINE__); \
-   fprintf(stdout, __VA_ARGS__);                                            \
-   fprintf(stdout, "\n");                                                           \
-} while(0)
+#endif
 	
 #ifdef __cplusplus
 }

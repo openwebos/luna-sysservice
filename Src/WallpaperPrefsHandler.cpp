@@ -45,16 +45,6 @@
 
 #include "ImageHelpers.h"
 
-#if 1
-#define WP_TRACE(...) \
-do { \
-    fprintf(stdout, "Wallpapers: " ); \
-    fprintf(stdout, __VA_ARGS__); \
-} while (0)
-#else
-#define WP_TRACE(...) (void)0
-#endif
-
 #include "WallpaperPrefsHandler.h"
 
 static const char* s_logChannel = "WallpaperPrefsHandler";
@@ -139,7 +129,7 @@ bool WallpaperPrefsHandler::validate(const std::string& key, json_object* value,
 
 	if (!originId.empty())
 	{
-		g_warning("%s: [SECURITY] : refusing screenSize (%s) setting from %s",__FUNCTION__,key.c_str(),originId.c_str());
+        qWarning("%s: [SECURITY] : refusing screenSize (%s) setting from %s",__FUNCTION__,key.c_str(),originId.c_str());
 		return false;
 	}
 	return true;
@@ -223,30 +213,32 @@ json_object* WallpaperPrefsHandler::valuesForKey(const std::string& key)
 
 void WallpaperPrefsHandler::init()
 {
-	luna_log(s_logChannel,"WallpaperPrefsHandler::init()");
+    //luna_log(s_logChannel,"WallpaperPrefsHandler::init()");
+    __qMessage("start");
 	bool result;
 	LSError lsError;
 	LSErrorInit(&lsError);
 
 	getScreenDimensions();
-	g_message("Screen Width set to %d , Screen Height set to %d",SCREEN_WIDTH,SCREEN_HEIGHT);
+    __qMessage("Screen Width set to %d , Screen Height set to %d",SCREEN_WIDTH,SCREEN_HEIGHT);
 	s_wallpaperDir = std::string(PrefsDb::s_mediaPartitionPath) + std::string(PrefsDb::s_mediaPartitionWallpapersDir);
 	s_wallpaperThumbsDir = std::string(PrefsDb::s_mediaPartitionPath) + std::string(PrefsDb::s_mediaPartitionWallpaperThumbsDir);
 	
 	//make sure the wallpaper directories exist
 	int exit_status = g_mkdir_with_parents(s_wallpaperDir.c_str(),0766);
 	if (exit_status < 0) {
-		g_warning("WallpaperPrefsHandler:: can't seem to create the wallpaper dir (currently [%s])",s_wallpaperDir.c_str());
+        qWarning("can't seem to create the wallpaper dir (currently [%s])",s_wallpaperDir.c_str());
 	}
 	exit_status = g_mkdir_with_parents(s_wallpaperThumbsDir.c_str(),0766);
 	if (exit_status < 0) {
-		g_warning("WallpaperPrefsHandler:: can't seem to create the wallpaper thumbs dir (currently [%s])",s_wallpaperThumbsDir.c_str());
+        qWarning("can't seem to create the wallpaper thumbs dir (currently [%s])",s_wallpaperThumbsDir.c_str());
 	}
 	
 	result = LSPalmServiceRegisterCategory( m_service, "/wallpaper", s_methods, NULL,
 			NULL, this, &lsError);
 	if (!result) {
-		luna_critical(s_logChannel, "Failed in registering wallpaper handler method: %s", lsError.message);
+        //luna_critical(s_logChannel, "Failed in registering wallpaper handler method: %s", lsError.message);
+        qCritical("Failed in registering wallpaper handler method: %s", lsError.message);
 		LSErrorFree(&lsError);
 		return;
 	}
@@ -257,14 +249,16 @@ void WallpaperPrefsHandler::init()
 	    
 	result = LSCategorySetData(m_serviceHandlePublic, "/wallpaper", this, &lsError);
 	if (!result) {
-		luna_critical(s_logChannel, "Failed in LSCategorySetData: %s", lsError.message);
+        //luna_critical(s_logChannel, "Failed in LSCategorySetData: %s", lsError.message);
+        qCritical("Failed in LSCategorySetData: %s", lsError.message);
 		LSErrorFree(&lsError);
 		return;
 	}
 	
 	result = LSCategorySetData(m_serviceHandlePrivate, "/wallpaper", this, &lsError);
 	if (!result) {
-		luna_critical(s_logChannel, "Failed in LSCategorySetData: %s", lsError.message);
+        //luna_critical(s_logChannel, "Failed in LSCategorySetData: %s", lsError.message);
+        qCritical("Failed in LSCategorySetData: %s", lsError.message);
 		LSErrorFree(&lsError);
 		return;
 	}
@@ -317,7 +311,8 @@ static std::string runImage2Binary(json_object * p_jsonRequestObject)
 	argv[2] = (gchar*)(requestString.c_str());
 	argv[3] = NULL;
 
-	g_warning("%s: executing: %s %s %s",__FUNCTION__,argv[0],argv[1],argv[2]);
+	//g_warning("%s: executing: %s %s %s",__FUNCTION__,argv[0],argv[1],argv[2]);
+    __qMessage(" executing: %s %s %s",argv[0],argv[1],argv[2]);
 
 	gboolean resultStatus = g_spawn_sync(NULL,
 			argv,
@@ -331,7 +326,8 @@ static std::string runImage2Binary(json_object * p_jsonRequestObject)
 			&gerr);
 
 	if (gerr) {
-		g_warning("%s: error: %s",__FUNCTION__,gerr->message);
+		//g_warning("%s: error: %s",__FUNCTION__,gerr->message);
+        qCritical("error: %s", gerr->message);
 		g_error_free(gerr);
 		if (stdoutBuffer)
 		{
@@ -347,13 +343,15 @@ static std::string runImage2Binary(json_object * p_jsonRequestObject)
 			{
 				g_free(stdoutBuffer);
 			}
-			g_warning("%s: error: result status is %d , error code = %d",__FUNCTION__,resultStatus,exitStatus);
+			//g_warning("%s: error: result status is %d , error code = %d",__FUNCTION__,resultStatus,exitStatus);
+            qCritical("error: result status is %d , error code = %d", resultStatus, exitStatus);
 			return "";
 		}
 	}
 	else {
 		//failed to exec command
-		g_warning("%s: error: spawn failed",__FUNCTION__);
+		//g_warning("%s: error: spawn failed",__FUNCTION__);
+        qCritical("error: spawn failed");
 		if (stdoutBuffer)
 		{
 			g_free(stdoutBuffer);
@@ -418,15 +416,16 @@ bool WallpaperPrefsHandler::importWallpaperViaImage2(const std::string& imageFil
 	//invoke the exec binary
 	std::string result = runImage2Binary(requestObject);
 
-	g_message("%s: result: %s",__FUNCTION__,(result.empty() ? "(NO OUTPUT)" : result.c_str()));
+	//g_message("%s: result: %s",__FUNCTION__,(result.empty() ? "(NO OUTPUT)" : result.c_str()));
+    __qMessage("result: %s", (result.empty() ? "(NO OUTPUT)" : result.c_str()));
 
 	return false;
 }
 
 bool WallpaperPrefsHandler::importWallpaper(std::string& ret_wallpaperName,const std::string& sourcePathAndFile,
 		bool toScreenSize,
-		double centerX,double centerY,double scale,std::string& errorText) {
-	
+		double centerX,double centerY,double scale,std::string& errorText)
+{
 	//split into parts
 
 	gchar* fileName = g_path_get_basename(sourcePathAndFile.c_str());
@@ -498,7 +497,7 @@ bool WallpaperPrefsHandler::importWallpaper(std::string& ret_wallpaperName, cons
         && reader.size().width() == SCREEN_WIDTH && reader.size().height() == SCREEN_HEIGHT)
         toScreenSize = true;
 
-    WP_TRACE("importWallpaper(): parameters: scale = %lf , centerX = %lf , centerY = %lf , toScreenSize? = %s\n",
+    qDebug("importWallpaper(): parameters: scale = %lf , centerX = %lf , centerY = %lf , toScreenSize? = %s\n",
             scale,centerX,centerY,(toScreenSize ? "True" : "False"));
     //create a resized version of the image to screen res in the wallpapers dir
 
@@ -518,13 +517,13 @@ bool WallpaperPrefsHandler::importWallpaper(std::string& ret_wallpaperName, cons
             image = image.scaled(image.width() * scale, image.height() * scale);
 
         // now refocus as requested
-        WP_TRACE("importWallpaper(): calling clipImageBufferToScreenSizeWithFocus...\n");
+        qDebug("importWallpaper(): calling clipImageBufferToScreenSizeWithFocus...\n");
         image = clipImageToScreenSizeWithFocus(image,
                 image.width() * centerX, image.height() * centerY);
 
         // and write out the file
         image.save(QString::fromStdString(destPathAndFile), 0, 100);
-        WP_TRACE("importWallpaper(): wrote final image to file\n");
+        qDebug("importWallpaper(): wrote final image to file\n");
     }
 
     //create a thumbnail version in the wallpaper thumbs dir
@@ -538,7 +537,7 @@ bool WallpaperPrefsHandler::importWallpaper(std::string& ret_wallpaperName, cons
     m_wallpapers.push_back(sourceFile);
     ret_wallpaperName = sourceFile;
     //all good...
-    WP_TRACE("importWallpaper(): complete\n");
+    qDebug("importWallpaper(): complete\n");
 
     return true;
 }
@@ -552,7 +551,7 @@ bool WallpaperPrefsHandler::importWallpaper_lowMem(std::string& ret_wallpaperNam
     std::string pathAndFile = sourcePath + std::string("/")+sourceFile;
     QImageReader reader(QString::fromStdString(pathAndFile));
     if(!reader.canRead()) {
-        qDebug()<<reader.supportedImageFormats();
+        qWarning()<<reader.supportedImageFormats();
         errorText = reader.errorString().toStdString();
         return false;
     }
@@ -597,10 +596,10 @@ bool WallpaperPrefsHandler::importWallpaper_lowMem(std::string& ret_wallpaperNam
     if ((qFuzzyCompare(scale,1.0)) && (qFuzzyCompare(centerX,0.5)) && (qFuzzyCompare(centerY,0.5)) 
             && (srcWidth == SCREEN_WIDTH) && (srcHeight == SCREEN_HEIGHT))
         toScreenSize = true;
-	
-	WP_TRACE("importWallpaper(): parameters: scale = %lf , centerX = %lf , centerY = %lf , toScreenSize? = %s\n",
+
+	qDebug("importWallpaper(): parameters: scale = %lf , centerX = %lf , centerY = %lf , toScreenSize? = %s\n",
 			scale,centerX,centerY,(toScreenSize ? "True" : "False"));
-		
+
 	int maxDim = (SCREEN_WIDTH > SCREEN_HEIGHT) ? SCREEN_WIDTH : SCREEN_HEIGHT;
 	bool result;
 	if((srcWidth > maxDim) || (srcHeight > maxDim)) {
@@ -662,7 +661,7 @@ bool WallpaperPrefsHandler::importWallpaper_lowMem(std::string& ret_wallpaperNam
 	m_wallpapers.push_back(sourceFile);
 	ret_wallpaperName = sourceFile;
 	//all good...
-	WP_TRACE("importWallpaper(): complete\n");
+	qDebug("importWallpaper(): complete\n");
 	return result;
 }
 
@@ -693,7 +692,7 @@ bool WallpaperPrefsHandler::convertImage(const std::string& pathToSourceFile,
 		scale = 1.0;
 
 
-    WP_TRACE("convertImage(): parameters: scale = %lf , centerX = %lf , centerY = %lf\n",
+    qDebug("convertImage(): parameters: scale = %lf , centerX = %lf , centerY = %lf\n",
             scale,centerX,centerY);
 
     // used to scale the file before it is actually read to memory
@@ -707,23 +706,23 @@ bool WallpaperPrefsHandler::convertImage(const std::string& pathToSourceFile,
     scale /= prescale;
 
     if (scale != 1.0) {
-        WP_TRACE("convertImage(): scaling image\n");
+        qDebug("convertImage(): scaling image\n");
         image = image.scaled(scale * image.width(), scale * image.height());
     }
 
     if (!justConvert) {
         //now refocus as requested
-        WP_TRACE("convertImage(): calling clipImageBufferToScreenSizeWithFocus...\n");
+        qDebug("convertImage(): calling clipImageBufferToScreenSizeWithFocus...\n");
         image = clipImageToScreenSizeWithFocus(image, image.width() * centerX, image.height() * centerY);
 
         destWidth = SCREEN_WIDTH;
         destHeight = SCREEN_HEIGHT;
-        WP_TRACE("convertImage(): clipImageBufferToScreenSizeWithFocus Ok\n");
+        qDebug("convertImage(): clipImageBufferToScreenSizeWithFocus Ok\n");
     }
 
     //and write out the file
     image.save(QString::fromStdString(pathToDestFile), format, 100);
-    WP_TRACE("convertImage(): wrote final image to file\n");
+    qDebug("convertImage(): wrote final image to file\n");
     return true;
 }
 
@@ -820,8 +819,8 @@ QImage WallpaperPrefsHandler::clipImageToScreenSizeWithFocus(QImage& image, int 
     if(focus_y >= image.height())
         focus_y = image.height();
 
-    WP_TRACE("clipImageBufferToScreenSizeWithFocus(): srcImg is ( %d , %d )\n",image.width(),image.height());
-    WP_TRACE("clipImageBufferToScreenSizeWithFocus(): focus is ( %d , %d )\n",focus_x,focus_y);
+    qDebug("clipImageBufferToScreenSizeWithFocus(): srcImg is ( %d , %d )\n",image.width(),image.height());
+    qDebug("clipImageBufferToScreenSizeWithFocus(): focus is ( %d , %d )\n",focus_x,focus_y);
 
     QImage result(SCREEN_WIDTH, SCREEN_HEIGHT, image.format());
 
@@ -902,8 +901,8 @@ one (const struct dirent*)
  * wallpapers in there (call scanForWallpapers(true) afterwards to fix)
  * 
  */
-const std::list<std::string>& WallpaperPrefsHandler::buildIndexFromExisting(int * nInvalid) {
-	
+const std::list<std::string>& WallpaperPrefsHandler::buildIndexFromExisting(int * nInvalid)
+{
 	if (s_wallpaperDir.length() == 0)
 		return m_wallpapers;
 
@@ -918,9 +917,9 @@ const std::list<std::string>& WallpaperPrefsHandler::buildIndexFromExisting(int 
 	struct dirent **entries=0;
 
 	int n=0;
-	
+
 	m_wallpapers.clear();
-	
+
 	std::map<std::string,char> thumbExistenceMap;
 	int count = scandir(thumbpath.c_str(),&entries,one,alphasort);
 	int i;
@@ -1008,11 +1007,11 @@ const std::list<std::string>& WallpaperPrefsHandler::buildIndexFromExisting(int 
 		
 }
 
-const std::list<std::string>& WallpaperPrefsHandler::scanForWallpapers(bool rebuild) {
-	
+const std::list<std::string>& WallpaperPrefsHandler::scanForWallpapers(bool rebuild)
+{
 	if (s_wallpaperDir.length() == 0)
 		return m_wallpapers;
-	
+
 	std::string path = s_wallpaperDir;
 	if (path[path.size() - 1] != '/')
 		path += '/';
@@ -1020,7 +1019,7 @@ const std::list<std::string>& WallpaperPrefsHandler::scanForWallpapers(bool rebu
 	std::string thumbpath = s_wallpaperThumbsDir;
 	if (thumbpath[thumbpath.size() - 1] != '/')
 		thumbpath += '/';
-	
+
 	struct dirent **entries;
 
 	int rc;
@@ -1028,24 +1027,24 @@ const std::list<std::string>& WallpaperPrefsHandler::scanForWallpapers(bool rebu
 	int count = scandir(thumbpath.c_str(),&entries,one,alphasort);
 	int i;
 	for (i = 0;i < count; ++i) {
-		
+
 		if (entries[i]->d_name[0] == '.') {
 			continue;
 		}
-		
+
 		if (entries[i]->d_type == DT_DIR) {
 			continue;
 		}
-		
+
 		if (entries[i]->d_type == DT_REG) {
 			std::string p = path + entries[i]->d_name;
 			
 			//add to the map
 			thumbExistenceMap[std::string(entries[i]->d_name)] = ' ';
 		}
-		
+
 	}
-	
+
 	for (i = 0; i < count; ++i) {
 		free(entries[i]);
 	}
@@ -1072,7 +1071,7 @@ const std::list<std::string>& WallpaperPrefsHandler::scanForWallpapers(bool rebu
 			scanTimeZoneFolder(p, len, zoneInfoList);
 		}
 		*/
-		
+
 		if (entries[i]->d_type == DT_REG) {
 
 			//does it already have a thumbnail?
@@ -1081,7 +1080,7 @@ const std::list<std::string>& WallpaperPrefsHandler::scanForWallpapers(bool rebu
 				//yup, already got this one...skip
 				continue;
 			}
-			
+
             std::string p = path + entries[i]->d_name;
             QImageReader reader(QString::fromStdString(p));
             if(!reader.canRead())
@@ -1096,6 +1095,7 @@ const std::list<std::string>& WallpaperPrefsHandler::scanForWallpapers(bool rebu
             }
             else if (reader.format() == "jpg") {
                 // why do we not create thumbs for jpgs?
+                qWarning() << "Can\'t create thumbnails for JPGs" << entries[i]->d_name;
             }
 		}
 	}
@@ -1137,10 +1137,10 @@ bool WallpaperPrefsHandler::getWallpaperSpecFromName(const std::string& wallpape
 		if (wallpaperName == (*it))
 			break;
 	}
-	
+
 	if (it == m_wallpapers.end())
 		return false;
-	
+
 	return makeLocalPathnamesFromWallpaperName(wallpaperFile,wallpaperThumbFile,wallpaperName);
 }
 
@@ -1150,7 +1150,7 @@ bool WallpaperPrefsHandler::getWallpaperSpecFromFilename(std::string& wallpaperN
 	UrlRep url = UrlRep::fromUrl(wallpaperFile.c_str());
 	if (url.valid ==  false)
 		return false;
-	
+
 	wallpaperName = url.resource;
 	//try to match the given wallpaper to one of the ones in the list
 	std::list<std::string>::iterator it;
@@ -1158,10 +1158,10 @@ bool WallpaperPrefsHandler::getWallpaperSpecFromFilename(std::string& wallpaperN
 		if (wallpaperName == (*it))
 			break;
 	}
-	
+
 	if (it == m_wallpapers.end())
 		return false;
-	
+
 	return makeLocalPathnamesFromWallpaperName(wallpaperFile,wallpaperThumbFile,wallpaperName);
 }
 
@@ -1258,7 +1258,7 @@ static bool cbImportWallpaper(LSHandle* lsHandle, LSMessage *message,
 	std::string result;
 	const char* reply = 0;
 	json_object * jsonReplyObject = 0;
-	
+
 	bool success = false;
 	std::string input;
 	json_object* json = 0;
@@ -1271,7 +1271,7 @@ static bool cbImportWallpaper(LSHandle* lsHandle, LSMessage *message,
 	std::string wallpaperName;		//the name of the wallpaper will be returned here if successful
 
 	WallpaperPrefsHandler* wh = (WallpaperPrefsHandler*) user_data;
-	
+
 	LSErrorInit(&lsError);
 
 	const char* str = LSMessageGetPayload(message);
@@ -1294,7 +1294,7 @@ static bool cbImportWallpaper(LSHandle* lsHandle, LSMessage *message,
 		errorText = std::string("lunabus handler error; luna didn't pass a valid instance var to handler");
 		goto Done;
 	}
-	
+
 	label = json_object_object_get(root,"target");
 	if (label) {
 		input = json_object_get_string(label);
@@ -1371,9 +1371,7 @@ static bool cbImportWallpaper(LSHandle* lsHandle, LSMessage *message,
 		//use the older method here
 		success = wh->importWallpaper(wallpaperName,input,toScreenSize,fx,fy,scaleFactor,errorText);
 	}
-	
 
-		
 Done:
 
 	if (root)
@@ -1510,12 +1508,12 @@ static bool cbConvertImage(LSHandle* lsHandle, LSMessage *message,
 	double fx,fy;
 	bool justConvert=true;
 	WallpaperPrefsHandler* wh = (WallpaperPrefsHandler*) user_data;
-	
+
 	std::string sourceFile,destFile;
 	std::string sourceFileEncoded,destFileEncoded;
 	std::string tempDestFileExtn;
 	std::string destTypeStr;
-	
+
 	LSErrorInit(&lsError);
 
 	const char* str = LSMessageGetPayload(message);
@@ -1560,7 +1558,7 @@ static bool cbConvertImage(LSHandle* lsHandle, LSMessage *message,
 	else {
 		tempDestFileExtn = ".raw";
 	}
-		
+
 	if (Utils::extractFromJson(root,"dest",destFile) == false) {
 		if (Utils::createTempFile(std::string(PrefsDb::s_mediaPartitionPath)+std::string(PrefsDb::s_mediaPartitionTempDir)
 									,std::string("image")
@@ -1613,7 +1611,7 @@ static bool cbConvertImage(LSHandle* lsHandle, LSMessage *message,
 
 	scaleFactor = 1.0;
 	fx = 0.5;fy=0.5;
-	
+
 	//attempt to get additional parameters
 	label = json_object_object_get(root,"focusX");
 	if ((label) && (!is_error(label))) {
@@ -1650,6 +1648,7 @@ static bool cbConvertImage(LSHandle* lsHandle, LSMessage *message,
 	json_object_object_add(json, (char*) "returnValue", json_object_new_boolean(success));
 	if (!success) {
 		json_object_object_add(json,(char*) "errorText",json_object_new_string(const_cast<char*>(errorText.c_str())));
+        qWarning(errorText.c_str());
 	}
 	else {
 		json_object * inner_json = json_object_new_object();
@@ -1722,9 +1721,9 @@ static bool cbRefreshWallpaperIndex(LSHandle* lsHandle, LSMessage *message,
 	std::string result;
 	const char* reply = 0;
 	json_object * json;
-	
+
 	std::string errorText;
-	
+
 	WallpaperPrefsHandler* wh = (WallpaperPrefsHandler*) user_data;
 	if (wh) {
 		wh->scanForWallpapers(true);
@@ -1734,20 +1733,21 @@ static bool cbRefreshWallpaperIndex(LSHandle* lsHandle, LSMessage *message,
 		retVal=false;
 		errorText = std::string("lunabus handler error; luna didn't pass a valid instance var to handler");
 	}
-	
+
 	json = json_object_new_object();
 	json_object_object_add(json, (char*) "returnValue", json_object_new_boolean(retVal));
 	if (!retVal) {
 		json_object_object_add(json,(char*) "errorText",json_object_new_string(const_cast<char*>(errorText.c_str())));
+        qWarning(errorText.c_str());
 	}
-	
+
 	reply = json_object_to_json_string(json);
 
 	if (reply)
 		retVal = LSMessageReply(lsHandle, message, reply, &lsError);
 	if (!retVal)
 		LSErrorFree (&lsError);
-	
+
 	if (json)
 		json_object_put(json);
 
@@ -1877,7 +1877,7 @@ static bool cbGetWallpaperSpec(LSHandle* lsHandle, LSMessage *message,
 			errorText = std::string("invalid wallpaper name specified (perhaps it doesn't exist in the wallpaper dir; was it imported?");
 		goto Done;
 	}
-	
+
 	label = json_object_object_get(root,"wallpaperFile");
 	if ((label) && (!is_error(label))) {
 		wallpaperFile = json_object_get_string(label);
@@ -1897,6 +1897,7 @@ Done:
 	json_object_object_add(json, (char*) "returnValue", json_object_new_boolean(retVal));
 	if (!retVal) {
 		json_object_object_add(json,(char*) "errorText",json_object_new_string(const_cast<char*>(errorText.c_str())));
+        qWarning(errorText.c_str());
 	}
 	else {
 		inner_json = json_object_new_object();
@@ -1981,8 +1982,8 @@ Example response for a failed call:
 \endcode
 */
 static bool cbDeleteWallpaper(LSHandle* lsHandle, LSMessage *message,
-		void *user_data) {
-
+		void *user_data)
+{
 	bool        retVal;
 	LSError     lsError;
 	std::string result;
@@ -2041,6 +2042,7 @@ static bool cbDeleteWallpaper(LSHandle* lsHandle, LSMessage *message,
 	json_object_object_add(json, (char*) "returnValue", json_object_new_boolean(retVal));
 	if (!retVal) {
 		json_object_object_add(json,(char*) "errorText",json_object_new_string(const_cast<char*>(errorText.c_str())));
+        qWarning(errorText.c_str());
 	}
 	else {
 		inner_json = json_object_new_object();
@@ -2077,20 +2079,21 @@ void WallpaperPrefsHandler::getScreenDimensions()
 			SCREEN_HEIGHT = varinfo.yres;
 			if (((unsigned int)(SCREEN_WIDTH)) > 65536)
 			{
-				g_message("%s: fb0 opened, but FBIOGET_VSCREENINFO ioctl gave a bad xres value (%d)",
-							__FUNCTION__, varinfo.xres);
+                //g_message("%s: fb0 opened, but FBIOGET_VSCREENINFO ioctl gave a bad xres value (%d)",__FUNCTION__, varinfo.xres);
+                qWarning() << "fb0 opened, but FBIOGET_VSCREENINFO ioctl gave a bad xres value (%d)" << varinfo.xres;
 				SCREEN_WIDTH = 320;
 			}
 			if (((unsigned int)(SCREEN_HEIGHT)) > 65536)
 			{
-				g_message("%s: fb0 opened, but FBIOGET_VSCREENINFO ioctl gave a bad yres value (%d)",
-											__FUNCTION__, varinfo.yres);
+                //g_message("%s: Failed to open framebuffer device fb0",__FUNCTION__);
+                qWarning() << "Failed to open framebuffer device fb0";
 				SCREEN_HEIGHT = 480;
 			}
 		}
 		else
 		{
-			g_message("%s: fb0 opened, but couldn't execute FBIOGET_VSCREENINFO ioctl",__FUNCTION__);
+            //g_message("%s: fb0 opened, but couldn't execute FBIOGET_VSCREENINFO ioctl",__FUNCTION__);
+            qWarning() << "fb0 opened, but couldn't execute FBIOGET_VSCREENINFO ioctl";
 			SCREEN_WIDTH = 320;
 			SCREEN_HEIGHT = 480;
 		}
@@ -2098,7 +2101,8 @@ void WallpaperPrefsHandler::getScreenDimensions()
 	}
 	else
 	{
-		g_message("%s: Failed to open framebuffer device fb0",__FUNCTION__);
+        //g_message("%s: Failed to open framebuffer device fb0",__FUNCTION__);
+        qWarning() << "Failed to open framebuffer device fb0";
 		SCREEN_WIDTH = 320;
 		SCREEN_HEIGHT = 480;
 	}

@@ -34,7 +34,7 @@ LocalePrefsHandler::LocalePrefsHandler(LSPalmService* service)
 }
 
 LocalePrefsHandler::~LocalePrefsHandler()
-{   
+{
 }
 
 std::list<std::string> LocalePrefsHandler::keys() const
@@ -58,7 +58,8 @@ bool LocalePrefsHandler::validateLocale(json_object* value)
 
 	label = json_object_object_get(value, "languageCode");
 	if (!label) {
-		luna_warn(s_logChannel, "Failed to find param languageCode");
+        //luna_warn(s_logChannel, "Failed to find param languageCode");
+        qWarning() << "Failed to find param languageCode";
 	}
 	else {
 		lcode = json_object_get_string(label);
@@ -67,7 +68,8 @@ bool LocalePrefsHandler::validateLocale(json_object* value)
 
 	label = json_object_object_get(value, "countryCode");
 	if (!label) {
-		luna_warn(s_logChannel, "Failed to find param countryCode");
+        //luna_warn(s_logChannel, "Failed to find param countryCode");
+        qWarning() << "Failed to find param countryCode";
 	}
 	else {
 		ccode = json_object_get_string(label);
@@ -115,7 +117,8 @@ bool LocalePrefsHandler::validateRegion(json_object* value)
 
 	label = json_object_object_get(value, "countryCode");
 	if (!label) {
-		luna_warn(s_logChannel, "Failed to find param regionCode");
+        //luna_warn(s_logChannel, "Failed to find param regionCode");
+        qWarning() << "Failed to find param regionCode";
 	}
 	else {
 		rcode = json_object_get_string(label);
@@ -144,12 +147,12 @@ bool LocalePrefsHandler::validateRegion(json_object* value)
 
 bool LocalePrefsHandler::validate(const std::string& key, json_object* value)
 {
-   
+
 	if (key == "locale")
 		return validateLocale(value);
 	else if (key == "region")
 		return validateRegion(value);
-	
+
 	return false;
 }
 
@@ -204,7 +207,7 @@ json_object* LocalePrefsHandler::valuesForLocale()
 
 	json_object_object_add(json, (char*) "locale", langArrayObj);
 
-	return json;	
+	return json;
 
 }
 
@@ -255,10 +258,10 @@ void LocalePrefsHandler::readCurrentRegionSetting()
 {
 	std::string region = PrefsDb::instance()->getPref("region");
 	bool success = false;
-	
+
 	if (!region.empty()) {
 
-		json_object* label = 0;		
+		json_object* label = 0;
 		json_object* json = json_tokener_parse(region.c_str());
 		if (!json || is_error(json))
 			goto Done;
@@ -278,7 +281,7 @@ void LocalePrefsHandler::readCurrentRegionSetting()
 
 	if (!success) {
 		m_regionCode = "us";
-	}		
+	}
 }
 
 void LocalePrefsHandler::readCurrentLocaleSetting()
@@ -288,7 +291,7 @@ void LocalePrefsHandler::readCurrentLocaleSetting()
 	
 	if (!locale.empty()) {
 
-		json_object* label = 0;		
+		json_object* label = 0;
 		json_object* json = json_tokener_parse(locale.c_str());
 		if (!json || is_error(json))
 			goto Done;
@@ -314,7 +317,7 @@ void LocalePrefsHandler::readCurrentLocaleSetting()
 	if (!success) {
 		m_languageCode = "en";
 		m_countryCode = "us";
-	}		
+	}
 }
 
 void LocalePrefsHandler::readLocaleFile()
@@ -324,7 +327,8 @@ void LocalePrefsHandler::readLocaleFile()
 	if (!jsonStr)
 		jsonStr = Utils::readFile(s_defaultLocaleFile);
 	if (!jsonStr) {
-		luna_critical(s_logChannel, "Failed to load locale files: [%s] nor [%s]", s_custLocaleFile,s_defaultLocaleFile);
+        //luna_critical(s_logChannel, "Failed to load locale files: [%s] nor [%s]", s_custLocaleFile,s_defaultLocaleFile);
+        qCritical() << "Failed to load locale files: [" << s_custLocaleFile << "] nor [" << s_defaultLocaleFile << "]";
 		return;
 	}
 
@@ -334,19 +338,22 @@ void LocalePrefsHandler::readLocaleFile()
 
 	root = json_tokener_parse(jsonStr);
 	if (!root || is_error(root)) {
-		luna_critical(s_logChannel, "Failed to parse locale file contents into json");
+        //luna_critical(s_logChannel, "Failed to parse locale file contents into json");
+        qCritical() << "Failed to parse locale file contents into json";
 		goto Done;
 	}
 
 	label = json_object_object_get(root, "locale");
 	if (!label || is_error(label)) {
-		luna_critical(s_logChannel, "Failed to get locale entry from locale file");
+        //luna_critical(s_logChannel, "Failed to get locale entry from locale file");
+        qCritical() << "Failed to get locale entry from locale file";
 		goto Done;
 	}
 
 	localeArray = json_object_get_array(label);
 	if (!localeArray) {
-		luna_critical(s_logChannel, "Failed to get locale array from locale file");
+        //luna_critical(s_logChannel, "Failed to get locale array from locale file");
+        qCritical() << "Failed to get locale array from locale file";
 		goto Done;
 	}
 
@@ -410,7 +417,8 @@ void LocalePrefsHandler::readRegionFile()
 	if (!jsonStr)
 		jsonStr = Utils::readFile(s_defaultRegionFile);
 	if (!jsonStr) {
-		luna_critical(s_logChannel, "Failed to load region files: [%s] nor [%s]", s_custRegionFile,s_defaultRegionFile);
+        //luna_critical(s_logChannel, "Failed to load region files: [%s] nor [%s]", s_custRegionFile,s_defaultRegionFile);
+        qCritical() << "Failed to load region files: [" << s_custRegionFile << "] nor [" << s_defaultRegionFile << "]";
 		return;
 	}
 
@@ -420,19 +428,22 @@ void LocalePrefsHandler::readRegionFile()
 
 	root = json_tokener_parse(jsonStr);
 	if (!root || is_error(root)) {
-		luna_critical(s_logChannel, "Failed to parse region file contents into json");
+        //luna_critical(s_logChannel, "Failed to parse region file contents into json");
+        qCritical() << "Failed to parse region file contents into json";
 		goto Done;
 	}
 
 	label = json_object_object_get(root, "region");
 	if (!label || is_error(label)) {
-		luna_critical(s_logChannel, "Failed to get region entry from region file");
+        //luna_critical(s_logChannel, "Failed to get region entry from region file");
+        qCritical() << "Failed to get region entry from region file";
 		goto Done;
 	}
 
 	regionArray = json_object_get_array(label);
 	if (!regionArray) {
-		luna_critical(s_logChannel, "Failed to get region array from region file");
+        //luna_critical(s_logChannel, "Failed to get region array from region file");
+        qCritical() << "Failed to get region array from region file";
 		goto Done;
 	}
 

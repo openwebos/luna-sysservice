@@ -59,20 +59,23 @@ SystemRestore::SystemRestore() : m_msmState(Phone)
 	//load the defaults file
 	char* jsonStr = Utils::readFile(PrefsDb::s_defaultPrefsFile);
 	if (!jsonStr) {
-		g_warning("Failed to load prefs file: %s", PrefsDb::s_defaultPrefsFile);
+        //g_warning("Failed to load prefs file: %s", PrefsDb::s_defaultPrefsFile);
+        qWarning() << "Failed to load prefs file:" << PrefsDb::s_defaultPrefsFile;
 		goto Platform;
 	}
 
 	root = json_tokener_parse(jsonStr);
 	if (!root || is_error(root)) {
 		root = 0;
-		g_warning("Failed to parse file contents into json");
+        //g_warning("Failed to parse file contents into json");
+        qWarning() << "Failed to parse file contents into json";
 		goto Platform;
 	}
 
 	label = json_object_object_get(root, "preferences");
 	if (!label || is_error(label)) {
-		g_warning("Failed to get preferences entry from file");
+        //g_warning("Failed to get preferences entry from file");
+        qWarning() << "Failed to get preferences entry from file";
 		goto Platform;
 	}
 	{
@@ -100,20 +103,23 @@ Platform:
 	
 	jsonStr = Utils::readFile(PrefsDb::s_defaultPlatformPrefsFile);
 	if (!jsonStr) {
-		g_warning("Failed to load platform prefs file: %s", PrefsDb::s_defaultPlatformPrefsFile);
+        //g_warning("Failed to load platform prefs file: %s", PrefsDb::s_defaultPlatformPrefsFile);
+        qWarning() << "Failed to load platform prefs file:" << PrefsDb::s_defaultPlatformPrefsFile;
 		goto Exit;
 	}
 		
 	root = json_tokener_parse(jsonStr);
 	if (!root || is_error(root)) {
 		root = 0;
-		g_warning("Failed to parse file [%s] contents into json",PrefsDb::s_defaultPlatformPrefsFile);
+        //g_warning("Failed to parse file [%s] contents into json",PrefsDb::s_defaultPlatformPrefsFile);
+        qWarning() << "Failed to parse file [" << PrefsDb::s_defaultPlatformPrefsFile << "] contents into json";
 		goto Exit;
 	}
 
 	label = json_object_object_get(root, "preferences");
 	if (!label || is_error(label)) {
-		g_warning("Failed to get preferences entry from file");
+        //g_warning("Failed to get preferences entry from file");
+        qWarning() << "Failed to get preferences entry from file";
 		goto Exit;
 	}
 	
@@ -186,7 +192,8 @@ int SystemRestore::fileCopy(const char * srcFileAndPath,const char * dstFileAndP
 	g_object_unref(dst);
 	
 	if (rc == false) {
-		g_warning("file copy error %d: [%s]",err->code,err->message);
+        //g_warning("file copy error %d: [%s]",err->code,err->message);
+        qWarning("file copy error %d: [%s]",err->code,err->message);
 		g_error_free(err);
 		return -1;
 	}
@@ -213,14 +220,16 @@ int SystemRestore::restoreDefaultRingtoneToMediaPartition()
 	Utils::splitFileAndPath(defaultRingtoneFileAndPath,pathPart,filePart);
 	if (filePart.length() == 0)
 	{
-		g_warning("%s: filepart.length == 0 , %s",__FUNCTION__,filePart.c_str());
+        //g_warning("%s: filepart.length == 0 , %s",__FUNCTION__,filePart.c_str());
+        qWarning() << "filepart.length == 0," << filePart.c_str();
 		return -1;
 	}
 	std::string targetFileAndPath = std::string(PrefsDb::s_mediaPartitionPath)+std::string(PrefsDb::s_mediaPartitionRingtonesDir)+std::string("/")+filePart;
 	int rc = Utils::fileCopy(defaultRingtoneFileAndPath.c_str(),targetFileAndPath.c_str());
 	if (rc == -1)
 	{
-		g_warning("%s: filecopy %s -> %s failed",__FUNCTION__,defaultRingtoneFileAndPath.c_str(),targetFileAndPath.c_str());
+        //g_warning("%s: filecopy %s -> %s failed",__FUNCTION__,defaultRingtoneFileAndPath.c_str(),targetFileAndPath.c_str());
+        qWarning() << "filecopy" << defaultRingtoneFileAndPath.c_str() << "->" << targetFileAndPath.c_str() << "failed";
 		return -1;
 	}
 	return 1;
@@ -229,7 +238,8 @@ int SystemRestore::restoreDefaultWallpaperToMediaPartition()
 {
 	//check the file specified by defaultWallpaperFileAndPath
 	if (!Utils::doesExistOnFilesystem(defaultWallpaperFileAndPath.c_str()) ) {
-		g_warning("%s: file %s doesn't exist",__FUNCTION__,defaultWallpaperFileAndPath.c_str());
+        //g_warning("%s: file %s doesn't exist",__FUNCTION__,defaultWallpaperFileAndPath.c_str());
+        qWarning() << "file" << defaultWallpaperFileAndPath.c_str() << "doesn\'t exist";
 		return -1;
 	}
 
@@ -240,7 +250,8 @@ int SystemRestore::restoreDefaultWallpaperToMediaPartition()
 	Utils::splitFileAndPath(defaultWallpaperFileAndPath,pathPart,filePart);
 	if (filePart.length() == 0)
 	{
-		g_warning("%s: filepart.length == 0 , %s",__FUNCTION__,filePart.c_str());
+        //g_warning("%s: filepart.length == 0 , %s",__FUNCTION__,filePart.c_str());
+        qWarning() << "filepart.length == 0," << filePart.c_str();
 		return -1;
 	}
 		
@@ -248,7 +259,8 @@ int SystemRestore::restoreDefaultWallpaperToMediaPartition()
 	int rc = Utils::fileCopy(defaultWallpaperFileAndPath.c_str(),targetFileAndPath.c_str());
 	if (rc == -1)
 	{
-		g_warning("%s: filecopy %s -> %s failed",__FUNCTION__,defaultWallpaperFileAndPath.c_str(),targetFileAndPath.c_str());
+        //g_warning("%s: filecopy %s -> %s failed",__FUNCTION__,defaultWallpaperFileAndPath.c_str(),targetFileAndPath.c_str());
+        qWarning() << "filecopy" << defaultWallpaperFileAndPath.c_str() << "->" << targetFileAndPath.c_str() << "failed";
 		return -1;
 	}
 
@@ -267,14 +279,16 @@ int SystemRestore::restoreDefaultRingtoneSetting()
 		
 	root = json_tokener_parse(defaultRingtoneString.c_str());
 	if (!root || is_error(root)) {
-		g_warning("Failed to parse string into json");
+        //g_warning("Failed to parse string into json");
+        qWarning() << "Failed to parse string into json";
 		root = 0;
 		goto Exit;
 	}
 	
 	label = json_object_object_get(root, "fullPath");
 	if (!label || is_error(label)) {
-		g_warning("Failed to parse ringtone details");
+        //g_warning("Failed to parse ringtone details");
+        qWarning() << "Failed to parse ringtone details";
 		goto Exit;
 	}
 
@@ -311,14 +325,16 @@ int SystemRestore::restoreDefaultWallpaperSetting()
 
 	root = json_tokener_parse(defaultWallpaperString.c_str());
 	if (!root || is_error(root)) {
-		g_warning("Failed to parse string into json");
+        //g_warning("Failed to parse string into json");
+        qWarning() << "Failed to parse string into json";
 		root = 0;
 		goto Exit;
 	}
 
 	label = json_object_object_get(root, "wallpaperFile");
 	if (!label || is_error(label)) {
-		g_warning("Failed to parse wallpaper details");
+        //g_warning("Failed to parse wallpaper details");
+        qWarning() << "Failed to parse wallpaper details";
 		goto Exit;
 	}
 
@@ -328,8 +344,10 @@ int SystemRestore::restoreDefaultWallpaperSetting()
 	//restore the default wallpaper file to the media partition
 	rc = restoreDefaultWallpaperToMediaPartition();
 	if (rc == -1) {
-		g_warning("SystemRestore::restoreDefaultWallpaperSetting(): [ERROR] could not copy default wallpaper [%s] to media partition",
-				defaultWallpaperFileAndPath.c_str());
+        //g_warning("SystemRestore::restoreDefaultWallpaperSetting(): [ERROR] could not copy default wallpaper [%s] to media partition",
+        //        defaultWallpaperFileAndPath.c_str());
+        qWarning() << "SystemRestore::restoreDefaultWallpaperSetting(): [ERROR] could not copy default wallpaper [" <<
+                defaultWallpaperFileAndPath.c_str() << "] to media partition";
 		rc=0;
 		goto Exit;		//error of some kind
 	}
@@ -363,29 +381,34 @@ bool SystemRestore::isRingtoneSettingConsistent()
 	//parse the setting
 	root = json_tokener_parse(ringToneRawPref.c_str());
 	if (!root || is_error(root)) {
-		g_warning("Failed to parse string into json");
+        //g_warning("Failed to parse string into json");
+        qWarning() << "Failed to parse string into json";
 		root = 0;
 		goto Exit;
 	}
 
 	label = json_object_object_get(root, "fullPath");
 	if (!label || is_error(label)) {
-		g_warning("Failed to parse ringtone details");
+        //g_warning("Failed to parse ringtone details");
+        qWarning() << "Failed to parse ringtone details";
 		goto Exit;
 	}
 
 	ringToneFileAndPath = json_object_get_string(label);
 	
-	g_warning("SystemRestore::isRingtoneSettingConsistent(): checking [%s]...",ringToneFileAndPath.c_str());
+    //g_warning("SystemRestore::isRingtoneSettingConsistent(): checking [%s]...",ringToneFileAndPath.c_str());
+    __qMessage("checking [%s]...",ringToneFileAndPath.c_str());
 	//check to see if file exists
 	if (Utils::doesExistOnFilesystem(ringToneFileAndPath.c_str())) {
 		if (Utils::filesizeOnFilesystem(ringToneFileAndPath.c_str()) > 0)			//TODO: a better check for corruption; see wallpaper consist. checking
 			rc = true;
 		else
-			g_warning("SystemRestore::isRingtoneSettingConsistent(): file size is 0; corrupt file");
+            //g_warning("SystemRestore::isRingtoneSettingConsistent(): file size is 0; corrupt file");
+            qWarning() << "file size is 0; corrupt file";
 	}
 	else {
-		g_warning("SystemRestore::isRingtoneSettingConsistent(): sound file is not on filesystem");
+        //g_warning("SystemRestore::isRingtoneSettingConsistent(): sound file is not on filesystem");
+        qWarning() << "Sound file is not on filesystem";
 	}
 	Exit:
 
@@ -412,20 +435,23 @@ bool SystemRestore::isWallpaperSettingConsistent()
 	//parse the setting
 	root = json_tokener_parse(wallpaperRawPref.c_str());
 	if (!root || is_error(root)) {
-		g_warning("Failed to parse string into json");
+        //g_warning("Failed to parse string into json");
+        qWarning() << "Failed to parse string into json";
 		root = 0;
 		goto Exit;
 	}
 
 	label = json_object_object_get(root, "wallpaperFile");
 	if (!label || is_error(label)) {
-		g_warning("Failed to parse wallpaper details");
+        //g_warning("Failed to parse wallpaper details");
+        qWarning() << "Failed to parse wallpaper details";
 		goto Exit;
 	}
 
 	wallpaperFileAndPath = json_object_get_string(label);
 
-	g_warning("SystemRestore::isWallpaperSettingConsistent(): checking [%s]...",wallpaperFileAndPath.c_str());
+    //g_warning("SystemRestore::isWallpaperSettingConsistent(): checking [%s]...",wallpaperFileAndPath.c_str());
+    __qMessage("checking [%s]...",wallpaperFileAndPath.c_str());
 	//check to see if file exists
 
     {
@@ -433,7 +459,7 @@ bool SystemRestore::isWallpaperSettingConsistent()
         if (reader.canRead())
             rc = true;
         else
-            qWarning()<<"SystemRestore::isWallpaperSettingConsistent()"<<reader.errorString()<<reader.fileName();
+            qWarning() <<reader.errorString()<<reader.fileName();
     }
 	Exit:
 
@@ -459,14 +485,16 @@ void SystemRestore::refreshDefaultSettings()
 	//parse the setting
 	root = json_tokener_parse(wallpaperRawDefaultPref.c_str());
 	if (!root || is_error(root)) {
-		g_warning("Failed to parse string into json");
+        //g_warning("Failed to parse string into json");
+        qWarning() << "Failed to parse string into json";
 		root = 0;
 		goto Stage2;
 	}
 
 	label = json_object_object_get(root, "wallpaperFile");
 	if (!label || is_error(label)) {
-		g_warning("Failed to parse wallpaper details");
+        //g_warning("Failed to parse wallpaper details");
+        qWarning() << "Failed to parse wallpaper details";
 		goto Stage2;
 	}
 
@@ -488,14 +516,16 @@ void SystemRestore::refreshDefaultSettings()
 	//parse the setting
 	root = json_tokener_parse(ringtoneRawDefaultPref.c_str());
 	if (!root || is_error(root)) {
-		g_warning("Failed to parse string into json");
+        //g_warning("Failed to parse string into json");
+        qWarning() << "Failed to parse string into json";
 		root = 0;
 		goto Exit;
 	}
 
 	label = json_object_object_get(root, "fullPath");
 	if (!label || is_error(label)) {
-		g_warning("Failed to parse ringtone details");
+        //g_warning("Failed to parse ringtone details");
+        qWarning() << "Failed to parse ringtone details";
 		goto Exit;
 	}
 
@@ -552,12 +582,14 @@ int SystemRestore::createSpecialDirectories()
 int SystemRestore::startupConsistencyCheck() 
 {
 
-	g_warning("SystemRestore::startupConsistencyCheck() started");
+    //g_warning("SystemRestore::startupConsistencyCheck() started");
+    __qMessage("started");
 	// -- run startup tests to determine the state of the device
 
 	if (Utils::doesExistOnFilesystem(PrefsDb::s_systemTokenFileAndPath) == false) {
 		//the media partition has been reformatted or damaged
-		g_warning("SystemRestore::startupConsistencyCheck() running - system token missing; media was erased/damaged");
+        //g_warning("SystemRestore::startupConsistencyCheck() running - system token missing; media was erased/damaged");
+        qWarning() << "running - system token missing; media was erased/damaged";
 		//run restore
 
 		int rc=0;		//avoid having tons of if's ...so don't mess with the return values of the restore__ functions
@@ -574,12 +606,14 @@ int SystemRestore::startupConsistencyCheck()
 			}
 		}
 		else {
-			g_warning("SystemRestore::startupConsistencyCheck() running - system token missing and WAS NOT written because one of the restore functions failed!");
+            //g_warning("SystemRestore::startupConsistencyCheck() running - system token missing and WAS NOT written because one of the restore functions failed!");
+            qWarning() << "running - system token missing and WAS NOT written because one of the restore functions failed!";
 		}
 	}
 	else {
 		
-		g_warning("SystemRestore::startupConsistencyCheck() running - checking wallpaper and ringtone consistency");
+        //g_warning("SystemRestore::startupConsistencyCheck() running - checking wallpaper and ringtone consistency");
+        __qMessage("running - checking wallpaper and ringtone consistency");
 		//check consistency of wallpaper setting
 		if (!SystemRestore::instance()->isWallpaperSettingConsistent()) {
 			//run restore on wallpaper
@@ -593,7 +627,8 @@ int SystemRestore::startupConsistencyCheck()
 
 	//check the media icon file
 	if (Utils::filesizeOnFilesystem(PrefsDb::s_volumeIconFileAndPathDest) == 0) {
-		g_warning("SystemRestore::startupConsistencyCheck() running - restoring volume icon file");
+        //g_warning("SystemRestore::startupConsistencyCheck() running - restoring volume icon file");
+        __qMessage("running - restoring volume icon file");
 		//restore it
 		Utils::fileCopy(PrefsDb::s_volumeIconFileAndPathSrc,PrefsDb::s_volumeIconFileAndPathDest);
 	}
@@ -612,20 +647,23 @@ int SystemRestore::startupConsistencyCheck()
 //	g_warning("SystemRestore::startupConsistencyCheck() running - [%s] returned %d",cmdline.c_str(),exitCode);
 //#endif
 
-	g_warning("SystemRestore::startupConsistencyCheck() finished");
+    //g_warning("SystemRestore::startupConsistencyCheck() finished");
+    __qMessage("finished");
 	return 1;
 }
 
 //static
 int SystemRestore::runtimeConsistencyCheck() 
 {
-	g_warning("SystemRestore::runtimeConsistencyCheck() started");
+    //g_warning("SystemRestore::runtimeConsistencyCheck() started");
+    __qMessage("started");
 	
 	PrefsFactory::instance()->runConsistencyChecksOnAllHandlers();
 	
 	//check the media icon file
 	if (Utils::filesizeOnFilesystem(PrefsDb::s_volumeIconFileAndPathDest) == 0) {
-		g_warning("SystemRestore::startupConsistencyCheck() running - restoring volume icon file");
+        //g_warning("SystemRestore::startupConsistencyCheck() running - restoring volume icon file");
+        __qMessage("running - restoring volume icon file");
 		//restore it
 		Utils::fileCopy(PrefsDb::s_volumeIconFileAndPathSrc,PrefsDb::s_volumeIconFileAndPathDest);
 	}
@@ -644,7 +682,8 @@ int SystemRestore::runtimeConsistencyCheck()
 //	g_warning("SystemRestore::runtimeConsistencyCheck() running - [%s] returned %d",cmdline.c_str(),exitCode);
 //#endif
 
-	g_warning("SystemRestore::runtimeConsistencyCheck() finished");
+    //g_warning("SystemRestore::runtimeConsistencyCheck() finished");
+    __qMessage("finished");
 	return 1;
 }
 
@@ -696,8 +735,8 @@ bool SystemRestore::msmAvail(LSMessage* message)
 	}
 
 	bool available = json_object_get_boolean(modeAvail);
-	g_warning("msmAvail(): MSM available: %s",
-			( available == TRUE) ? "true" : "false");
+    //g_warning("msmAvail(): MSM available: %s",( available == TRUE) ? "true" : "false");
+    __qMessage("msmAvail(): MSM available: %s",( available == TRUE) ? "true" : "false");
 
 	//attrib it all for good measure  ... necessary because attrib-ing at boot doesn't always work, storaged sometimes lies about partition available
 	//			...so try it again right before the user can go into storage mode and see the hidden files anyways
@@ -742,8 +781,8 @@ bool SystemRestore::msmProgress(LSMessage* message)
 		return false;
 	}
 
-	g_warning("msmProgress(): MSM stage: [%s]",
-			json_object_get_string(stage));
+    //g_warning("msmProgress(): MSM stage: [%s]", json_object_get_string(stage));
+    __qMessage("msmProgress(): MSM stage: [%s]", json_object_get_string(stage));
 	
 	json_object_put( payload );
 	
@@ -777,7 +816,8 @@ bool SystemRestore::msmEntry(LSMessage* message)
 		}
 	}		
 
-	g_warning("msmEntry(): MSM mode: [%s]",modeStr.c_str());
+    //g_warning("msmEntry(): MSM mode: [%s]",modeStr.c_str());
+    __qMessage("msmEntry(): MSM mode: [%s]",modeStr.c_str());
 	
 	json_object_put(payload );
 
@@ -786,7 +826,8 @@ bool SystemRestore::msmEntry(LSMessage* message)
 
 bool SystemRestore::msmFscking(LSMessage* message)
 {
-	g_warning("msmFscking()");
+    //g_warning("msmFscking()");
+    __qMessage("msmFscking()");
 	return true;
 }
 
@@ -799,7 +840,8 @@ bool SystemRestore::msmPartitionAvailable(LSMessage* message)
 
 	std::string mountPoint;
 	bool available=false;
-	g_warning("msmPartitionAvailable(): signaled");
+    //g_warning("msmPartitionAvailable(): signaled");
+    __qMessage("msmPartitionAvailable(): signaled");
 	
 	const char* str = LSMessageGetPayload( message );
 	if( !str )
@@ -820,7 +862,8 @@ bool SystemRestore::msmPartitionAvailable(LSMessage* message)
 	if (label && (!is_error(label)))
 		available = json_object_get_boolean(label);
 	
-	g_warning("msmPartitionAvailable(): mount point: [%s] , available: %s",mountPoint.c_str(),(available ? "true" : "false"));
+    //g_warning("msmPartitionAvailable(): mount point: [%s] , available: %s",mountPoint.c_str(),(available ? "true" : "false"));
+    __qMessage("msmPartitionAvailable(): mount point: [%s] , available: %s",mountPoint.c_str(),(available ? "true" : "false"));
 			
 	if (available && (mountPoint == "/media/internal")) {
 		SystemRestore::createSpecialDirectories();

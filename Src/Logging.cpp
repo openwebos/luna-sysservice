@@ -21,48 +21,95 @@
 
 #include "Logging.h"
 
-static GStaticMutex s_mutex       = G_STATIC_MUTEX_INIT;
-static bool         s_initialized = false;
-static GHashTable*  s_channelHash = 0;
 
-bool LunaChannelEnabled(const char* channel)
+#ifdef USE_PMLOG
+
+static const size_t MSGID_LENGTH = 30;
+
+static char * fmtUniqueLogId(char *dest, const char *pFile, guint32 lineNbr)
 {
-	if (!channel)
-		return false;
-
-	bool ret = false;
-	
-	g_static_mutex_lock(&s_mutex);
-		
-	if (!s_initialized) {
-
-		s_initialized = true;
-		int index = 0;
-
-		s_channelHash = ::g_hash_table_new(g_str_hash, g_str_equal);
-		
-		const char* env = ::getenv("LUNA_LOGGING");
-		if (!env)
-			goto Done;
-		
-		gchar** splitStr = ::g_strsplit(env, ",", 0);
-		if (!splitStr)
-			goto Done;
-
-		while (splitStr[index]) {
-			char* key = ::g_strdup(splitStr[index]);
-			key = g_strstrip(key);
-			g_hash_table_insert(s_channelHash, key, (gpointer)0x1);
-			index++;
-		}
-	}
-
-	if (g_hash_table_lookup(s_channelHash, channel))
-		ret = true;
-
- Done:	
-
-	g_static_mutex_unlock(&s_mutex);
-
-	return ret;
+    const char *pStart = strrchr (pFile, '/');
+    gchar *str = g_ascii_strup((pStart ? pStart + 1 : pFile), MSGID_LENGTH - 6);
+    char *ptr = strchr(str, '.');
+    if (ptr) *ptr = '\0'; // trim off file extensions
+    snprintf (dest, MSGID_LENGTH, "%s#%d", str, lineNbr);
+    g_free (str);
+    return dest;
 }
+
+void outputQtMessages(QtMsgType type,
+                    const QMessageLogContext &context,
+                    const QString &msg)
+{
+    PmLogContext pmContext;
+    PmLogGetContext("LunaSysService", &pmContext);
+    // Length will be an arbitrary short string with length up to 31
+    char msgId[MSGID_LENGTH+1];
+
+    QString file = QString(context.file).section('/', -1);
+
+    switch (type) {
+    case QtDebugMsg:
+#ifndef NO_LOGGING
+            PmLogDebug(pmContext, "%s", msg.toStdString().c_str());
+#endif
+        break;
+    case QtWarningMsg:
+        PmLogWarning(pmContext, fmtUniqueLogId(msgId, file.toStdString().c_str(), context.line),
+                1, PMLOGKS("FUNC", context.function),
+                "%s", msg.toStdString().c_str());
+        break;
+    case QtCriticalMsg:
+        PmLogError(pmContext,  fmtUniqueLogId(msgId, file.toStdString().c_str(), context.line),
+                1, PMLOGKS("FUNC", context.function),
+                "%s", msg.toStdString().c_str());
+        break;
+    case QtFatalMsg:
+        PmLogCritical(pmContext,  fmtUniqueLogId(msgId, file.toStdString().c_str(), context.line),
+                1, PMLOGKS("FUNC", context.function),
+                "%s", msg.toStdString().c_str());
+        abort();
+    }
+}
+
+
+void sysServiceLogInfo(const char * fileName, guint32 lineNbr,const char* funcName, const char *logMsg)
+{
+    PmLogContext pmContext;
+    PmLogGetContext("LunaSysService", &pmContext);
+    // Length will be an arbitrary short string with length up to 31
+    char msgId[MSGID_LENGTH+1];
+
+    PmLogInfo(pmContext, fmtUniqueLogId(msgId, fileName, lineNbr),
+            1, PMLOGKS("FUNC", funcName),
+            "%s", logMsg);
+}
+
+#else  //USE_PMLOG
+
+void outputQtMessages(QtMsgType type,
+                    const __qMessageLogContext &context,
+                    const QString &msg)
+{
+    QByteArray utf_text(msg.toUtf8());
+    const char *raw(utf_text.constData());
+
+    switch (type) {
+        default:
+    case QtDebugMsg:
+#ifndef NO_LOGGING
+        g_debug("%s: %s", context.function, raw);
+#endif
+        break;
+    case QtWarningMsg:
+        g_warning ("%s: %s", context.function, raw);
+        break;
+    case QtCriticalMsg:
+        g_error("%s: %s", context.function, raw);
+        break;
+    case QtFatalMsg:
+        g_critical("%s: %s", context.function, raw);
+        abort();
+    }
+}
+#endif  // #ifdef USE_PMLOG

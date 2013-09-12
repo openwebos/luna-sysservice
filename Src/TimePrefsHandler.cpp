@@ -61,8 +61,9 @@ static const char*    s_logChannel = "TimePrefsHandler";
 
 #define ABSV(x) ((x) < 0 ? (x*-1) : (x))
 #define DIFFTIME(x,y) ((x) > (y) ? ((x)-(y)) : ((y)-(x)))
-#define LSREPORT(lse) g_critical( "in %s: %s => %s", __func__, \
-        (lse).func, (lse).message )
+//#define LSREPORT(lse) g_critical( "in %s: %s => %s", __func__, \
+//        (lse).func, (lse).message )
+#define LSREPORT(lse) qCritical( "in %s: %s => %s", __func__, (lse).func, (lse).message )
 
 #define TIMEOUT_INTERVAL_SEC	5
 
@@ -77,7 +78,7 @@ extern char *strptime (__const char *__restrict __s,
 static void
 print_tzvars (void)
 {
-    g_debug ("tzname[0]='%s' tzname[1]='%s' daylight='%d' timezone='%ld'", tzname[0], tzname[1], daylight, timezone);
+    qDebug ("tzname[0]='%s' tzname[1]='%s' daylight='%d' timezone='%ld'", tzname[0], tzname[1], daylight, timezone);
 }
 
 
@@ -89,7 +90,7 @@ set_tz(const char * tz) {
     putenv(env);
     tzset();
     
-    g_debug("%s: tz set to %s", __func__, tz);
+    qDebug("%s: tz set to %s", __func__, tz);
 
     print_tzvars();
 }
@@ -135,7 +136,7 @@ public:
 	: name(_name) , jsonStringValue(_json) , dstSupported(dst) , offsetToUTC(_offset) , preferred(false)
 	{
 	}
-	
+
 	TimeZoneInfo(const TimeZoneInfo& c)
 	{
 		name = c.name;
@@ -145,7 +146,7 @@ public:
 		offsetToUTC = c.offsetToUTC;
 		preferred = c.preferred;
 	}
-	
+
 	TimeZoneInfo& operator=(const TimeZoneInfo& c)
 	{
 		if (this == &c)
@@ -156,9 +157,9 @@ public:
 		dstSupported = c.dstSupported;
 		offsetToUTC = c.offsetToUTC;
 		preferred = c.preferred;
-		return *this;		
+		return *this;
 	}
-	
+
 	~TimeZoneInfo() {
 	}
 
@@ -172,11 +173,11 @@ public:
     int   	offsetToUTC;
     bool 	preferred;					//if set to true, then pick this TZ is searching by offset vs any others
     int		howManyZonesForCountry;		//how many offsets (incl. this one) does this country (based on countryCode) span? e.g. USA = 9
-    
+
 };
 
 const TimeZoneInfo TimePrefsHandler::s_failsafeDefaultZone("Etc/GMT-0",
-		"{\"Country\":\"\",\"CountryCode\":\"\",\"ZoneID\":\"Etc/GMT-0\",\"City\":\"\",\"Description\":\"GMT\",\"offsetFromUTC\": 0,\"supportsDST\":0}",
+        "{\"Country\":\"\",\"CountryCode\":\"\",\"ZoneID\":\"Etc/GMT-0\",\"City\":\"\",\"Description\":\"GMT\",\"offsetFromUTC\": 0,\"supportsDST\":0}",
 		0,
 		0);
 
@@ -184,7 +185,7 @@ const TimeZoneInfo TimePrefsHandler::s_failsafeDefaultZone("Etc/GMT-0",
 class PreferredZones
 {
 public:
-	PreferredZones() : dstPref(NULL) , nonDstPref(NULL) , dstFallback(NULL) , nonDstFallback(NULL) {}
+	PreferredZones() : dstPref(NULL), nonDstPref(NULL), dstFallback(NULL), nonDstFallback(NULL) {}
 	PreferredZones(const PreferredZones& c) {
 		offset = c.offset;
 		dstPref = c.dstPref;
@@ -192,7 +193,7 @@ public:
 		dstFallback = c.dstFallback;
 		nonDstFallback = c.nonDstFallback;
 	}
-	
+
 	PreferredZones& operator=(const PreferredZones& c) {
 		if (this == &c)
 			return *this;
@@ -203,7 +204,7 @@ public:
 		nonDstFallback = c.nonDstFallback;
 		return *this;
 	}
-	
+
 	int 		   offset;
 	TimeZoneInfo * dstPref;
 	TimeZoneInfo * nonDstPref;
@@ -212,13 +213,28 @@ public:
 };
 
 NitzParameters::NitzParameters()
-: _offset(-1000) , _dst(0), _mcc(0) , _mnc(0) , _timevalid(false) , _tzvalid(false) , _dstvalid(false) , _localtimeStamp(0)
+: _offset(-1000)
+    , _dst(0)
+    , _mcc(0)
+    , _mnc(0)
+    , _timevalid(false)
+    , _tzvalid(false)
+    , _dstvalid(false)
+    , _localtimeStamp(0)
 {
 	memset(&_timeStruct,0,sizeof(_timeStruct));
 }
 
-NitzParameters::NitzParameters(struct tm& timeStruct,int offset,int dst,int mcc,int mnc,bool timevalid,bool tzvalid,bool dstvalid,uint32_t remotetimeStamp)
-: _offset(offset) , _dst(dst), _mcc(mcc) , _mnc(mnc) , _timevalid(timevalid) , _tzvalid(tzvalid) , _dstvalid(dstvalid) , _localtimeStamp(remotetimeStamp)
+NitzParameters::NitzParameters(struct tm& timeStruct,int offset,int dst,int mcc,int mnc,
+        bool timevalid,bool tzvalid,bool dstvalid,uint32_t remotetimeStamp)
+: _offset(offset)
+    , _dst(dst)
+    , _mcc(mcc)
+    , _mnc(mnc)
+    , _timevalid(timevalid)
+    , _tzvalid(tzvalid)
+    , _dstvalid(dstvalid)
+    , _localtimeStamp(remotetimeStamp)
 {
 	memcpy(&_timeStruct,&timeStruct,sizeof(timeStruct));
 	_localtimeStamp = time(NULL);
@@ -235,7 +251,7 @@ bool NitzParameters::valid(uint32_t threshold)
 	
 //	uint32_t lt = time(NULL);
 //	uint32_t difft = (uint32_t)(DIFFTIME(_localtimeStamp,(uint32_t)time(NULL)));
-//	g_debug("%s: object(%u) ? (%u) current time = diff: %u , threshold: %u",__FUNCTION__,_localtimeStamp,lt,difft,threshold);
+//	qDebug("%s: object(%u) ? (%u) current time = diff: %u , threshold: %u",__FUNCTION__,_localtimeStamp,lt,difft,threshold);
 //	if (difft > threshold)
 //		return false;
 	return true;
@@ -313,11 +329,11 @@ static time_t PrvCurrentUpTimeSeconds()
 #if !defined(DESKTOP)
 	// FIXME: CLOCK_UPTIME doesn't work
 	struct timespec currTime;
-	::clock_gettime(CLOCK_MONOTONIC, &currTime);   
+	::clock_gettime(CLOCK_MONOTONIC, &currTime);
 	return currTime.tv_sec;
 #else	
 	struct timespec currTime;
-	::clock_gettime(CLOCK_MONOTONIC, &currTime);   
+	::clock_gettime(CLOCK_MONOTONIC, &currTime);
 	return currTime.tv_sec;
 #endif
 }
@@ -342,25 +358,25 @@ TimePrefsHandler::TimePrefsHandler(LSPalmService* service)
 {
 	if (!s_inst)
 		s_inst=this;
-	
-	init();    
+
+	init();
 }
 
 TimePrefsHandler::~TimePrefsHandler()
 {
-    
+
 }
 
 std::list<std::string> TimePrefsHandler::keys() const
 {
-    return m_keyList; 
+    return m_keyList;
 }
 
 bool TimePrefsHandler::validate(const std::string& key, json_object* value)
 {
 	if (value == NULL)
 		return false;
-	
+
 	for (size_t i=0;i<sizeof(timePrefKeys)/sizeof(TimePrefKey);i++) {
 		if (key == timePrefKeys[i].keyName) {
 			if (timePrefKeys[i].validateFn != NULL)
@@ -369,7 +385,7 @@ bool TimePrefsHandler::validate(const std::string& key, json_object* value)
 				return false;
 		}
 	}
-	
+
     return false;
 }
 
@@ -377,7 +393,7 @@ void TimePrefsHandler::valueChanged(const std::string& key, json_object* value)
 {
 	bool bval;
 	std::string strval;
-	
+
 	if (key == "useNetworkTime") {
 		if (value) {
 			bval = json_object_get_boolean(value);
@@ -405,18 +421,21 @@ void TimePrefsHandler::valueChanged(const std::string& key, json_object* value)
 		//TODO: change tz
 		if (value) {
 			strval = TimePrefsHandler::tzNameFromJsonValue(value);
-			g_warning("TimePrefsHandler::valueChanged(): attempted change of timeZone to [%s]",strval.c_str());
+            //g_warning("TimePrefsHandler::valueChanged(): attempted change of timeZone to [%s]",strval.c_str());
+            __qMessage("attempted change of timeZone to [%s]",strval.c_str());
 			const TimeZoneInfo * new_mcTZ = timeZone_ZoneFromName(strval.c_str());
 			if (new_mcTZ) {
 				if (*new_mcTZ == *m_cpCurrentTimeZone) {
-					g_warning("TimePrefsHandler::valueChanged(): new and old timezones are the same...skipping the rest of the change procedure");
+                    //g_warning("TimePrefsHandler::valueChanged(): new and old timezones are the same...skipping the rest of the change procedure");
+                    __qMessage("new and old timezones are the same...skipping the rest of the change procedure");
 					return;
 				}
 				m_cpCurrentTimeZone = new_mcTZ;
 			}
 			
 			if (m_cpCurrentTimeZone) {
-				g_warning("%s: successfully mapped to zone [%s]",__FUNCTION__,m_cpCurrentTimeZone->name.c_str());
+                //g_warning("%s: successfully mapped to zone [%s]",__FUNCTION__,m_cpCurrentTimeZone->name.c_str());
+                __qMessage("successfully mapped to zone [%s]",m_cpCurrentTimeZone->name.c_str());
 				setTimeZone(m_cpCurrentTimeZone);
 			}
 			else {
@@ -426,12 +445,14 @@ void TimePrefsHandler::valueChanged(const std::string& key, json_object* value)
 				m_cpCurrentTimeZone = timeZone_ZoneFromOffset(currOffsetToUTC);
 				if (m_cpCurrentTimeZone == NULL)
 				{
-					g_warning("%s: Couldn't pick timezone from offset %d ... picking a generic zone based on offset",__FUNCTION__,currOffsetToUTC);
+                    //g_warning("%s: Couldn't pick timezone from offset %d ... picking a generic zone based on offset",__FUNCTION__,currOffsetToUTC);
+                    qWarning() << "Couldn't pick timezone from offset" << currOffsetToUTC << "... picking a generic zone based on offset";
 					//STILL NULL! pick a generic zone
 					m_cpCurrentTimeZone = timeZone_GenericZoneFromOffset(currOffsetToUTC);
 					if (m_cpCurrentTimeZone == NULL)
 					{
-						g_warning("%s: Couldn't pick GENERIC timezone from offset %d ... last resort: go to default zone",__FUNCTION__,currOffsetToUTC);
+                        //g_warning("%s: Couldn't pick GENERIC timezone from offset %d ... last resort: go to default zone",__FUNCTION__,currOffsetToUTC);
+                        qWarning() << "Couldn't pick GENERIC timezone from offset" << currOffsetToUTC << "... last resort: go to default zone";
 						//This should never happen unless the syszone list is corrupt. But if it is, pick the failsafe default
 						m_cpCurrentTimeZone = &s_failsafeDefaultZone;
 					}
@@ -446,27 +467,30 @@ void TimePrefsHandler::valueChanged(const std::string& key, json_object* value)
 			launchAppsOnTimeChange();
 		}
 		else {
-			g_warning("TimePrefsHandler::valueChanged(): attempted change of timeZone but no value provided");
+            //g_warning("TimePrefsHandler::valueChanged(): attempted change of timeZone but no value provided");
+            qWarning("attempted change of timeZone but no value provided");
 		}
 	}
 	else if (key == "timeFormat") {
 		//TODO: change tformat
 		if (value) {
 			strval = json_object_get_string(value);
-			g_warning("TimePrefsHandler::valueChanged(): attempted change of timeFormat to [%s]",strval.c_str());
+            //g_warning("TimePrefsHandler::valueChanged(): attempted change of timeFormat to [%s]",strval.c_str());
+            __qMessage("attempted change of timeFormat to [%s]",strval.c_str());
 		}
 		else {
-			g_warning("TimePrefsHandler::valueChanged(): attempted change of timeFormat but no value provided");
+            //g_warning("TimePrefsHandler::valueChanged(): attempted change of timeFormat but no value provided");
+            qWarning() << "attempted change of timeFormat but no value provided";
 		}
 	}
-	
-	g_warning("valueChanged: useNetworkTime is [%s] , useNetworkTimeZone is [%s]",
+
+    //g_warning("valueChanged: useNetworkTime is [%s] , useNetworkTimeZone is [%s]",
+    qWarning("valueChanged: useNetworkTime is [%s] , useNetworkTimeZone is [%s]",
 			(this->isNITZTimeEnabled() ? "true" : "false"),(this->isNITZTZEnabled() ? "true" : "false"));
 }
 
 json_object* TimePrefsHandler::valuesForKey(const std::string& key)
 {
-	
 	json_object * ro = NULL;
 	for (size_t i=0;i<sizeof(timePrefKeys)/sizeof(TimePrefKey);i++) {
 		if ((key == timePrefKeys[i].keyName) && (timePrefKeys[i].valuesFn != NULL)) {
@@ -480,21 +504,22 @@ json_object* TimePrefsHandler::valuesForKey(const std::string& key)
 	if (ro) {
 		return ro;
 	}
-	
+
 	//else, a default return object is returned
 	ro = json_object_new_object();
 	return ro;	
 }
 
-json_object * TimePrefsHandler::timeZoneListAsJson() {
+json_object * TimePrefsHandler::timeZoneListAsJson()
+{
 	if (TimePrefsHandler::s_timeZonesJson != NULL)
 		return json_object_get(TimePrefsHandler::s_timeZonesJson);		//"copy" it!
-	
+
 	return (NULL);
 }
 
-bool TimePrefsHandler::isValidTimeZoneName(const std::string& tzName) {
-	
+bool TimePrefsHandler::isValidTimeZoneName(const std::string& tzName)
+{
 	if (TimePrefsHandler::s_timeZonesJson == NULL)
 		return false;
 
@@ -549,11 +574,11 @@ bool TimePrefsHandler::isValidTimeZoneName(const std::string& tzName) {
 	}
 
 	return false;
-			
+
 }
 
-static json_object * presetValues_boolean() {
-	
+static json_object * presetValues_boolean()
+{
 	json_object* arrayObj = json_object_new_array();
 	json_object_array_add(arrayObj,json_object_new_boolean(true));
 	json_object_array_add(arrayObj,json_object_new_boolean(false));
@@ -561,67 +586,67 @@ static json_object * presetValues_boolean() {
 	return arrayObj;
 }
 
-static json_object * valuesFor_useNetworkTime( TimePrefsHandler * pTimePrefsHandler) {
-	
+static json_object * valuesFor_useNetworkTime( TimePrefsHandler * pTimePrefsHandler)
+{
 	json_object* json = json_object_new_object();
 	json_object_object_add(json,(char *)"useNetworkTime",presetValues_boolean());
 	return json;
-		
+
 }
 
-static bool validateFor_useNetworkTime( TimePrefsHandler * pTimePrefsHandler,const json_object* pValue) {
-	
+static bool validateFor_useNetworkTime( TimePrefsHandler * pTimePrefsHandler,const json_object* pValue)
+{
 	if (json_object_get_type(const_cast<json_object*>(pValue)) != json_type_boolean)
 		return false;
 	return true;
 }
 
-static json_object * valuesFor_useNetworkTimeZone( TimePrefsHandler * pTimePrefsHandler) {
-	
+static json_object * valuesFor_useNetworkTimeZone( TimePrefsHandler * pTimePrefsHandler)
+{
 	json_object* json = json_object_new_object();
 	json_object_object_add(json,(char *)"useNetworkTimeZone",presetValues_boolean());
 	return json;
 }
 
-static bool validateFor_useNetworkTimeZone( TimePrefsHandler * pTimePrefsHandler,const json_object* pValue) {
-	
+static bool validateFor_useNetworkTimeZone( TimePrefsHandler * pTimePrefsHandler,const json_object* pValue)
+{
 	if (json_object_get_type(const_cast<json_object*>(pValue)) != json_type_boolean)
 			return false;
 		return true;
 }
 
-static json_object * valuesFor_timeZone( TimePrefsHandler * pTimePrefsHandler) {
-	
+static json_object * valuesFor_timeZone( TimePrefsHandler * pTimePrefsHandler)
+{
 	if (pTimePrefsHandler == NULL)
 		return (json_object_new_object());
-	
+
 	json_object * json = pTimePrefsHandler->timeZoneListAsJson();
 	if (json == NULL)
 		return (json_object_new_object());
-	
+
 	return json;
 }
 
-static bool validateFor_timeZone( TimePrefsHandler * pTimePrefsHandler,const json_object* pValue) {
-	
+static bool validateFor_timeZone( TimePrefsHandler * pTimePrefsHandler,const json_object* pValue)
+{
 	if (pTimePrefsHandler == NULL)
 		return false;
-	
+
 	json_object * pval = const_cast<json_object*>(pValue);
-	
+
 	if (json_object_get_type(pval) != json_type_object)
 			return false;
 
 	json_object* label = 0;
 	std::string tzname;
-	
+
 	label = json_object_object_get(pval, "ZoneID");
 	if (!label) {
 		return false;
 	}
 
 	tzname = json_object_get_string(label);
-	
+
 	bool rv = pTimePrefsHandler->isValidTimeZoneName(tzname);
 	return rv;			//broken out for debugging ease
 }
@@ -632,17 +657,17 @@ static bool validateFor_timeZone( TimePrefsHandler * pTimePrefsHandler,const jso
  */
 std::string TimePrefsHandler::getDefaultTZFromJson(TimeZoneInfo * r_pZoneInfo)
 {
-	
 	if (s_timeZonesJson == NULL)
 	{
 		if (r_pZoneInfo)
 			*r_pZoneInfo = s_failsafeDefaultZone;
 		return s_failsafeDefaultZone.jsonStringValue;
 	}
-	
+
 	json_object * label = json_object_object_get(s_timeZonesJson, "timeZone");
 	if (!label || is_error(label)) {
-		g_warning("error on json object: it doesn't contain a timezones array");
+        //g_warning("error on json object: it doesn't contain a timezones array");
+        qWarning() << "error on json object: it doesn't contain a timezones array";
 		if (r_pZoneInfo)
 			*r_pZoneInfo = s_failsafeDefaultZone;
 		return s_failsafeDefaultZone.jsonStringValue;
@@ -650,11 +675,12 @@ std::string TimePrefsHandler::getDefaultTZFromJson(TimeZoneInfo * r_pZoneInfo)
 
 	array_list * srcJsonArray = json_object_get_array(label);
 	if ((!srcJsonArray) || (is_error(srcJsonArray))) {
-		g_warning("error on json object: it doesn't contain a timezones array");
+        //g_warning("error on json object: it doesn't contain a timezones array");
+        qWarning("error on json object: it doesn't contain a timezones array");
 		if (r_pZoneInfo)
 			*r_pZoneInfo = s_failsafeDefaultZone;
 		return s_failsafeDefaultZone.jsonStringValue;
-	}	
+	}
 	for (int i = 0; i < array_list_length(srcJsonArray); i++) {
 		json_object* obj = (json_object*) array_list_get_idx(srcJsonArray, i);
 
@@ -662,10 +688,10 @@ std::string TimePrefsHandler::getDefaultTZFromJson(TimeZoneInfo * r_pZoneInfo)
 		label = json_object_object_get(obj,(char*)"default");
 		if (!label)
 			continue;
-		
+
 		//found it - I actually don't care if it's true or false...its mere existence is enough to 
 		//consider this a default. 
-		
+
 		if (r_pZoneInfo)
 		{
 			if (TimePrefsHandler::jsonUtil_ZoneFromJson(obj,*r_pZoneInfo) == false)
@@ -674,11 +700,11 @@ std::string TimePrefsHandler::getDefaultTZFromJson(TimeZoneInfo * r_pZoneInfo)
 				return (s_failsafeDefaultZone.jsonStringValue);
 			}
 		}
-		
+
 		return (r_pZoneInfo->jsonStringValue);
-		
+
 	}
-	
+
 	if (r_pZoneInfo)
 		*r_pZoneInfo = s_failsafeDefaultZone;
 	return s_failsafeDefaultZone.jsonStringValue;
@@ -718,15 +744,16 @@ std::string TimePrefsHandler::transitionNITZValidState(bool nitzValid,bool userS
 		//confused? weird state...default to NITZVALID
 		nextState = NITZVALIDITY_STATE_NITZVALID;
 	}
-	
+
 	PrefsDb::instance()->setPref("nitzValidity",nextState);
-	g_warning("transitionNITZValidState(): transitioning [%s] -> [%s]",currentState.c_str(),nextState.c_str());
-	
+    //g_warning("transitionNITZValidState(): transitioning [%s] -> [%s]",currentState.c_str(),nextState.c_str());
+    __qMessage("transitioning [%s] -> [%s]",currentState.c_str(),nextState.c_str());
+
 	return currentState;
 }
 
-static json_object * valuesFor_timeFormat( TimePrefsHandler * pTimePrefsHandler) {
-	
+static json_object * valuesFor_timeFormat( TimePrefsHandler * pTimePrefsHandler)
+{
 	json_object* json = json_object_new_object();
 	json_object* arrayObj = json_object_new_array();
 	json_object_array_add(arrayObj,json_object_new_string((char *)"HH12"));
@@ -735,10 +762,11 @@ static json_object * valuesFor_timeFormat( TimePrefsHandler * pTimePrefsHandler)
 	return json;
 }
 
-static bool validateFor_timeFormat( TimePrefsHandler * pTimePrefsHandler,const json_object* pValue) {
+static bool validateFor_timeFormat( TimePrefsHandler * pTimePrefsHandler,const json_object* pValue)
+{
 	if (json_object_get_type(const_cast<json_object*>(pValue)) != json_type_string)
 			return false;
-		
+
 	std::string val = json_object_get_string(const_cast<json_object*>(pValue));
 	return ((val == "HH12") || (val == "HH24"));
 }
@@ -771,7 +799,8 @@ void TimePrefsHandler::init()
     result = LSPalmServiceRegisterCategory( m_service, "/time", s_methods, NULL,
     		NULL, this, &lsError);
     if (!result) {
-    	luna_critical(s_logChannel, "Failed in registering time handler method: %s", lsError.message);
+        //luna_critical(s_logChannel, "Failed in registering time handler method: %s", lsError.message);
+        qCritical("Failed in registering time handler method: %s", lsError.message);
     	LSErrorFree(&lsError);
     	return;
     }
@@ -787,43 +816,48 @@ void TimePrefsHandler::init()
 			json_object* ja = json_object_object_get(s_timeZonesJson,(char *)"timeZone");
 			if ((ja) && (!is_error(ja))) {
 				int s = json_object_array_length(ja);
-				g_message("%d timezones loaded from [%s]",s,s_tzFile);
+                //g_message("%d timezones loaded from [%s]",s,s_tzFile);
+                __qMessage("%d timezones loaded from [%s]",s,s_tzFile);
 			}
 			json_object* jsa = json_object_object_get(s_timeZonesJson,(char *)"syszones");
 			if ((jsa) && (!is_error(jsa))) {
 				int s = json_object_array_length(jsa);
-				g_message("%d sys timezones loaded from [%s]",s,s_tzFile);
+                //g_message("%d sys timezones loaded from [%s]",s,s_tzFile);
+                __qMessage("%d sys timezones loaded from [%s]",s,s_tzFile);
 			}
-						
+
 		}
 	}
-	
+
 	//load the default
 	m_pDefaultTimeZone = new TimeZoneInfo();
 	(void)getDefaultTZFromJson(m_pDefaultTimeZone);
-	
+
 	std::string nitzValidityState = PrefsDb::instance()->getPref("nitzValidity");
 	if (nitzValidityState == "") {
 		PrefsDb::instance()->setPref("nitzValidity",NITZVALIDITY_STATE_NITZVALID);
-		g_warning("nitzValidity default set to [%s]",NITZVALIDITY_STATE_NITZVALID);
+        //g_warning("nitzValidity default set to [%s]",NITZVALIDITY_STATE_NITZVALID);
+        __qMessage("nitzValidity default set to [%s]",NITZVALIDITY_STATE_NITZVALID);
 	}
-	
+
 	std::string currentlySetTimeZoneJsonString= PrefsDb::instance()->getPref("timeZone");
 	if (currentlySetTimeZoneJsonString == "") {
 		currentlySetTimeZoneJsonString = m_pDefaultTimeZone->jsonStringValue;
 		//set a default
 		PrefsDb::instance()->setPref("timeZone",currentlySetTimeZoneJsonString);
-		g_warning("timezone default set to [%s]",currentlySetTimeZoneJsonString.c_str());	
+        //g_warning("timezone default set to [%s]",currentlySetTimeZoneJsonString.c_str());
+        __qMessage("timezone default set to [%s]",currentlySetTimeZoneJsonString.c_str());
 	}
-	
+
 	std::string currentlySetTimeZoneName = tzNameFromJsonString(currentlySetTimeZoneJsonString);
-    
+
 	scanTimeZoneJson();
-    
+
     m_cpCurrentTimeZone = timeZone_ZoneFromName(currentlySetTimeZoneName);
-    
+
     if (m_cpCurrentTimeZone) {
-    	g_warning("%s: successfully mapped to zone [%s]",__FUNCTION__,m_cpCurrentTimeZone->name.c_str());
+        //g_warning("%s: successfully mapped to zone [%s]",__FUNCTION__,m_cpCurrentTimeZone->name.c_str());
+        __qMessage("successfully mapped to zone [%s]", m_cpCurrentTimeZone->name.c_str());
     	setTimeZone(m_cpCurrentTimeZone);
     }
     else {
@@ -832,17 +866,19 @@ void TimePrefsHandler::init()
     	m_cpCurrentTimeZone = this->timeZone_ZoneFromOffset(currOffsetToUTC);
     	if (m_cpCurrentTimeZone == NULL)
     	{
-    		g_warning("%s: Couldn't pick timezone from offset %d ... picking a generic zone based on offset",__FUNCTION__,currOffsetToUTC);
+            //g_warning("%s: Couldn't pick timezone from offset %d ... picking a generic zone based on offset",__FUNCTION__,currOffsetToUTC);
+            qWarning() << " Couldn't pick timezone from offset" << currOffsetToUTC << "... picking a generic zone based on offset";
     		//STILL NULL! pick a generic zone
     		m_cpCurrentTimeZone = timeZone_GenericZoneFromOffset(currOffsetToUTC);
     		if (m_cpCurrentTimeZone == NULL)
     		{
-    			g_warning("%s: Couldn't pick GENERIC timezone from offset %d ... last resort: go to default zone",__FUNCTION__,currOffsetToUTC);
+                //g_warning("%s: Couldn't pick GENERIC timezone from offset %d ... last resort: go to default zone",__FUNCTION__,currOffsetToUTC);
+                qWarning() << "Couldn't pick GENERIC timezone from offset" << currOffsetToUTC << "... last resort: go to default zone";
     			//This should never happen unless the syszone list is corrupt. But if it is, pick the failsafe default
     			m_cpCurrentTimeZone = &s_failsafeDefaultZone;
     		}
     	}
-    	
+
     	//there is no way to get here w/o m_cpCurrentTimeZone being non-NULL
     	setTimeZone(m_cpCurrentTimeZone);
     }
@@ -878,7 +914,8 @@ void TimePrefsHandler::readCurrentNITZSettings()
 {
 	std::string settingJsonStr = PrefsDb::instance()->getPref("useNetworkTime");
 	bool val;
-	g_warning("readCurrentNITZSettings: string1 is [%s]",settingJsonStr.c_str());
+    //g_warning("readCurrentNITZSettings: string1 is [%s]",settingJsonStr.c_str());
+    __qMessage("string1 is [%s]",settingJsonStr.c_str());
 	json_object* json = json_tokener_parse(settingJsonStr.c_str());
 	if (json && (!is_error(json))) {
 		val = json_object_get_boolean(json);
@@ -889,11 +926,12 @@ void TimePrefsHandler::readCurrentNITZSettings()
 		PrefsDb::instance()->setPref("useNetworkTime","true");
 		val = true;
 	}
-		
+
 	setNITZTimeEnable(val);
-	
+
 	settingJsonStr = PrefsDb::instance()->getPref("useNetworkTimeZone");
-	g_warning("readCurrentNITZSettings: string2 is [%s]",settingJsonStr.c_str());
+    //g_warning("readCurrentNITZSettings: string2 is [%s]",settingJsonStr.c_str());
+    __qMessage("string2 is [%s]",settingJsonStr.c_str());
 	json = json_tokener_parse(settingJsonStr.c_str());
 	if (json && (!is_error(json))) {
 		val = json_object_get_boolean(json);
@@ -907,24 +945,25 @@ void TimePrefsHandler::readCurrentNITZSettings()
 	}
 
 	setNITZTZEnable(val);
-	
+
 }
 
 void TimePrefsHandler::readCurrentTimeSettings()
 {
 	std::string settingJsonStr = PrefsDb::instance()->getPref("timeFormat");
-	g_warning("readCurrentTimeSettings: string1 is [%s]",settingJsonStr.c_str());
+    //g_warning("readCurrentTimeSettings: string1 is [%s]",settingJsonStr.c_str());
+    __qMessage("string1 is [%s]",settingJsonStr.c_str());
 	if (settingJsonStr == "") {
 		PrefsDb::instance()->setPref("timeFormat","\"HH12\"");		//must store as a json string, or else baaaad stuff
 		//TODO: fix that ...it's not very robust
 	}
-	
+
 }
-std::string TimePrefsHandler::tzNameFromJsonValue(json_object * pValue) {
-	
+std::string TimePrefsHandler::tzNameFromJsonValue(json_object * pValue)
+{
 	if (pValue == NULL)
 		return std::string();
-	
+
 	if (json_object_get_type(pValue) != json_type_object)
 		return std::string();
 
@@ -937,14 +976,14 @@ std::string TimePrefsHandler::tzNameFromJsonValue(json_object * pValue) {
 	return tzname;
 }
 
-std::string TimePrefsHandler::tzNameFromJsonString(const std::string& TZJson) {
-	
+std::string TimePrefsHandler::tzNameFromJsonString(const std::string& TZJson)
+{
 	json_object * root = json_tokener_parse(TZJson.c_str());
 	if (!root || is_error(root))
 		return std::string("");
-	
+
 	std::string zoneId;
-	
+
 	json_object* obj = json_object_object_get(root,(char *)"ZoneID");
 	if ((obj) && (!is_error(obj))) {
 		zoneId = json_object_get_string(obj);
@@ -959,22 +998,24 @@ std::string TimePrefsHandler::tzNameFromJsonString(const std::string& TZJson) {
  * 
  */
 
-std::string TimePrefsHandler::getQualifiedTZIdFromName(const std::string& tzName) {
-	
+std::string TimePrefsHandler::getQualifiedTZIdFromName(const std::string& tzName)
+{
 	if ((tzName.length() == 0) || (s_timeZonesJson == NULL))
 		return std::string("");
-	
+
 	json_object * label = json_object_object_get(s_timeZonesJson, "timeZone");
 	if (!label || is_error(label)) {
-		g_warning("error on json object: it doesn't contain a timezones array");
+        //g_warning("error on json object: it doesn't contain a timezones array");
+        qWarning() << "error on json object: it doesn't contain a timezones array";
 		return std::string("");
 	}
 
 	array_list * srcJsonArray = json_object_get_array(label);
 	if ((!srcJsonArray) || (is_error(srcJsonArray))) {
-		g_warning("error on json object: it doesn't contain a timezones array");
+        //g_warning("error on json object: it doesn't contain a timezones array");
+        qWarning() << "error on json object: it doesn't contain a timezones array";
 		return std::string("");
-	}	
+	}
 	for (int i = 0; i < array_list_length(srcJsonArray); i++) {
 		json_object* obj = (json_object*) array_list_get_idx(srcJsonArray, i);
 
@@ -987,18 +1028,20 @@ std::string TimePrefsHandler::getQualifiedTZIdFromName(const std::string& tzName
 			return (std::string(json_object_to_json_string(obj)));
 
 	}
-	
+
 	//try the sys zones
-	
+
 	label = json_object_object_get(s_timeZonesJson, "syszones");
 	if (!label || is_error(label)) {
-		g_warning("error on json object: it doesn't contain a syszones array");
+        //g_warning("error on json object: it doesn't contain a syszones array");
+        qWarning() << "error on json object: it doesn't contain a syszones array";
 		return std::string("");
 	}
 
 	srcJsonArray = json_object_get_array(label);
 	if ((!srcJsonArray) || (is_error(srcJsonArray))) {
-		g_warning("error on json object: it doesn't contain a syszones array");
+        //g_warning("error on json object: it doesn't contain a syszones array");
+        qWarning() << "error on json object: it doesn't contain a syszones array";
 		return std::string("");
 	}	
 	for (int i = 0; i < array_list_length(srcJsonArray); i++) {
@@ -1016,21 +1059,22 @@ std::string TimePrefsHandler::getQualifiedTZIdFromName(const std::string& tzName
 	return std::string("");
 }
 
-std::string TimePrefsHandler::getQualifiedTZIdFromJson(const std::string& jsonTz) {
-	
+std::string TimePrefsHandler::getQualifiedTZIdFromJson(const std::string& jsonTz)
+{
 	if ((jsonTz.length() == 0) || (s_timeZonesJson == NULL))
 		return std::string("");
-	
+
 	std::string tzName;
 	json_object * label;
-	
+
 	json_object * jsontzRoot = json_tokener_parse(jsonTz.c_str());
 	if (!jsontzRoot || is_error(jsontzRoot)) {
 		return std::string("");
 	}
 	label = json_object_object_get(jsontzRoot,"ZoneID");
 	if ((!label) || is_error(label)) {
-		g_warning("error on json input: it doesn't contain a ZoneID key");
+        //g_warning("error on json input: it doesn't contain a ZoneID key");
+        qWarning() << "error on json object: it doesn't contain a ZoneID key";
 		json_object_put(jsontzRoot);
 		return std::string("");
 	}
@@ -1038,18 +1082,20 @@ std::string TimePrefsHandler::getQualifiedTZIdFromJson(const std::string& jsonTz
 		tzName = json_object_get_string(label);
 	}
 	json_object_put(jsontzRoot);
-	
+
 	label = json_object_object_get(s_timeZonesJson, "timeZone");
 	if (!label || is_error(label)) {
-		g_warning("error on json object: it doesn't contain a timezones array");
+        //g_warning("error on json object: it doesn't contain a timezones array");
+        qWarning() << "error on json object: it doesn't contain a timezones array";
 		return std::string("");
 	}
 
 	array_list * srcJsonArray = json_object_get_array(label);
 	if ((!srcJsonArray) || (is_error(srcJsonArray))) {
-		g_warning("error on json object: it doesn't contain a timezones array");
+        //g_warning("error on json object: it doesn't contain a timezones array");
+        qWarning() << "error on json object: it doesn't contain a timezones array";
 		return std::string("");
-	}	
+	}
 	for (int i = 0; i < array_list_length(srcJsonArray); i++) {
 		json_object* obj = (json_object*) array_list_get_idx(srcJsonArray, i);
 
@@ -1062,18 +1108,20 @@ std::string TimePrefsHandler::getQualifiedTZIdFromJson(const std::string& jsonTz
 			return (std::string(json_object_to_json_string(obj)));
 
 	}
-	
+
 	//try the sys zones
-	
+
 	label = json_object_object_get(s_timeZonesJson, "syszones");
 	if (!label || is_error(label)) {
-		g_warning("error on json object: it doesn't contain a syszones array");
+        //g_warning("error on json object: it doesn't contain a syszones array");
+        qWarning() << "error on json object: it doesn't contain a syszones array";
 		return std::string("");
 	}
 
 	srcJsonArray = json_object_get_array(label);
 	if ((!srcJsonArray) || (is_error(srcJsonArray))) {
-		g_warning("error on json object: it doesn't contain a syszones array");
+        //g_warning("error on json object: it doesn't contain a syszones array");
+        qWarning() << "error on json object: it doesn't contain a syszones array";
 		return std::string("");
 	}	
 	for (int i = 0; i < array_list_length(srcJsonArray); i++) {
@@ -1087,13 +1135,13 @@ std::string TimePrefsHandler::getQualifiedTZIdFromJson(const std::string& jsonTz
 		if (zoneId == tzName)
 			return (std::string(json_object_to_json_string(obj)));
 	}
-		
+
 	return std::string("");
 }
 
 //a replacement for the scanTimeZoneFile so that I only need to deal with 1 file...see init() for where the json obj is created
-void TimePrefsHandler::scanTimeZoneJson() {
-
+void TimePrefsHandler::scanTimeZoneJson()
+{
 	std::string name;
 	std::string countryCode;
 	int offset;
@@ -1103,55 +1151,59 @@ void TimePrefsHandler::scanTimeZoneJson() {
 	std::map<int,PreferredZones> tmpPrefZoneMap;
 	std::map<int,PreferredZones>::iterator tmpPrefZoneMapIter;
 	std::map<std::string,std::set<int> > tmpCountryZoneCounterMap;
-	
+
 	if (s_timeZonesJson == NULL) {
-		g_warning("scanTimeZoneJson(): no json loaded");
+        //g_warning("scanTimeZoneJson(): no json loaded");
+	    qWarning () << "no json loaded";
 		return;
 	}
-	
+
 	json_object * label = json_object_object_get(TimePrefsHandler::s_timeZonesJson, "timeZone");
 	if (!label || is_error(label)) {
-		g_warning("scanTimeZoneJson(): invalid json; missing timeZone array");
+        //g_warning("scanTimeZoneJson(): invalid json; missing timeZone array");
+        qWarning() << "invalid json; missing timeZone array";
 		return;
 	}
 	else if (!(json_object_is_type(label,json_type_array))) {
-		g_warning("scanTimeZoneJson(): invalid json; timeZone is not an array");
+        //g_warning("scanTimeZoneJson(): invalid json; timeZone is not an array");
+        qWarning() << "invalid json; timeZone is not an array";
 		return;
 	}
-	
+
 	array_list * srcJsonArray = json_object_get_array(label);
 	if ((!srcJsonArray) || (is_error(srcJsonArray))) {
-		g_warning("scanTimeZoneJson(): invalid json; timeZone array invalid");
+        //g_warning("scanTimeZoneJson(): invalid json; timeZone array invalid");
+        qWarning() << "invalid json; timeZone array invalid";
 		return;
 	}
-	
+
 	for (int i = 0; i < array_list_length(srcJsonArray); i++) {
 		json_object* obj = (json_object*) array_list_get_idx(srcJsonArray, i);
 
 		if ((!obj) || (is_error(obj)))
 			continue;
-		
+
 		label = json_object_object_get(obj,(char*)"ZoneID");
 		if ((!label) || (is_error(label))) {
 			continue;
 		}
-		
+
 		name = json_object_get_string(label);
-		
+
 		label = json_object_object_get(obj,(char*)"offsetFromUTC");
 		if ((!label) || (is_error(label))) {
 			continue;
 		}
 
 		offset = json_object_get_int(label);
-		
+
 		label = json_object_object_get(obj,(char*)"supportsDST");
 		if ((!label) || (is_error(label))) {
 			continue;
 		}
 
 		supportsDst = json_object_get_int(label);
-		
+
 		label = json_object_object_get(obj,(char*)"preferred");
 		if ((!label) || (is_error(label))) {
 			pref=false;
@@ -1164,10 +1216,10 @@ void TimePrefsHandler::scanTimeZoneJson() {
 			countryCode = json_object_get_string(label);
 		else
 			countryCode = "";
-		
+
 		//update "counter map"
 		tmpCountryZoneCounterMap[countryCode].insert(offset);
-		
+
 		TimeZoneInfo* tz = new TimeZoneInfo;
 		tz->offsetToUTC = offset;
 		tz->preferred = pref;
@@ -1175,7 +1227,7 @@ void TimePrefsHandler::scanTimeZoneJson() {
 		tz->name = name;
 		tz->countryCode = countryCode;
 		tz->jsonStringValue = json_object_to_json_string(obj);
-		
+
 		tmpPrefZoneMapIter = tmpPrefZoneMap.find(tz->offsetToUTC);
 		if (tmpPrefZoneMapIter == tmpPrefZoneMap.end()) {
 			PreferredZones pz;
@@ -1201,23 +1253,23 @@ void TimePrefsHandler::scanTimeZoneJson() {
 			else if ( (!supportsDst) && ((*tmpPrefZoneMapIter).second.nonDstFallback)==NULL)
 				(*tmpPrefZoneMapIter).second.nonDstFallback = tz;
 		}
-		
+
 		m_zoneList.push_back(tz);
 
 		m_offsetZoneMultiMap.insert(TimeZonePair(offset, tz));
-		
+
 	}
-	
+
 	//go through the whole zone list and assign offset-per-country counter values
 	for (TimeZoneInfoList::iterator it = m_zoneList.begin(); it != m_zoneList.end();++it)
 	{
 		(*it)->howManyZonesForCountry = tmpCountryZoneCounterMap[(*it)->countryCode].size();
 	}
-	
+
 	//go through the temp map and assign values to the final dst and non-dst maps
 	for (tmpPrefZoneMapIter = tmpPrefZoneMap.begin();tmpPrefZoneMapIter != tmpPrefZoneMap.end();tmpPrefZoneMapIter++) {
 		int off_key = (*tmpPrefZoneMapIter).second.offset;
-		
+
 		//if there is only a dstPref, then use that for both dst and non-dst
 		if ( ((*tmpPrefZoneMapIter).second.dstPref) && ((*tmpPrefZoneMapIter).second.nonDstPref == NULL))
 		{
@@ -1225,7 +1277,7 @@ void TimePrefsHandler::scanTimeZoneJson() {
 			m_preferredTimeZoneMapNoDST[off_key] = (*tmpPrefZoneMapIter).second.dstPref;
 			continue;
 		}
-		
+
 		if ((*tmpPrefZoneMapIter).second.dstPref)
 			m_preferredTimeZoneMapDST[off_key] = (*tmpPrefZoneMapIter).second.dstPref;
 		else if ((*tmpPrefZoneMapIter).second.dstFallback)
@@ -1234,7 +1286,7 @@ void TimePrefsHandler::scanTimeZoneJson() {
 			m_preferredTimeZoneMapDST[off_key] = (*tmpPrefZoneMapIter).second.nonDstPref;
 		else
 			m_preferredTimeZoneMapDST[off_key] = (*tmpPrefZoneMapIter).second.nonDstFallback;
-		
+
 		if ((*tmpPrefZoneMapIter).second.nonDstPref)
 			m_preferredTimeZoneMapNoDST[off_key] = (*tmpPrefZoneMapIter).second.nonDstPref;
 		else if ((*tmpPrefZoneMapIter).second.nonDstFallback)
@@ -1244,56 +1296,62 @@ void TimePrefsHandler::scanTimeZoneJson() {
 		else
 			m_preferredTimeZoneMapNoDST[off_key] = (*tmpPrefZoneMapIter).second.dstFallback;
 	}
-	
-	g_warning("scanTimeZoneJson(): found %d timezones",m_zoneList.size());
-	
+
+    //g_warning("scanTimeZoneJson(): found %d timezones",m_zoneList.size());
+    __qMessage("found %d timezones",m_zoneList.size());
+
 	for (TimeZoneMapIterator it = m_preferredTimeZoneMapDST.begin();it != m_preferredTimeZoneMapDST.end();it++) {
-		g_warning("DST-MAP: preferred zone found: [%s] , offset = %d , dstSupport = %s",
+        //g_warning("DST-MAP: preferred zone found: [%s] , offset = %d , dstSupport = %s",
+        __qMessage("DST-MAP: preferred zone found: [%s] , offset = %d , dstSupport = %s",
 				it->second->name.c_str(),it->second->offsetToUTC,(it->second->dstSupported != 0 ? "TRUE" : "FALSE"));
 	}
 	for (TimeZoneMapIterator it = m_preferredTimeZoneMapNoDST.begin();it != m_preferredTimeZoneMapNoDST.end();it++) {
-		g_warning("NON-DST-MAP: preferred zone found: [%s] , offset = %d , dstSupport = %s",
-						it->second->name.c_str(),it->second->offsetToUTC,(it->second->dstSupported != 0 ? "TRUE" : "FALSE"));	
-	} 
-	
+        //g_warning("NON-DST-MAP: preferred zone found: [%s] , offset = %d , dstSupport = %s",
+        __qMessage("NON-DST-MAP: preferred zone found: [%s] , offset = %d , dstSupport = %s",
+						it->second->name.c_str(),it->second->offsetToUTC,(it->second->dstSupported != 0 ? "TRUE" : "FALSE"));
+	}
+
 	//now grab the "syszones"...these are the default, generic, timezones that get set in case NITZ supplies "dstinvalid"
-	
+
 	label = json_object_object_get(s_timeZonesJson, "syszones");
 	if (!label || is_error(label)) {
-		g_warning("scanTimeZoneJson(): invalid json; missing syszones array");
+        //g_warning("scanTimeZoneJson(): invalid json; missing syszones array");
+        qWarning() << "invalid json; missing syszones array";
 		return;
 	}
 	else if (!(json_object_is_type(label,json_type_array))) {
-		g_warning("scanTimeZoneJson(): invalid json; syszones is not an array");
+        //g_warning("scanTimeZoneJson(): invalid json; syszones is not an array");
+        qWarning() << "invalid json; syszones is not an array";
 		return;
 	}
-	
+
 	srcJsonArray = json_object_get_array(label);
 	if ((!srcJsonArray) || (is_error(srcJsonArray))) {
-		g_warning("scanTimeZoneJson(): invalid json; syszones array invalid");
+        //g_warning("scanTimeZoneJson(): invalid json; syszones array invalid");
+        qWarning() << "invalid json; syszones array invalid";
 		return;
 	}
-	
+
 	for (int i = 0; i < array_list_length(srcJsonArray); i++) {
 		json_object* obj = (json_object*) array_list_get_idx(srcJsonArray, i);
 
 		if ((!obj) || (is_error(obj)))
 			continue;
-		
+
 		label = json_object_object_get(obj,(char*)"ZoneID");
 		if ((!label) || (is_error(label))) {
 			continue;
 		}
-		
+
 		name = json_object_get_string(label);
 
 		label = json_object_object_get(obj,(char*)"offsetFromUTC");
 		if ((!label) || (is_error(label))) {
 			continue;
 		}
-		
+
 		offset = json_object_get_int(label);
-		
+
 		TimeZoneInfo* tz = new TimeZoneInfo;
 		tz->offsetToUTC = offset;
 		tz->preferred = false;
@@ -1301,26 +1359,29 @@ void TimePrefsHandler::scanTimeZoneJson() {
 		//setTZIName(tz,name.c_str());
 		tz->name = name;
 		tz->jsonStringValue = json_object_to_json_string(obj);
-		
+
 		m_syszoneList.push_back(tz);
 	}
-	
+
 	//now grab the time zone info for known MCCs...
 	// This is used to correct problems in many networks' NITZ data
 
 	label = json_object_object_get(s_timeZonesJson, "mccInfo");
 	if (!label || is_error(label)) {
-		g_warning("scanTimeZoneJson(): invalid json; missing mccInfo array");
+        //g_warning("scanTimeZoneJson(): invalid json; missing mccInfo array");
+        qWarning() << "invalid json; missing mccInfo array";
 		return;
 	}
 	else if (!(json_object_is_type(label,json_type_array))) {
-		g_warning("scanTimeZoneJson(): invalid json; mccInfo is not an array");
+        //g_warning("scanTimeZoneJson(): invalid json; mccInfo is not an array");
+        qWarning() << "invalid json; mccInfo is not an array";
 		return;
 	}
 	
 	srcJsonArray = json_object_get_array(label);
 	if ((!srcJsonArray) || (is_error(srcJsonArray))) {
-		g_warning("scanTimeZoneJson(): invalid json; mccInfo array invalid");
+        //g_warning("scanTimeZoneJson(): invalid json; mccInfo array invalid");
+        qWarning() << "invalid json; mccInfo array invalid";
 		return;
 	}
 
@@ -1361,9 +1422,9 @@ void TimePrefsHandler::scanTimeZoneJson() {
 		if ((!label) || (is_error(label))) {
 			continue;
 		}
-		
+
 		mcc = json_object_get_int(label);
-		
+
 		TimeZoneInfo* tz = new TimeZoneInfo;
 		tz->offsetToUTC = offset;
 		tz->preferred = false;
@@ -1390,7 +1451,8 @@ void TimePrefsHandler::setTimeZone(const TimeZoneInfo * pZoneInfo)
 	{
 		//failsafe default!
 		pZoneInfo = &s_failsafeDefaultZone;
-		g_warning("%s: passed in NULL for the zone. Failsafe activated! setting failsafe-default zone: [%s]",__FUNCTION__,pZoneInfo->name.c_str());
+        //g_warning("%s: passed in NULL for the zone. Failsafe activated! setting failsafe-default zone: [%s]",__FUNCTION__,pZoneInfo->name.c_str());
+        qWarning() << "passed in NULL for the zone. Failsafe activated! setting failsafe-default zone: [" << pZoneInfo->name.c_str() << "]";
 	}
 
 	m_cpCurrentTimeZone = pZoneInfo;
@@ -1398,26 +1460,28 @@ void TimePrefsHandler::setTimeZone(const TimeZoneInfo * pZoneInfo)
 	systemSetTimeZone(pZoneInfo);
 }
 
-void TimePrefsHandler::systemSetTimeZone(const TimeZoneInfo * pZoneInfo) {
-
+void TimePrefsHandler::systemSetTimeZone(const TimeZoneInfo * pZoneInfo)
+{
 	if (pZoneInfo == NULL)
 		return;
-	
+
 	// Do we have a timezone file in place?
 	struct stat stBuf;
 	if (lstat(s_tzFilePath, &stBuf) == 0) {
 		unlink(s_tzFilePath);
 	}
-	
+
 	std::string tzFileActual = s_zoneInfoFolder;
 	tzFileActual += pZoneInfo->name;
-	
+
 	symlink(tzFileActual.c_str(), s_tzFilePath);
-	g_warning("systemSetTimeZone(): Setting Time Zone: %s, utc Offset: %d",
+    //g_warning("systemSetTimeZone(): Setting Time Zone: %s, utc Offset: %d",
+    __qMessage("Setting Time Zone: %s, utc Offset: %d",
 			pZoneInfo->name.c_str(), pZoneInfo->offsetToUTC);
 	std::string tzsetting = pZoneInfo->name;
 	tzsetWorkaround(tzsetting.c_str());
-	g_warning("TZ env is now [%s]",getenv("TZ"));
+    //g_warning("TZ env is now [%s]",getenv("TZ"));
+    __qMessage("TZ env is now [%s]",getenv("TZ"));
 }
 
 //static
@@ -1426,19 +1490,23 @@ void TimePrefsHandler::systemSetTime(time_t utc)
 	struct timeval timeVal;
 	timeVal.tv_sec = utc;
 	timeVal.tv_usec = 0;
-	g_warning("%s: settimeofday: %u",__FUNCTION__,(unsigned int)timeVal.tv_sec);
+    //g_warning("%s: settimeofday: %u",__FUNCTION__,(unsigned int)timeVal.tv_sec);
+    qDebug("%s: settimeofday: %u",__FUNCTION__,(unsigned int)timeVal.tv_sec);
 	int rc=settimeofday(&timeVal, 0);
-	g_warning("%s: settimeofday %s",__FUNCTION__,( rc == 0 ? "succeeded" : "failed"));
-		
+    //g_warning("%s: settimeofday %s",__FUNCTION__,( rc == 0 ? "succeeded" : "failed"));
+    __qMessage("settimeofday %s", ( rc == 0 ? "succeeded" : "failed"));
+
 }
 
 //static
 void TimePrefsHandler::systemSetTime(struct timeval * pTimeVal)
 {
-	g_warning("%s: settimeofday: %u",__FUNCTION__,(unsigned int)pTimeVal->tv_sec);
+    //g_warning("%s: settimeofday: %u",__FUNCTION__,(unsigned int)pTimeVal->tv_sec);
+    qDebug("%s: settimeofday: %u",__FUNCTION__,(unsigned int)pTimeVal->tv_sec);
 	int rc=settimeofday(pTimeVal, 0);
-	g_warning("%s: settimeofday %s",__FUNCTION__,( rc == 0 ? "succeeded" : "failed"));
-		
+    //g_warning("%s: settimeofday %s",__FUNCTION__,( rc == 0 ? "succeeded" : "failed"));
+    __qMessage("settimeofday %s", ( rc == 0 ? "succeeded" : "failed"));
+
 }
 
 
@@ -1537,7 +1605,7 @@ void TimePrefsHandler::postSystemTimeChange()
 	json_object_object_add(json, (char*) "TZ", json_object_new_string(tzAbbr.c_str()));
 
 	json_object_object_add(json, (char*) "timeZoneFile", json_object_new_string(const_cast<char*>(s_tzFilePath)));
-	
+
 	if (nitzValidity == NITZVALIDITY_STATE_NITZVALID)
 		json_object_object_add(json,(char*) "NITZValid", json_object_new_boolean(true));
 	else if (nitzValidity == NITZVALIDITY_STATE_NITZINVALIDUSERNOTSET)
@@ -1549,13 +1617,13 @@ void TimePrefsHandler::postSystemTimeChange()
 		json_object_object_add(json,(char*) "NITZValidTime", json_object_new_boolean(m_immNitzTimeValid));
 	if (isNITZTZEnabled())
 		json_object_object_add(json,(char*) "NITZValidZone", json_object_new_boolean(m_immNitzZoneValid));
-	
+
 	const char * reply = json_object_to_json_string(json);
 
 	std::string subKeyStr = std::string("getSystemTime");
 	std::string subValStr = std::string(reply);
 	PrefsFactory::instance()->postPrefChangeValueIsCompleteString(subKeyStr,subValStr);
-	
+
 	json_object_put(json);    
 }
 
@@ -1565,11 +1633,11 @@ void TimePrefsHandler::postNitzValidityStatus()
 		return;
 
 	std::string nitzValidity = PrefsDb::instance()->getPref("nitzValidity");
-	
+
 	LSError lsError;
 	json_object* json = 0;
 	LSErrorInit(&lsError);
-	
+
 	json = json_object_new_object();
 	if (nitzValidity == NITZVALIDITY_STATE_NITZVALID)
 		json_object_object_add(json,(char*) "NITZValid", json_object_new_boolean(true));
@@ -1581,23 +1649,23 @@ void TimePrefsHandler::postNitzValidityStatus()
 		json_object_object_add(json,(char*) "NITZValidTime", json_object_new_boolean(m_immNitzTimeValid));
 	if (isNITZTZEnabled())
 		json_object_object_add(json,(char*) "NITZValidZone", json_object_new_boolean(m_immNitzZoneValid));
-		
+
 	const char * reply = json_object_to_json_string(json);
 
 	std::string subKeyStr = std::string("getSystemTime");
 	std::string subValStr = std::string(reply);
 	PrefsFactory::instance()->postPrefChangeValueIsCompleteString(subKeyStr,subValStr);
-	json_object_put(json);    
+	json_object_put(json);
 }
 
 
 void TimePrefsHandler::launchAppsOnTimeChange()
 {
-	
+
 	bool rc;
 	LSError lsError;
 	LSErrorInit(&lsError);
-	
+
 	//grab the pref and parse out the json
 	std::string rawCurrentPref = PrefsDb::instance()->getPref("timeChangeLaunch");
 	struct json_object * storedJson = json_tokener_parse(rawCurrentPref.c_str());
@@ -1612,7 +1680,7 @@ void TimePrefsHandler::launchAppsOnTimeChange()
 		//nothing to do
 		return;
 	}
-	
+
 	for (int listIdx=0;listIdx<json_object_array_length(storedJson_listArray);++listIdx) {
 		struct json_object * storedJson_listObject = json_object_array_get_idx(storedJson_listArray,listIdx);
 		if (storedJson_listObject == NULL)
@@ -1628,7 +1696,7 @@ void TimePrefsHandler::launchAppsOnTimeChange()
 			launchStr = std::string("{ \"id\":\"")+appId+std::string("\", \"params\":")+json_object_to_json_string(label)+std::string(" }");
 		else
 			launchStr = launchStr = std::string("{ \"id\":\"")+appId+std::string("\", \"params\":\"\" }");
-		
+
 		LSErrorInit(&lsError);
 		rc = LSCall(getPrivateHandle(),
 				"luna://com.palm.applicationManager/launch",
@@ -1670,7 +1738,8 @@ bool TimePrefsHandler::setNITZTimeEnable(bool time_en) {	//returns old value
 	LPAppHandle lpHandle = 0;
 	if (LPAppGetHandle("com.palm.systemservice", &lpHandle) == LP_ERR_NONE)
 	{
-		g_warning("%s: Writing networkTimeEnabled = %d",__FUNCTION__,(int)time_en);
+        //g_warning("%s: Writing networkTimeEnabled = %d",__FUNCTION__,(int)time_en);
+        __qMessage("Writing networkTimeEnabled = %d", (int)time_en);
 		LPAppSetValueInt(lpHandle, "networkTimeEnabled", (int)time_en);
 		LPAppFreeHandle(lpHandle, true);
 	}
@@ -1685,14 +1754,14 @@ bool TimePrefsHandler::setNITZTimeEnable(bool time_en) {	//returns old value
 		//clear the flag
 		m_nitzSetting &= (~TimePrefsHandler::NITZ_TimeEnable);
 	}
-	
+
 	return rv;
 }
 
-bool TimePrefsHandler::setNITZTZEnable(bool tz_en) {	//returns old value
-
+bool TimePrefsHandler::setNITZTZEnable(bool tz_en) //returns old value
+{
 	bool rv = (m_nitzSetting & TimePrefsHandler::NITZ_TZEnable);
-	
+
 	if (tz_en) {
 		m_nitzSetting |= TimePrefsHandler::NITZ_TZEnable;
 	}
@@ -1700,7 +1769,7 @@ bool TimePrefsHandler::setNITZTZEnable(bool tz_en) {	//returns old value
 		//clear the flag
 		m_nitzSetting &= (~TimePrefsHandler::NITZ_TZEnable);
 	}
-	
+
 	return rv;
 }
 
@@ -1711,9 +1780,10 @@ const TimeZoneInfo* TimePrefsHandler::timeZone_ZoneFromOffset(int offset,int dst
 		const TimeZoneInfo* tzMcc = timeZone_ZoneFromMCC(mcc, 0);
 		if (tzMcc && !tzMcc->countryCode.empty()) {
 
-			g_message("MCC code: %d, Offset: %d, DstValue: %d, TZ Entry: %s", mcc, offset, dstValue,
+            //g_message("MCC code: %d, Offset: %d, DstValue: %d, TZ Entry: %s", mcc, offset, dstValue,
+            __qMessage("MCC code: %d, Offset: %d, DstValue: %d, TZ Entry: %s", mcc, offset, dstValue,
 					  tzMcc->jsonStringValue.c_str());
-			
+
 			std::string countryCode = tzMcc->countryCode;
 
 			// All timezones wih matching offset
@@ -1735,11 +1805,12 @@ const TimeZoneInfo* TimePrefsHandler::timeZone_ZoneFromOffset(int offset,int dst
 					// First iteration: preferred and DST enabled
 					for (TimeZoneInfoListConstIterator iter = mccMatchingTzList.begin();
 						 iter != mccMatchingTzList.end(); ++iter) {
-						
+
 						TimeZoneInfo* z = (*iter);
 //						if (z->preferred && z->dstSupported == 1) {
 						if (z->preferred && z->dstSupported == dstValue) {
-							g_message("Found match in first iteration: %s", z->jsonStringValue.c_str());
+                            //g_message("Found match in first iteration: %s", z->jsonStringValue.c_str());
+                            __qMessage("Found match in first iteration: %s", z->jsonStringValue.c_str());
 							return z;
 						}
 					}
@@ -1747,10 +1818,11 @@ const TimeZoneInfo* TimePrefsHandler::timeZone_ZoneFromOffset(int offset,int dst
 					// Second iteration: DST enabled
 					for (TimeZoneInfoListConstIterator iter = mccMatchingTzList.begin();
 						 iter != mccMatchingTzList.end(); ++iter) {
-						
+
 						TimeZoneInfo* z = (*iter);
 						if (z->dstSupported == 1) {
-							g_message("Found match in second iteration: %s", z->jsonStringValue.c_str());
+                            //g_message("Found match in second iteration: %s", z->jsonStringValue.c_str());
+                            __qMessage("Found match in second iteration: %s", z->jsonStringValue.c_str());
 							return z;
 						}
 					}
@@ -1762,7 +1834,8 @@ const TimeZoneInfo* TimePrefsHandler::timeZone_ZoneFromOffset(int offset,int dst
 
 					TimeZoneInfo* z = (*iter);
 					if (z->preferred) {
-						g_message("Found match in third iteration: %s", z->jsonStringValue.c_str());
+                        //g_message("Found match in third iteration: %s", z->jsonStringValue.c_str());
+                        __qMessage("Found match in third iteration: %s", z->jsonStringValue.c_str());
 						return z;
 					}
 				}
@@ -1773,7 +1846,8 @@ const TimeZoneInfo* TimePrefsHandler::timeZone_ZoneFromOffset(int offset,int dst
 
 					TimeZoneInfo* z = (*iter);
 					if (z->dstSupported == dstValue) {
-						g_message("Found match in fourth iteration: %s", z->jsonStringValue.c_str());
+                        //g_message("Found match in fourth iteration: %s", z->jsonStringValue.c_str());
+                        __qMessage("Found match in fourth iteration: %s", z->jsonStringValue.c_str());
 						return z;
 					}
 				}
@@ -1781,13 +1855,14 @@ const TimeZoneInfo* TimePrefsHandler::timeZone_ZoneFromOffset(int offset,int dst
 				// Finally: just the first in the list
 				TimeZoneInfo* z = mccMatchingTzList.front();
 				if (z) {
-					g_message("Found match in fifth iteration: %s", z->jsonStringValue.c_str());
+                    //g_message("Found match in fifth iteration: %s", z->jsonStringValue.c_str());
+                    __qMessage("Found match in fifth iteration: %s", z->jsonStringValue.c_str());
 					return z;
 				}
 			}
 		}
 	}
-	
+
 	TimeZoneInfo * z = NULL;
 	TimeZoneMapConstIterator it;
 	if (dstValue == 0) {
@@ -1800,7 +1875,7 @@ const TimeZoneInfo* TimePrefsHandler::timeZone_ZoneFromOffset(int offset,int dst
 		if (it != m_preferredTimeZoneMapDST.end())
 			z = it->second;
 	}
-	
+
 	return z;
 }
 
@@ -1831,7 +1906,7 @@ const TimeZoneInfo* TimePrefsHandler::timeZone_ZoneFromName(const std::string& n
 {
 	if (name.empty())
 		return 0;
-    
+
 	for (TimeZoneInfoList::const_iterator it = m_zoneList.begin();
 		 it != m_zoneList.end(); ++it) {
 		TimeZoneInfo* z = (TimeZoneInfo*) (*it);
@@ -1839,7 +1914,7 @@ const TimeZoneInfo* TimePrefsHandler::timeZone_ZoneFromName(const std::string& n
 		if (z->name == name)
 			return z;
 	}
-	
+
 	for (TimeZoneInfoList::const_iterator it = m_syszoneList.begin();
 	it != m_syszoneList.end(); ++it) {
 		TimeZoneInfo* z = (TimeZoneInfo*) (*it);
@@ -1848,16 +1923,16 @@ const TimeZoneInfo* TimePrefsHandler::timeZone_ZoneFromName(const std::string& n
 			return z;
 	}
 
-	return 0;    
+	return 0;
 }
 
 const TimeZoneInfo* TimePrefsHandler::timeZone_GetDefaultZoneFailsafe()
 {
 	//No matter what, return *a* zone...never null.
 	//order:  try the m_pDefaultTimeZone , then default zone from json, then finally the failsafe default hardcoded
-	
+
 	const TimeZoneInfo * tz = NULL;
-	
+
 	if (m_pDefaultTimeZone)
 	{
 		tz = timeZone_ZoneFromName(m_pDefaultTimeZone->name);
@@ -1870,7 +1945,7 @@ const TimeZoneInfo* TimePrefsHandler::timeZone_GetDefaultZoneFailsafe()
 	
 	if (tz == NULL)
 		tz = &s_failsafeDefaultZone;
-	
+
 	return tz;
 }
 
@@ -1957,15 +2032,15 @@ bool TimePrefsHandler::cbSetSystemTime(LSHandle* lshandle, LSMessage *message,
 	std::string utcTimeInSecsStr;
 	std::string errorText;
 	std::string errorCode;
-	
+
 	long utcTimeInSecs=0;
 	bool utcTimeValid=true;
-	
+
 	struct timeval timeVal;	
 	int rc=0;
-	
+
 	TimePrefsHandler* th = (TimePrefsHandler*) user_data;
-	
+
 	if (!root || (is_error(root))) {
 		root = 0;
 		errorText = "malformed json";
@@ -1975,16 +2050,16 @@ bool TimePrefsHandler::cbSetSystemTime(LSHandle* lshandle, LSMessage *message,
 	label = json_object_object_get(root, "utc");
 
 	if ((!label) || is_error(label))
-	{	
+	{
 		utcTimeValid=false;
-		
+
 	}
 	else
 	{
 		utcTimeValid = true;
 		utcTimeInSecsStr = json_object_get_string(label);
 	}
-	
+
 	errno = 0;
 	if (utcTimeValid) {
 		utcTimeInSecs   = strtoul(utcTimeInSecsStr.c_str(), 0, 10);
@@ -1996,23 +2071,25 @@ bool TimePrefsHandler::cbSetSystemTime(LSHandle* lshandle, LSMessage *message,
 		//a new time was specified
 		timeVal.tv_sec = utcTimeInSecs;
 		timeVal.tv_usec = 0;
-		g_warning("%s: settimeofday: %u",__FUNCTION__,(unsigned int)timeVal.tv_sec);
+        g_warning("%s: settimeofday: %u",__FUNCTION__,(unsigned int)timeVal.tv_sec);
+        qDebug("%s: settimeofday: %u",__FUNCTION__,(unsigned int)timeVal.tv_sec);
 		rc=settimeofday(&timeVal, 0);
-		g_warning("%s: settimeofday %s",__FUNCTION__,( rc == 0 ? "succeeded" : "failed"));
-				
+        //g_warning("%s: settimeofday %s",__FUNCTION__,( rc == 0 ? "succeeded" : "failed"));
+        __qMessage("settimeofday %s", ( rc == 0 ? "succeeded" : "failed"));
+
 	}
-	
+
 	TimePrefsHandler::transitionNITZValidState((th->getLastNITZValidity() & TimePrefsHandler::NITZ_Valid),true);
 	th->postSystemTimeChange();
 	th->launchAppsOnTimeChange();
-									   
+
 Done_cbSetSystemTime:
-		
+
 	if (root)
 		json_object_put(root);
 
 	root = json_object_new_object();
-	
+
 	if (errorText.empty())
 	{
 		//success case
@@ -2025,11 +2102,11 @@ Done_cbSetSystemTime:
 		json_object_object_add(root,"errorText",json_object_new_string(errorText.c_str()));
 		json_object_object_add(root,"errorCode",json_object_new_string("FAIL"));
 	}
-	
+
 	if (!LSMessageReply( lshandle, message,json_object_to_json_string(root) , &lserror )) {
 		LSErrorFree (&lserror);
 	}
-	
+
 	json_object_put(root);
 	return true;
 }
@@ -2044,7 +2121,8 @@ bool TimePrefsHandler::cbPowerDActivityStatus(LSHandle* lshandle, LSMessage *mes
 	const char* str = LSMessageGetPayload(message);
 	if( !str )
 		str = "[NO PAYLOAD IN LSMessage!]";
-	g_warning("cbPowerDActivityStatus(): reported status: %s",str);
+    //g_warning("cbPowerDActivityStatus(): reported status: %s",str);
+    __qMessage("reported status: %s",str);
 	return true;
 }
 
@@ -2180,7 +2258,7 @@ bool TimePrefsHandler::cbSetSystemNetworkTime(LSHandle * lshandle, LSMessage *me
 	NitzParameters nitzParam;
 	int nitzFlags = 0;
 	std::string nitzFnMsg;
-	
+
 	TimePrefsHandler* th = (TimePrefsHandler*)user_data;
 
 	const char* str = LSMessageGetPayload(message);
@@ -2195,7 +2273,8 @@ bool TimePrefsHandler::cbSetSystemNetworkTime(LSHandle * lshandle, LSMessage *me
 	}
 
 	memset(&timeStruct,0,sizeof(struct tm));
-	g_warning("NITZ message received from Telephony Service: %s",str);
+    //g_warning("NITZ message received from Telephony Service: %s",str);
+    __qMessage("NITZ message received from Telephony Service: %s",str);
 
 	label = json_object_object_get(root, "sec");
 	if (!label || (is_error(label)))
@@ -2233,25 +2312,25 @@ bool TimePrefsHandler::cbSetSystemNetworkTime(LSHandle * lshandle, LSMessage *me
 		utcOffset = strtol(json_object_get_string(label),0,10);
 	else
 		utcOffset = -1000;					// this is an invalid value so it can be detected later on
-	
+
 	label = json_object_object_get(root, "mcc");
 	if ((label) && (!is_error(label)))
 		mcc = strtol(json_object_get_string(label),0,10);
 	else
 		mcc = 0;
-	
+
 	label = json_object_object_get(root, "mnc");
 	if ((label) && (!is_error(label)))
 		mnc = strtol(json_object_get_string(label),0,10);
 	else
 		mnc = 0;
-	
+
 	label = json_object_object_get(root, "tzvalid");
 	if ((label) && (!is_error(label)))
 		tzValid = json_object_get_boolean(label);
 	else 
 		tzValid = false;
-	
+
 	dbg_time_tzvalidOverride(tzValid);
 	
 	label = json_object_object_get(root, "timevalid");
@@ -2259,23 +2338,23 @@ bool TimePrefsHandler::cbSetSystemNetworkTime(LSHandle * lshandle, LSMessage *me
 		timeValid = json_object_get_boolean(label);
 	else
 		timeValid = false;
-	
+
 	dbg_time_timevalidOverride(timeValid);
-	
+
 	label = json_object_object_get(root, "dstvalid");
 	if ((label) && (!is_error(label)))
 		dstValid = json_object_get_boolean(label);
 	else
 		dstValid = false;
-	
+
 	dbg_time_dstvalidOverride(dstValid);
-	
+
 	label = json_object_object_get(root, "dst");
 	if ((label) && (!is_error(label)))
 		dst = json_object_get_int(label);
 	else
 		dst = 0;
-	
+
 	//additional param checks
 	if (utcOffset == -1000)
 		tzValid = false;
@@ -2293,7 +2372,7 @@ bool TimePrefsHandler::cbSetSystemNetworkTime(LSHandle * lshandle, LSMessage *me
 		if (json_object_get_boolean(label))
 			nitzFlags |= NITZHANDLER_FLAGBIT_IGNORE_TIL_SET;
 	}
-		
+
 	nitzParam = NitzParameters(timeStruct,utcOffset,dst,mcc,mnc,timeValid,tzValid,dstValid,remotetimeStamp);	//wasteful copy but this fn isn't called much
 
 	//run the nitz chain
@@ -2322,43 +2401,44 @@ bool TimePrefsHandler::cbSetSystemNetworkTime(LSHandle * lshandle, LSMessage *me
 		errorText = "nitz message failed exit: "+nitzFnMsg;
 		goto Done_cbSetSystemNetworkTime;
 	}
-	
+
 	//if successfully completed, then reset the last nitz parameter member and flags
 	if (th->m_p_lastNitzParameter == NULL)
 		th->m_p_lastNitzParameter = new NitzParameters(nitzParam);
 	else
 		*(th->m_p_lastNitzParameter) = nitzParam;
-	
+
 	th->m_lastNitzFlags = nitzFlags;
 
 Done_cbSetSystemNetworkTime:
 
 	//start the timeout cycle for completing NITZ processing later
 	th->startTimeoutCycle();
-	
+
 	if (root)
 		json_object_put(root);
 
 	root = json_object_new_object();
-	
+
 	if (errorText.empty())
 	{
 		//success
 		json_object_object_add(root,"returnValue",json_object_new_boolean(true));
-		
+
 	}
 	else
 	{
 		json_object_object_add(root,"returnValue",json_object_new_boolean(false));
 		json_object_object_add(root,"errorText",json_object_new_string(errorText.c_str()));
+        qWarning() << errorText.c_str();
 	}
-	
+
 	LSErrorInit(&lserror);
 	if (!LSMessageReply( lshandle, message,json_object_to_json_string(root), &lserror )) {
 		LSErrorFree (&lserror);
 	}
 	json_object_put(root);
-	
+
 	return true;
 
 }
@@ -2380,13 +2460,13 @@ int  TimePrefsHandler::nitzHandlerEntry(NitzParameters& nitz,int& flags,std::str
 		flags |= NITZHANDLER_FLAGBIT_MCCALLOW;
 	if (PrefsDb::instance()->getPref("AllowNTPTime") == "true")
 		flags |= NITZHANDLER_FLAGBIT_NTPALLOW;
-	
+
 	return NITZHANDLER_RETURN_SUCCESS;
 }
 
 int  TimePrefsHandler::nitzHandlerTimeValue(NitzParameters& nitz,int& flags,std::string& r_statusMsg)
 {
-	
+
 	if (isNITZTimeEnabled() == false)
 		return NITZHANDLER_RETURN_SUCCESS;			//automatic time adjustments are not allowed
 
@@ -2396,13 +2476,13 @@ int  TimePrefsHandler::nitzHandlerTimeValue(NitzParameters& nitz,int& flags,std:
 		systemSetTime(utc);
 		nitz._timevalid = true;
 	}
-	
+
 	if (nitz._timevalid)
 	{
 		signalReceivedNITZUpdate(true,false);
 		return NITZHANDLER_RETURN_SUCCESS;			//the time was already set by the TIL...nothing to do, so exit
 	}
-	
+
 	//check to see if NTP time is allowed.
 	if ((flags & NITZHANDLER_FLAGBIT_NTPALLOW) == 0)
 		return NITZHANDLER_RETURN_SUCCESS;			//no NTP allowed...nothing left to do
@@ -2422,14 +2502,13 @@ int  TimePrefsHandler::nitzHandlerTimeValue(NitzParameters& nitz,int& flags,std:
 	else {
 		m_lastNtpUpdate = 0;
 	}
-		
+
 	return NITZHANDLER_RETURN_SUCCESS;
-	
+
 }
 
 int	 TimePrefsHandler::nitzHandlerOffsetValue(NitzParameters& nitz,int& flags,std::string& r_statusMsg)
 {
-	
 	if (isNITZTZEnabled() == false)
 		return NITZHANDLER_RETURN_SUCCESS;
 
@@ -2437,11 +2516,10 @@ int	 TimePrefsHandler::nitzHandlerOffsetValue(NitzParameters& nitz,int& flags,st
 
 	if (nitz._tzvalid == false)
 		return NITZHANDLER_RETURN_SUCCESS;			///this is not a message with a tz offset value...return (not an error)
-	
+
 	//try and set the timezone
 	const TimeZoneInfo * selectedZone = NULL;
-	
-	
+
 	//check to see if I've been told to use generic timezones exclusively
 	if ( flags & NITZHANDLER_FLAGBIT_GZONEFORCE )
 	{
@@ -2451,7 +2529,7 @@ int	 TimePrefsHandler::nitzHandlerOffsetValue(NitzParameters& nitz,int& flags,st
 		signalReceivedNITZUpdate(false,true);
 		return NITZHANDLER_RETURN_SUCCESS;
 	}
-	
+
 	int effectiveDstValue = nitz._dst;
 	//try and pick a zone based on offset and dst passed in. In the case of dstvalid = false, assume dst=1. This will be corrected when an updated message comes in (IF it comes in...else, 1 it is)
 	if (nitz._dstvalid)
@@ -2460,7 +2538,7 @@ int	 TimePrefsHandler::nitzHandlerOffsetValue(NitzParameters& nitz,int& flags,st
 	}
 	else
 		effectiveDstValue = 0;
-	
+
 	selectedZone = timeZone_ZoneFromOffset(nitz._offset,effectiveDstValue,nitz._mcc);
 	if (selectedZone == NULL)
 	{
@@ -2516,7 +2594,7 @@ int  TimePrefsHandler::nitzHandlerDstValue(NitzParameters& nitz,int& flags,std::
 //		}
 //	}
 //	setTimeZone(selectedZone);					///setTimeZone() has a failsafe against NULLs being passed in so this is safe 
-	return NITZHANDLER_RETURN_SUCCESS;		
+	return NITZHANDLER_RETURN_SUCCESS;
 }
 
 int  TimePrefsHandler::nitzHandlerExit(NitzParameters& nitz,int& flags,std::string& r_statusMsg)
@@ -2534,7 +2612,8 @@ void  TimePrefsHandler::nitzHandlerSpecialCaseOffsetValue(NitzParameters& nitz,i
 		nitz._offset = 60;
 		nitz._dst = 1;
 		nitz._dstvalid = true;
-		g_warning("%s: Special Case 1 applied! MCC 208 offset 120 -> offset 60, dst=1",__FUNCTION__);
+        //g_warning("%s: Special Case 1 applied! MCC 208 offset 120 -> offset 60, dst=1",__FUNCTION__);
+        qWarning() << "Special Case 1 applied! MCC 208 offset 120 -> offset 60, dst=1";
 		return;
 	}
 
@@ -2545,7 +2624,8 @@ void  TimePrefsHandler::nitzHandlerSpecialCaseOffsetValue(NitzParameters& nitz,i
 		nitz._offset = 60;
 		nitz._dst = 1;
 		nitz._dstvalid = true;
-		g_warning("%s: Special Case 2 applied! MCC 214 offset 120 -> offset 60, dst=1",__FUNCTION__);
+        //g_warning("%s: Special Case 2 applied! MCC 214 offset 120 -> offset 60, dst=1",__FUNCTION__);
+        qWarning() << "Special Case 2 applied! MCC 214 offset 120 -> offset 60, dst=1";
 		return;
 	}
 }
@@ -2556,17 +2636,19 @@ int TimePrefsHandler::timeoutFunc()
 	{
 		//the timeout has been extended..decrement count and return signaling that cycle should repeat
 		--m_timeoutCycleCount;
-		g_warning("%s: Resetting the timeout cycle, count is now %d",__FUNCTION__,m_timeoutCycleCount);
+        //g_warning("%s: Resetting the timeout cycle, count is now %d",__FUNCTION__,m_timeoutCycleCount);
+        __qMessage("Resetting the timeout cycle, count is now %d", m_timeoutCycleCount);
 		return TIMEOUTFN_RESETCYCLE;
 	}
-	
+
 	//else, timeout needs to do work
 	//run the nitz chain
 	int nitzFlags = 0;
 	std::string errorText,nitzFnMsg;
 	NitzParameters nitzParam;		//this will be the "working copy" that the handlers will modify
-	
-	g_warning("%s: Running the NITZ chain...",__FUNCTION__);
+
+    //g_warning("%s: Running the NITZ chain...",__FUNCTION__);
+    __qMessage("Running the NITZ chain...");
 	if (timeoutNitzHandlerEntry(nitzParam,nitzFlags,nitzFnMsg) != NITZHANDLER_RETURN_SUCCESS)
 	{
 		errorText = "timeout-nitz message failed entry: "+nitzFnMsg;
@@ -2603,8 +2685,10 @@ int TimePrefsHandler::timeoutFunc()
 
 Done_timeoutFunc:
 
-	g_warning("%s: NITZ chain completed: %s",__FUNCTION__,(errorText.size() ? errorText.c_str() : "Ok"));
-	
+    //g_warning("%s: NITZ chain completed: %s",__FUNCTION__,(errorText.size() ? errorText.c_str() : "Ok"));
+    if (errorText.size()) qWarning() << "NITZ chain completed:" << errorText.c_str();
+    else __qMessage ("NITZ chain completed OK");
+
 	//if neither automatic time or automatic zone were turned on, then skip advertising the system time or nitz valid status
 	/*
 	 * The whole chain run could have just been avoided at the cb__ function level if "manual" mode was on....
@@ -2616,17 +2700,19 @@ Done_timeoutFunc:
 	 */
 	if ((isNITZTimeEnabled() == false) && (isNITZTZEnabled() == false))
 	{
-		g_warning("%s: Manual mode was on...not changing any NITZ variables/state",__FUNCTION__);
+        //g_warning("%s: Manual mode was on...not changing any NITZ variables/state",__FUNCTION__);
+        __qMessage ("Manual mode was on...not changing any NITZ variables/state");
 		//finish, indicating I'd like the periodic source to go away 
 		return TIMEOUTFN_ENDCYCLE;
 	}
-	
+
 	//figure out if everything was set ok
 	if ((nitzParam._timevalid == false) && (nitzParam._tzvalid == false) && (nitzParam._dstvalid == false))
 	{
 		m_immNitzTimeValid = false;
 		m_immNitzZoneValid = false;
-		g_warning("%s: Special-NITZ FAIL scenario detected - UI prompt to follow",__FUNCTION__);
+        //g_warning("%s: Special-NITZ FAIL scenario detected - UI prompt to follow",__FUNCTION__);
+        qWarning() << "Special-NITZ FAIL scenario detected - UI prompt to follow";
 		//no...set the overall validity flags (for tracking UI) to invalid, and post the inability to set the time
 		(void)TimePrefsHandler::transitionNITZValidState(false,false);
 		markLastNITZInvalid();
@@ -2636,8 +2722,9 @@ Done_timeoutFunc:
 	{
 		bool totallyGoodNitz = (nitzParam._timevalid) && (nitzParam._tzvalid) && (nitzParam._dstvalid);
 		time_t dbg_time_outp = time(NULL);
-		g_warning("%s: NITZ FINAL: At least something was ok (timevalid = %s,tzvalid = %s,dstvalid = %s), time is now %s",
-				__FUNCTION__,(nitzParam._timevalid ? "true" : "false"),
+        //g_warning("%s: NITZ FINAL: At least something was ok (timevalid = %s,tzvalid = %s,dstvalid = %s), time is now %s",__FUNCTION__,
+        __qMessage("NITZ FINAL: At least something was ok (timevalid = %s,tzvalid = %s,dstvalid = %s), time is now %s",
+                (nitzParam._timevalid ? "true" : "false"),
 				(nitzParam._tzvalid ? "true" : "false"),
 				(nitzParam._dstvalid ? "true" : "false"),
 				(ctime(&dbg_time_outp)));
@@ -2664,14 +2751,16 @@ Done_timeoutFunc:
 void TimePrefsHandler::startBootstrapCycle(int delaySeconds)
 {
 
-#if defined(MACHINE_topaz) || defined(DESKTOP) || defined(MACHINE_opal)
-	g_warning("%s: On a Machine without Cellular...kicking off time-set timeout cycle in %d seconds (to allow machine to settle down)", __FUNCTION__,delaySeconds);
+//#if defined(MACHINE_topaz) || defined(DESKTOP) || defined(MACHINE_opal)
+// @TODO: better handle devices with and without cellulrr
+    //g_warning("%s: On a Machine without Cellular...kicking off time-set timeout cycle in %d seconds (to allow machine to settle down)", __FUNCTION__,delaySeconds);
+    __qMessage("No Cellular...kicking off time-set timeout cycle in %d seconds (to allow machine to settle down)", delaySeconds);
 	if (m_p_lastNitzParameter)
 	{
 		m_p_lastNitzParameter->_timevalid = false;	//this will force NTP
 	}
 	startTimeoutCycle(delaySeconds);
-#endif
+//#endif
 
 }
 
@@ -2686,10 +2775,11 @@ void TimePrefsHandler::startTimeoutCycle(unsigned int timeoutInSeconds)
 	if (m_gsource_periodic)
 	{
 		m_timeoutCycleCount = (m_timeoutCycleCount > 0 ? 1 : 0);
-		g_warning("%s: timeout cycle count extended , now %d",__FUNCTION__,m_timeoutCycleCount);
+        //g_warning("%s: timeout cycle count extended , now %d",__FUNCTION__,m_timeoutCycleCount);
+        __qMessage("timeout cycle count extended , now %d", m_timeoutCycleCount);
 		return;
 	}
-	
+
 	//else, create a timeout source and attach it
 	//create a new periodic source
 	
@@ -2699,11 +2789,12 @@ void TimePrefsHandler::startTimeoutCycle(unsigned int timeoutInSeconds)
 		if ((timeoutInSeconds == 0) || (timeoutInSeconds > 300))
 			timeoutInSeconds = TIMEOUT_INTERVAL_SEC;
 	}
-	
+
 	m_gsource_periodic = g_timeout_source_new_seconds(timeoutInSeconds);
 	if (m_gsource_periodic == NULL) 
 	{
-		g_warning("Failed to create periodic source");
+        //g_warning("Failed to create periodic source");
+        qWarning() << "Failed to create periodic source";
 		return;
 	}
 	//add the callback functions to it
@@ -2713,13 +2804,15 @@ void TimePrefsHandler::startTimeoutCycle(unsigned int timeoutInSeconds)
 	m_gsource_periodic_id = g_source_attach(m_gsource_periodic,context);
 	if (m_gsource_periodic_id == 0) 
 	{
-		g_warning("%s: Failed to attach periodic source",__FUNCTION__);
+        //g_warning("%s: Failed to attach periodic source",__FUNCTION__);
+        qWarning() << "Failed to attach periodic source";
 		//destroy the periodic source
 		g_source_destroy(m_gsource_periodic);
 		m_gsource_periodic = NULL;
 	}
 	else {
-		g_warning("%s: Timeout cycle of %d seconds started",__FUNCTION__,timeoutInSeconds);
+        //g_warning("%s: Timeout cycle of %d seconds started",__FUNCTION__,timeoutInSeconds);
+        __qMessage("Timeout cycle of %d seconds started", timeoutInSeconds);
 		g_source_unref(m_gsource_periodic);		//it's owned now by the context
 	}
 
@@ -2729,7 +2822,7 @@ void TimePrefsHandler::timeout_destroy(gpointer userData)
 {
 	if (userData != m_gsource_periodic)
 		return;			//makes it harder for someone to call this function directly
-	
+
 	m_gsource_periodic_id = 0;
 	m_gsource_periodic = NULL;
 }
@@ -2768,7 +2861,7 @@ int  TimePrefsHandler::timeoutNitzHandlerTimeValue(NitzParameters& nitz,int& fla
 	//check if network time is allowed, if not, then exit
 	if (isNITZTimeEnabled() == false)
 		return NITZHANDLER_RETURN_SUCCESS;
-		
+
 	//check the timevalid field
 	if (nitz._timevalid)
 	{
@@ -2798,22 +2891,21 @@ int  TimePrefsHandler::timeoutNitzHandlerTimeValue(NitzParameters& nitz,int& fla
 	}
 	
 	return NITZHANDLER_RETURN_SUCCESS;
-	
+
 }
 
 int	 TimePrefsHandler::timeoutNitzHandlerOffsetValue(NitzParameters& nitz,int& flags,std::string& r_statusMsg)
 {
-	
 	//if automatic timezone is not allowed, then just exit
 	if (isNITZTZEnabled() == false)
 		return NITZHANDLER_RETURN_SUCCESS;
-		
+
 	//check the tzvalid field
 	if (nitz._tzvalid)
 	{
 		return NITZHANDLER_RETURN_SUCCESS;			//time zone was successfully applied in the original nitz cycle...nothing to do
 	}
-	
+
 	const TimeZoneInfo * tz = NULL;
 	if ( flags & NITZHANDLER_FLAGBIT_MCCALLOW )
 	{
@@ -2850,12 +2942,12 @@ int  TimePrefsHandler::timeoutNitzHandlerDstValue(NitzParameters& nitz,int& flag
 
 	if (flags & NITZHANDLER_FLAGBIT_SKIP_DST_SELECT)
 		return NITZHANDLER_RETURN_SUCCESS;		//something up the chain already figured dst into the mix...skip all this to avoid reselecting a TZ
-	
+
 	///However, some networks  seem to be sending dstvalid = false even when it shouldn't be. This hidden setting defaults to ignoring that
 	//				but if it's set "true", then dstvalid = false will result in it being considered a NITZ TZ set failure
 	if (PrefsDb::instance()->getPref(".sysservice-time-strictDstErrors") != "true")
 		nitz._dstvalid = true;
-	
+
 	return NITZHANDLER_RETURN_SUCCESS;
 }
 
@@ -2863,27 +2955,28 @@ int  TimePrefsHandler::timeoutNitzHandlerExit(NitzParameters& nitz,int& flags,st
 {
 	return NITZHANDLER_RETURN_SUCCESS;
 }
-	
+
 void TimePrefsHandler::setPeriodicTimeSetWakeup()
 {
-	
-	g_warning("%s called",__FUNCTION__);
-	
+    //g_warning("%s called",__FUNCTION__);
+    qDebug("%s called",__FUNCTION__);
+
 	if (getPrivateHandle() == NULL)
 	{
 		//not yet on the bus
 		m_sendWakeupSetToPowerD = true;
 		return;
 	}
-	
-	//if (isNITZTimeEnabled() && isNTPAllowed())				TODO:  should really be this and not the line below, but since "AllowNTPTime" setting/key currently doesn't
-																	// have a "changed" handler, there's no way to detect that it has been turned (back)on, so if it ever
-																	// gets set off, there will be no more NTP events scheduled even if it gets turned back on
+
+    //if (isNITZTimeEnabled() && isNTPAllowed())
+    // TODO:  should really be this and not the line below, but since "AllowNTPTime" setting/key currently doesn't
+    //     have a "changed" handler, there's no way to detect that it has been turned (back)on, so if it ever
+    //     gets set off, there will be no more NTP events scheduled even if it gets turned back on
 	if (isNITZTimeEnabled())
 	{
 		LSError lserror;
 		LSErrorInit(&lserror);
-	
+
 		std::string interval = PrefsDb::instance()->getPref(".sysservice-time-autoNtpInterval");
 		uint32_t timev = strtoul(interval.c_str(),NULL,10);
 		if ((timev < 300) || (timev > 86400))
@@ -2916,14 +3009,16 @@ void TimePrefsHandler::setPeriodicTimeSetWakeup()
 								+timeStr
 								+std::string("\",\"wakeup\":false,\"uri\":\"palm://com.palm.systemservice/time/setTimeWithNTP\",\"params\":\"{'source':'periodic'}\"}");
 		
-		g_warning("%s: scheduling event for %s in the future or when the device next wakes, whichever is later",__FUNCTION__,timeStr.c_str());
+        //g_warning("%s: scheduling event for %s in the future or when the device next wakes, whichever is later",__FUNCTION__,timeStr.c_str());
+        __qMessage("scheduling event for %s in the future or when the device next wakes, whichever is later", timeStr.c_str());
 		bool lsCallResult = LSCall(getPrivateHandle(),
 				"palm://com.palm.power/timeout/set",
 				payload.c_str(),
 				cbSetPeriodicWakeupPowerDResponse,this,NULL, &lserror);
 
 		if (!lsCallResult) {
-			g_warning("%s: call to powerD failed",__FUNCTION__);
+            //g_warning("%s: call to powerD failed",__FUNCTION__);
+            qWarning() << "call to powerD failed";
 			LSErrorFree(&lserror);
 			m_sendWakeupSetToPowerD = true;
 		}
@@ -2946,9 +3041,8 @@ bool TimePrefsHandler::isNTPAllowed()
 
 void TimePrefsHandler::signalReceivedNITZUpdate(bool time,bool zone)
 {
-	
-	LSError lsError;
-	
+    LSError lsError;
+
 	if (time)
 	{
 		LSErrorInit(&lsError);
@@ -2978,15 +3072,17 @@ void TimePrefsHandler::dbg_time_timevalidOverride(bool& timevalid)
 {
 	if (PrefsDb::instance()->getPref(".sysservice-dbg-time-debugEnable") != "true")
 		return;
-	
-	g_warning("%s: !!!!!!!!!!!!!!! USING DEBUG OVERRIDES !!!!!!!!!!!!!!",__FUNCTION__);
+
+    //g_warning("%s: !!!!!!!!!!!!!!! USING DEBUG OVERRIDES !!!!!!!!!!!!!!",__FUNCTION__);
+    __qMessage("!!!!!!!!!!!!!!! USING DEBUG OVERRIDES !!!!!!!!!!!!!!");
 	std::string v = PrefsDb::instance()->getPref(".sysservice-dbg-time-timevalid");
 	if (strcasecmp(v.c_str(),"true") == 0)
 		timevalid = true;
 	else if (strcasecmp(v.c_str(),"false") == 0)
 		timevalid = false;
-	
-	g_warning("%s: timevalid <--- %s",__FUNCTION__,(timevalid ? "true" : "false"));
+
+    //g_warning("%s: timevalid <--- %s",__FUNCTION__,(timevalid ? "true" : "false"));
+    __qMessage("timevalid <--- %s", (timevalid ? "true" : "false"));
 }
 
 //static
@@ -2995,14 +3091,16 @@ void TimePrefsHandler::dbg_time_tzvalidOverride(bool& tzvalid)
 	if (PrefsDb::instance()->getPref(".sysservice-dbg-time-debugEnable") != "true")
 		return;
 
-	g_warning("%s: !!!!!!!!!!!!!!! USING DEBUG OVERRIDES !!!!!!!!!!!!!!",__FUNCTION__);
+    //g_warning("%s: !!!!!!!!!!!!!!! USING DEBUG OVERRIDES !!!!!!!!!!!!!!",__FUNCTION__);
+    __qMessage("!!!!!!!!!!!!!!! USING DEBUG OVERRIDES !!!!!!!!!!!!!!");
 	std::string v = PrefsDb::instance()->getPref(".sysservice-dbg-time-tzvalid");
 	if (strcasecmp(v.c_str(),"true") == 0)
 		tzvalid = true;
 	else if (strcasecmp(v.c_str(),"false") == 0)
 		tzvalid = false;
 	
-	g_warning("%s: tzvalid <--- %s",__FUNCTION__,(tzvalid ? "true" : "false"));
+    //g_warning("%s: tzvalid <--- %s",__FUNCTION__,(tzvalid ? "true" : "false"));
+    __qMessage("tzvalid <--- %s", (tzvalid ? "true" : "false"));
 }
 
 //static
@@ -3011,14 +3109,16 @@ void TimePrefsHandler::dbg_time_dstvalidOverride(bool& dstvalid)
 	if (PrefsDb::instance()->getPref(".sysservice-dbg-time-debugEnable") != "true")
 		return;
 
-	g_warning("%s: !!!!!!!!!!!!!!! USING DEBUG OVERRIDES !!!!!!!!!!!!!!",__FUNCTION__);
+    //g_warning("%s: !!!!!!!!!!!!!!! USING DEBUG OVERRIDES !!!!!!!!!!!!!!",__FUNCTION__);
+    __qMessage("!!!!!!!!!!!!!!! USING DEBUG OVERRIDES !!!!!!!!!!!!!!");
 	std::string v = PrefsDb::instance()->getPref(".sysservice-dbg-time-dstvalid");
 	if (strcasecmp(v.c_str(),"true") == 0)
 		dstvalid = true;
 	else if (strcasecmp(v.c_str(),"false") == 0)
 		dstvalid = false;
-	
-	g_warning("%s: dstvalid <--- %s",__FUNCTION__,(dstvalid ? "true" : "false"));
+
+    //g_warning("%s: dstvalid <--- %s",__FUNCTION__,(dstvalid ? "true" : "false"));
+    __qMessage("dstvalid <--- %s", (dstvalid ? "true" : "false"));
 }
 	
 /*!
@@ -3057,24 +3157,25 @@ bool TimePrefsHandler::cbSetPeriodicWakeupPowerDResponse(LSHandle* lsHandle, LSM
 		return false;
 	}
 
-	g_message("%s: received message %s",__FUNCTION__,str);
-	
+    //g_message("%s: received message %s",__FUNCTION__,str);
+    __qMessage("received message %s", str);
+
 	TimePrefsHandler* th = (TimePrefsHandler*) user_data;
 	if (th == NULL)
 	{
-		g_critical("%s: user_data passed as NULL!",__FUNCTION__);
+        //g_critical("%s: user_data passed as NULL!",__FUNCTION__);
+        qCritical() << "user_data passed as NULL!";
 		return true;
 	}
 	json_object * root = json_tokener_parse(str);
 	json_object * label = 0;
-	
+
 	if ((!root) || is_error(root)) 
 	{
 		root=0;
 		goto Done_cbSetPeriodicWakeupPowerDResponse;
 	}
-	
-	
+
 	label = Utils::JsonGetObject(root,"returnValue");
 	if (label)
 	{
@@ -3099,7 +3200,7 @@ bool TimePrefsHandler::cbSetPeriodicWakeupPowerDResponse(LSHandle* lsHandle, LSM
 				th->m_lastNtpUpdate = 0;
 			}
 		}
-		
+
 		//schedule another
 		th->setPeriodicTimeSetWakeup();
 	}
@@ -3129,10 +3230,11 @@ bool TimePrefsHandler::cbServiceStateTracker(LSHandle* lsHandle, LSMessage *mess
 		return false;
 
 	TimePrefsHandler * th = (TimePrefsHandler *)user_data;
-	
+
 	if (th == NULL) 
 	{
-		g_critical("%s: user_data passed as NULL!",__FUNCTION__);
+        //g_critical("%s: user_data passed as NULL!",__FUNCTION__);
+        qCritical() << "user_data passed as NULL!";
 		return true;
 	}
 	root = json_tokener_parse(str);
@@ -3147,7 +3249,7 @@ bool TimePrefsHandler::cbServiceStateTracker(LSHandle* lsHandle, LSMessage *mess
 		json_object_put(root);
 		return true;
 	}
-	
+
 	std::string serviceName = json_object_get_string(label);
 	bool isConnected = false;
 	label = Utils::JsonGetObject(root,"connected");
@@ -3155,7 +3257,7 @@ bool TimePrefsHandler::cbServiceStateTracker(LSHandle* lsHandle, LSMessage *mess
 	{
 		isConnected = json_object_get_boolean(label);
 	}
-	
+
 	if (serviceName == "com.palm.power")
 	{
 		if ((isConnected) && (th->m_sendWakeupSetToPowerD))
@@ -3173,7 +3275,7 @@ bool TimePrefsHandler::cbServiceStateTracker(LSHandle* lsHandle, LSMessage *mess
 	json_object_put(root);
 
 	return true;
-	
+
 }
 
 /*!
@@ -3291,7 +3393,7 @@ bool TimePrefsHandler::cbGetSystemTime(LSHandle* lsHandle, LSMessage *message,
 
 	utctime = time(NULL);
 	p_localtime_s = localtime(&utctime);
-	
+
 	json = json_object_new_object();
 	json_object_object_add(json, (char*) "utc", json_object_new_int((int)time(NULL)));
 	localtime_json = json_object_new_object();
@@ -3302,9 +3404,9 @@ bool TimePrefsHandler::cbGetSystemTime(LSHandle* lsHandle, LSMessage *message,
 	json_object_object_add(localtime_json,(char *)"minute",json_object_new_int(p_localtime_s->tm_min));
 	json_object_object_add(localtime_json,(char *)"second",json_object_new_int(p_localtime_s->tm_sec));
 	json_object_object_add(json,(char *)"localtime",localtime_json);
-	
+
 	json_object_object_add(json, (char*) "offset", json_object_new_int(th->offsetToUtcSecs()/60));
-	
+
 	if (th->currentTimeZone()) {
 		json_object_object_add(json, (char*) "timezone", json_object_new_string(th->currentTimeZone()->name.c_str()));
 		//get current time zone abbreviation
@@ -3316,24 +3418,25 @@ bool TimePrefsHandler::cbGetSystemTime(LSHandle* lsHandle, LSMessage *message,
 		tzAbbr = std::string("UTC");		//default to something
 	}
 	json_object_object_add(json, (char*) "TZ", json_object_new_string(tzAbbr.c_str()));
-	
+
 	json_object_object_add(json, (char*) "timeZoneFile", json_object_new_string(const_cast<char*>(s_tzFilePath)));
-	
+
 	nitzValidity = PrefsDb::instance()->getPref("nitzValidity");
-	
+
 	if (nitzValidity == NITZVALIDITY_STATE_NITZVALID)
 		json_object_object_add(json,(char*) "NITZValid", json_object_new_boolean(true));
 	else if (nitzValidity == NITZVALIDITY_STATE_NITZINVALIDUSERNOTSET)
 		json_object_object_add(json,(char*) "NITZValid", json_object_new_boolean(false));
-	
+
 	reply = json_object_to_json_string(json);
-	
+
 	//**DEBUG validate for correct UTF-8 output
 	 if (!g_utf8_validate (reply, -1, NULL))
 	 {
-		 g_warning("cbGetSystemTime(): bus reply fails UTF-8 validity check! [%s]",reply);
+         //g_warning("cbGetSystemTime(): bus reply fails UTF-8 validity check! [%s]",reply);
+         qWarning() << "bus reply fails UTF-8 validity check! [" << reply << "]";
 	 }
-		
+
 Done:
 
 	retVal = LSMessageReply(lsHandle, message, reply, &lsError);
@@ -3403,7 +3506,7 @@ bool TimePrefsHandler::cbGetSystemTimezoneFile(LSHandle* lsHandle, LSMessage *me
 	json_object_object_add(json, (char*) "timeZoneFile", json_object_new_string(const_cast<char*>(s_tzFilePath)));
 	json_object_object_add(json, (char*) "subscribed",json_object_new_boolean(false));	//no subscriptions on this; make that explicit!
 	reply = json_object_to_json_string(json);
-		
+
 	retVal = LSMessageReply(lsHandle, message, reply, &lsError);
 	if (!retVal)
 		LSErrorFree (&lsError);
@@ -3423,7 +3526,10 @@ com.palm.systemservice/time/setTimeChangeLaunch
 
 Add an application to, or remove it from the timeChangeLaunch list.
 
-You can check what's on the list with: \code luna-send -n 1 -f luna://com.palm.systemservice/getPreferences '{"subscribe": false, "keys":["timeChangeLaunch"]}' \endcode
+You can check what's on the list with:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/getPreferences '{"subscribe": false, "keys":["timeChangeLaunch"]}'
+\endcode
 
 \subsection com_palm_systemservice_time_set_time_change_launch_syntax Syntax:
 \code
@@ -3453,7 +3559,8 @@ You can check what's on the list with: \code luna-send -n 1 -f luna://com.palm.s
 
 \subsection com_palm_systemservice_time_set_time_change_launch_examples Examples:
 \code
-luna-send -n 1 -f luna://com.palm.systemservice/time/setTimeChangeLaunch '{ "appId": "com.palm.app.someApp", "active": true, "parameters": { "param1": "foo", "param2": "bar" } } }'
+luna-send -n 1 -f luna://com.palm.systemservice/time/setTimeChangeLaunch
+    '{ "appId": "com.palm.app.someApp", "active": true, "parameters": { "param1": "foo", "param2": "bar" } } }'
 \endcode
 
 Example response for a succesful call:
@@ -3487,17 +3594,17 @@ bool TimePrefsHandler::cbSetTimeChangeLaunch(LSHandle* lsHandle, LSMessage *mess
 	struct json_object* tmpJson_listArray=0;
 	struct json_object* storedJson_listObject = 0;
 	int listIdx;
-	
+
 	struct json_object* label = 0;
 	LSErrorInit(&lsError);
 	std::string errorText;
-	
+
 	std::string appId;
 	bool active;
 	struct json_object * params;
-	
+
 	std::string rawCurrentPref;
-	
+
 	//format:  { "appId":<string; REQ>, "active":<boolean; OPT - default true> , "parameters":<string encoded json object>; OPT - default ""> }
     VALIDATE_SCHEMA_AND_RETURN(lsHandle,
                                message,
@@ -3507,7 +3614,7 @@ bool TimePrefsHandler::cbSetTimeChangeLaunch(LSHandle* lsHandle, LSMessage *mess
 	if( !str ) {
 		return false;
 	}
-	
+
 	jsonInput = json_tokener_parse(str);
 
 	if ((!jsonInput) || is_error(jsonInput)) {
@@ -3515,14 +3622,14 @@ bool TimePrefsHandler::cbSetTimeChangeLaunch(LSHandle* lsHandle, LSMessage *mess
 		errorText = "couldn't parse json parameters";
 		goto Done;
 	}
-	
+
 	label = Utils::JsonGetObject(jsonInput,"appId");
 	if (label == NULL) {
 		errorText = "missing required parameter appId";
 		goto Done;
 	}
 	appId = json_object_get_string(label);
-	
+
 	label = Utils::JsonGetObject(jsonInput,"active");
         if (label == NULL) {
                 errorText = "missing required parameter active";
@@ -3543,14 +3650,14 @@ bool TimePrefsHandler::cbSetTimeChangeLaunch(LSHandle* lsHandle, LSMessage *mess
 	 * {"launchList":[ { "appId":"com.palm.app.x","active":true,"parameters":""},{ "appId":"com.palm.app.y" , "active":true , "parameters":""},... ]}
 	 * 
 	 */
-	
+
 	//get the currently stored list of launch apps
 	rawCurrentPref = PrefsDb::instance()->getPref("timeChangeLaunch");
 	storedJson = json_tokener_parse(rawCurrentPref.c_str());
 	if ((storedJson == NULL) || (is_error(storedJson))) {
 		storedJson = json_object_new_object();
 	}
-	
+
 	//get the launchList array object out of it
 	storedJson_listArray = Utils::JsonGetObject(storedJson,"launchList");
 	if ((storedJson_listArray == NULL) && (active)) {
@@ -3569,7 +3676,7 @@ bool TimePrefsHandler::cbSetTimeChangeLaunch(LSHandle* lsHandle, LSMessage *mess
 	}
 	//else, Add
 	goto Add;		//making it explicit
-	
+
 Add:
 	//go through the array and try and find the appid (if it's in there already)
 	for (listIdx=0;listIdx<json_object_array_length(storedJson_listArray);++listIdx,storedJson_listObject=NULL) {
@@ -3584,7 +3691,7 @@ Add:
 		if (appId == foundAppId)
 			break;
 	}
-	
+
 	if (storedJson_listObject) {
 		//found it...
 		//json_object_object_add(storedJson_listObject,(char *)"parameters",json_object_new_string(params.c_str()));
@@ -3599,7 +3706,7 @@ Add:
 		json_object_array_add(storedJson_listArray,storedJson_listObject);
 	}
 	goto Store;
-	
+
 Remove:
 
 	tmpJson_listArray = json_object_new_array();
@@ -3620,32 +3727,33 @@ Remove:
 	//replace the old array with the new one in the storedJson object
 	json_object_object_add(storedJson,(char *) "launchList",tmpJson_listArray);
 	//TODO: verify that this object add that replaced the json array that was in the object already, actually deallocated the old json array
-	
+
 	//...proceed right below to Store
 	goto Store;
-	
+
 Store:
 	//store the pref back, in string form
 	rawCurrentPref = json_object_to_json_string(storedJson);
 	PrefsDb::instance()->setPref("timeChangeLaunch",rawCurrentPref.c_str());
 	json_object_put(storedJson);
-	
+
 Done:
 	
 	if (jsonInput)
 		json_object_put(jsonInput);
-	
+
 	jsonOutput = json_object_new_object();
 	json_object_object_add(jsonOutput, (char*) "subscribed",json_object_new_boolean(false));	//no subscriptions on this; make that explicit!
 	if (errorText.size()) {
 		json_object_object_add(jsonOutput,(char *)"errorCode",json_object_new_string(errorText.c_str()));
 		json_object_object_add(jsonOutput,(char *)"returnValue",json_object_new_boolean(false));
+        qWarning() << errorText.c_str();
 	}
 	else 
 		json_object_object_add(jsonOutput,(char *)"returnValue",json_object_new_boolean(true));
-	
+
 	const char * reply = json_object_to_json_string(jsonOutput);
-		
+
 	retVal = LSMessageReply(lsHandle, message, reply, &lsError);
 	if (!retVal)
 		LSErrorFree (&lsError);
@@ -3720,7 +3828,7 @@ bool TimePrefsHandler::cbGetNTPTime(LSHandle* lsHandle, LSMessage *message,
 	json_object_put(jsonOutput);
 
 	return true;
-		
+
 }
 
 /*!
@@ -3827,27 +3935,27 @@ bool TimePrefsHandler::cbConvertDate(LSHandle* pHandle, LSMessage* pMessage, voi
 		goto respond;
 	}
 
-	g_debug("%s: converting %s from %s to %s", __func__, date, source_tz, dest_tz);
+	qDebug("%s: converting %s from %s to %s", __func__, date, source_tz, dest_tz);
 	
 	bad_char = (char *) strptime(date, "%Y-%m-%d %H:%M:%S", &local_tm);
 	if (NULL == bad_char) {
-		g_warning("bad date: %s", date);
+        //g_warning("bad date: %s", date);
 		error_text = g_strdup_printf("unrecognized date format: '%s'", date);
 		goto respond;
 	} else if (*bad_char != '\0') {
-		g_warning("unrecognized characters in date: '%s'", date);
+        //g_warning("unrecognized characters in date: '%s'", date);
 		error_text = g_strdup_printf("unrecognized characters in date: '%s'", date);
 		goto respond;
 	}
 
 	if (!tz_exists(source_tz)) {
-		g_warning("source_tz timezone not found: '%s'", source_tz);
+        //g_warning("source_tz timezone not found: '%s'", source_tz);
 		error_text = g_strdup_printf("timezone not found: '%s'", source_tz);
 		goto respond;
 	}
 
 	if (!tz_exists(dest_tz)) {
-		g_warning("dest_tz timezone not found: '%s'", dest_tz);
+        //g_warning("dest_tz timezone not found: '%s'", dest_tz);
 		error_text = g_strdup_printf("timezone not found: '%s'", dest_tz);
 		goto respond;
 	}
@@ -3855,15 +3963,15 @@ bool TimePrefsHandler::cbConvertDate(LSHandle* pHandle, LSMessage* pMessage, voi
 	set_tz(source_tz);
 
 	local_time = mktime(&local_tm);
-	g_debug("0 date='%s' ctime='%s' local_time=%ld timezone=%ld", date, ctime(&local_time), local_time, timezone);
+    qDebug("0 date='%s' ctime='%s' local_time=%ld timezone=%ld", date, ctime(&local_time), local_time, timezone);
 
 	if (!tz_exists(dest_tz)) {
-		g_warning("timezone not found: '%s'", dest_tz);
+        //g_warning("timezone not found: '%s'", dest_tz);
 		error_text = g_strdup_printf("timezone not found: '%s'", dest_tz);
 	}
 
 	set_tz(dest_tz);
-	g_debug("1 date='%s' ctime='%s' local_time=%ld timezone=%ld", date, ctime(&local_time), local_time, timezone);
+    qDebug("1 date='%s' ctime='%s' local_time=%ld timezone=%ld", date, ctime(&local_time), local_time, timezone);
 
 	g_assert(!error_text);
 	status = g_strdup_printf("{\"returnValue\":true,\"date\":\"%s\"}", ctime(&local_time));
@@ -3872,6 +3980,7 @@ respond:
 	if (!status) {
 		g_assert(error_text);
 		status = g_strdup_printf("{\"returnValue\":false,\"errorText\":\"%s\"}", error_text);
+        qWarning() << error_text;
 		g_free(error_text);
 	}
 
@@ -3895,23 +4004,27 @@ gboolean TimePrefsHandler::source_periodic(gpointer userData)
 {
 	if (TimePrefsHandler::s_inst == NULL) 
 	{
-		g_warning("%s: instance handle is NULL!",__FUNCTION__);
+        //g_warning("%s: instance handle is NULL!",__FUNCTION__);
+        qWarning() << "instance handle is NULL!";
 		return FALSE;
 	}
 	int rc = TimePrefsHandler::s_inst->timeoutFunc();
 	
 	if (rc == TIMEOUTFN_RESETCYCLE)
 	{
-		g_warning("%s: Repeating timeout cycle",__FUNCTION__);
+        //g_warning("%s: Repeating timeout cycle",__FUNCTION__);
+        __qMessage("Repeating timeout cycle");
 		return TRUE;
 	}
 	else if (rc == TIMEOUTFN_ENDCYCLE)
 	{
-		g_warning("%s: Ending timeout cycle",__FUNCTION__);
+        //g_warning("%s: Ending timeout cycle",__FUNCTION__);
+        __qMessage("Ending timeout cycle");
 		return FALSE;
 	}
 	
-	g_warning("%s fall through! (rc %d)",__FUNCTION__,rc);
+    //g_warning("%s fall through! (rc %d)",__FUNCTION__,rc);
+    qWarning("fall through! (rc %d)",rc);
 	return TRUE;		///fall through! should never happen. if it does, repeat the cycle
 }
 
@@ -3921,7 +4034,8 @@ void TimePrefsHandler::source_periodic_destroy(gpointer userData)
 	//tear down the timeout source
 	if (TimePrefsHandler::s_inst == NULL) 
 	{
-		g_warning("%s: instance handle is NULL!",__FUNCTION__);
+        //g_warning("%s: instance handle is NULL!",__FUNCTION__);
+        qWarning() << "instance handle is NULL!";
 		return;
 	}
 	TimePrefsHandler::s_inst->timeout_destroy(userData);
@@ -3936,7 +4050,10 @@ void TimePrefsHandler::source_periodic_destroy(gpointer userData)
 
 com.palm.systemservice/time/launchTimeChangeApps
 
-Launch all applications on the timeChangeLaunch list. You can check what's on the list with: \code luna-send -n 1 -f luna://com.palm.systemservice/getPreferences '{"subscribe": false, "keys":["timeChangeLaunch"]}' \endcode
+Launch all applications on the timeChangeLaunch list. You can check what's on the list with:
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/getPreferences '{"subscribe": false, "keys":["timeChangeLaunch"]}'
+\endcode
 
 
 \subsection com_palm_systemservice_time_launch_time_change_apps_syntax Syntax:
@@ -4015,13 +4132,15 @@ static void tzsetWorkaround(const char * newTZ) {
         gchar *fullcmd = g_strdup_printf("%s -sf /usr/share/zoneinfo/%s /etc/localtime", cmdline, newTZ);
         int err = system(fullcmd);
         if(err != 0) {
-            g_warning("Error %d linking zoneinfo file from /usr/share/zoneinfo/%s to /etc/localtime", err, newTZ);
+            //g_warning("Error %d linking zoneinfo file from /usr/share/zoneinfo/%s to /etc/localtime", err, newTZ);
+            qWarning("Error %d linking zoneinfo file from /usr/share/zoneinfo/%s to /etc/localtime", err, newTZ);
         } 
         g_free(cmdline); 
         cmdline = NULL;
         g_free(fullcmd);
     } else {
-        g_warning("Couldn't find ln in PATH to set timezone file");
+        //g_warning("Couldn't find ln in PATH to set timezone file");
+        qWarning("Couldn't find ln in PATH to set timezone file");
     }
 #endif
 }
@@ -4043,7 +4162,8 @@ int TimePrefsHandler::getUTCTimeFromNTP(time_t& adjustedTime)
 	if ( (PrefsDb::instance()->getPref(".sysservice-dbg-time-debugEnable") == "true")
 		&& (PrefsDb::instance()->getPref(".sysservice-dbg-time-ntpBlock") == "true") )
 	{
-		g_warning("%s: !!!!!!!!!!!!!!! USING DEBUG OVERRIDES !!!!!!!!!!!!!!",__FUNCTION__);
+        //g_warning("%s: !!!!!!!!!!!!!!! USING DEBUG OVERRIDES !!!!!!!!!!!!!!",__FUNCTION__);
+        qWarning("!!!!!!!!!!!!!!! USING DEBUG OVERRIDES !!!!!!!!!!!!!!");
 		return -1;
 	}
 	gchar * g_stdoutBuffer = NULL;
@@ -4066,7 +4186,7 @@ int TimePrefsHandler::getUTCTimeFromNTP(time_t& adjustedTime)
     argv[2] = (gchar *)ntpServer.c_str();
     argv[3] = 0;
 
-    g_debug("%s: [NITZ , NTP] running sntp on %s",__FUNCTION__,ntpServer.c_str());
+    qDebug("%s: [NITZ , NTP] running sntp on %s",__FUNCTION__,ntpServer.c_str());
 	GError * gerr = NULL;
 	gint exit_status=0;
 	GSpawnFlags flags = (GSpawnFlags)(G_SPAWN_SEARCH_PATH);
@@ -4105,7 +4225,8 @@ int TimePrefsHandler::getUTCTimeFromNTP(time_t& adjustedTime)
 	if (pFoundStr == NULL) {
 		//the query failed in some way
 		rc = -1;
-		g_warning("%s: Failed in general output parse: raw output was: %s\n",__FUNCTION__,g_stdoutBuffer);
+        //g_warning("%s: Failed in general output parse: raw output was: %s\n",__FUNCTION__,g_stdoutBuffer);
+        qWarning() << "Failed in general output parse: raw output was:" << g_stdoutBuffer;
 		goto Done_getUTCTimeFromNTP;
     }
 
@@ -4122,7 +4243,8 @@ int TimePrefsHandler::getUTCTimeFromNTP(time_t& adjustedTime)
     if (sscanf(pFoundStr,"offset: %lf",&offsetValue) != 1) {
         //parse error...couldn't find the time offset in the string
         rc = -1;
-        g_warning("%s: Failed in specific (offset) output parse: raw output was: %s\n",__FUNCTION__,g_stdoutBuffer);
+        //g_warning("%s: Failed in specific (offset) output parse: raw output was: %s\n",__FUNCTION__,g_stdoutBuffer);
+        qWarning() << "Failed in specific (offset) output parse: raw output was:" << g_stdoutBuffer;
         goto Done_getUTCTimeFromNTP;
     }
 	
@@ -4145,10 +4267,11 @@ Done_getUTCTimeFromNTP:
 	if (g_stderrBuffer)
 		g_free(g_stderrBuffer);
 	if (gerr) {
-		g_warning("TimePrefsHandler::getUTCTimeFromNTP(): error - %s",gerr->message);
+        //g_warning("TimePrefsHandler::getUTCTimeFromNTP(): error - %s",gerr->message);
+        qCritical() << "getUTCTimeFromNTP(): error -" << gerr->message;
 		g_error_free(gerr);
 	}
-	
+
 	return rc;
 }
 
@@ -4168,7 +4291,8 @@ std::list<std::string> TimePrefsHandler::getTimeZonesForOffset(int offset)
 
 void TimePrefsHandler::slotNetworkConnectionStateChanged(bool connected)
 {
-	g_warning("%s: connected: %d", __PRETTY_FUNCTION__, connected);	
+    //g_warning("%s: connected: %d", __PRETTY_FUNCTION__, connected);
+    __qMessage("connected: %d", connected);
 	if (!connected)
 		return;
 
@@ -4181,13 +4305,15 @@ void TimePrefsHandler::slotNetworkConnectionStateChanged(bool connected)
 		timev = 86399; //24 hour default (23h.59m.59s actually)
 
 	time_t currTime = PrvCurrentUpTimeSeconds();
-	g_warning("%s: currTime: %d, lastNtpUpdate: %d, interval: %d",
-			  __PRETTY_FUNCTION__, (int)currTime, (int)m_lastNtpUpdate, timev);
+    //g_warning("%s: currTime: %d, lastNtpUpdate: %d, interval: %d", __PRETTY_FUNCTION__,
+    __qMessage("currTime: %d, lastNtpUpdate: %d, interval: %d",
+           (int)currTime, (int)m_lastNtpUpdate, timev);
 	if ((m_lastNtpUpdate > 0) && (time_t)(m_lastNtpUpdate + timev) > currTime)
 		return;
 
-	g_warning("%s: startBootstrapCycle", __PRETTY_FUNCTION__);	
-	startBootstrapCycle(0);
+    //g_warning("%s: startBootstrapCycle", __PRETTY_FUNCTION__);
+    __qMessage("startBootstrapCycle");
+    startBootstrapCycle(0);
 }
 
 bool TimePrefsHandler::cbTelephonyPlatformQuery(LSHandle* lsHandle, LSMessage *message,
@@ -4234,7 +4360,8 @@ bool TimePrefsHandler::cbTelephonyPlatformQuery(LSHandle* lsHandle, LSMessage *m
         TimePrefsHandler* th = (TimePrefsHandler*) userData;
         th->m_nitzTimeZoneAvailable = timeZoneAvailable;
 
-        g_message("%s: NITZ Time Zone Available: %d", __PRETTY_FUNCTION__, timeZoneAvailable);
+        //g_message("%s: NITZ Time Zone Available: %d", __PRETTY_FUNCTION__, timeZoneAvailable);
+        __qMessage("NITZ Time Zone Available: %d", timeZoneAvailable);
     }
 
     json_object_put(root);

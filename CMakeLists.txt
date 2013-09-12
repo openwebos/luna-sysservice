@@ -57,6 +57,13 @@ webos_add_compiler_flags(ALL ${PBNJSON_CPP_CFLAGS})
 pkg_check_modules(LS2 REQUIRED luna-service2)
 webos_add_compiler_flags(ALL ${LS2_CFLAGS})
 
+if (NOT DEFINED USE_PMLOG OR USE_PMLOG)
+    # -- check for pmLogLib
+    pkg_check_modules(PMLOG REQUIRED PmLogLib>=3)
+    include_directories(${PMLOG_INCLUDE_DIRS})
+   webos_add_compiler_flags(ALL ${PMLOG_CFLAGS_OTHER} -DUSE_PMLOG)
+endif()
+
 pkg_check_modules(Qt5Gui Qt5Gui)
 if (NOT Qt5Gui_FOUND)
     message(STATUS "Using Qt4")
@@ -122,6 +129,7 @@ target_link_libraries(LunaSysService
                       ${LS2_LDFLAGS}
                       ${QT_LDFLAGS}
                       ${URIPARSER_LDFLAGS}
+                      ${PMLOG_LDFLAGS}
                       )
 
 
