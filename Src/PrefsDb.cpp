@@ -39,10 +39,12 @@ const char* PrefsDb::s_prefsPath = "/var/luna/preferences";
 const char* PrefsDb::s_logChannel = "PrefsDb";
 
 #if !defined(DESKTOP)
-const char* PrefsDb::s_mediaPartitionPath = "/media/internal/"; 
+#define MEDIAPARTITIONPATH "/media/internal/"
 #else
-const char* PrefsDb::s_mediaPartitionPath = "/tmp/";
+#define MEDIAPARTITIONPATH "/tmp/webos/"  // note: changed from simply "/tmp/"
 #endif
+
+const char* PrefsDb::s_mediaPartitionPath = MEDIAPARTITIONPATH;
 
 const char* PrefsDb::s_mediaPartitionWallpapersDir = ".wallpapers";
 const char* PrefsDb::s_mediaPartitionWallpaperThumbsDir = ".wallpapers/thumbs";
@@ -50,21 +52,13 @@ const char* PrefsDb::s_mediaPartitionTempDir = ".temp";
 const char* PrefsDb::s_mediaPartitionRingtonesDir = "ringtones";
 
 const char* PrefsDb::s_sysserviceDir = ".sysservice";
-#if !defined(DESKTOP)
-const char* PrefsDb::s_systemTokenFileAndPath = "/media/internal/.sysservice/token";		//keep consistent as: s_mediaPartitionPath + s_sysserviceDir + <filename> (e.g. token)
-#else
-const char* PrefsDb::s_systemTokenFileAndPath = "/tmp/.sysservice/token";
-#endif
+const char* PrefsDb::s_systemTokenFileAndPath = MEDIAPARTITIONPATH ".sysservice/token";
 
 const char* PrefsDb::s_volumeIconFileAndPathSrc = "/usr/lib/luna/system/luna-systemui/images/castle.icns";
 
 const char* PrefsDb::s_volumeIconFile = ".VolumeIcon.icns";
 
-#if !defined(DESKTOP)
-const char* PrefsDb::s_volumeIconFileAndPathDest = "/media/internal/.VolumeIcon.icns";
-#else
-const char* PrefsDb::s_volumeIconFileAndPathDest = "/tmp/.VolumeIcon.icns";
-#endif
+const char* PrefsDb::s_volumeIconFileAndPathDest = MEDIAPARTITIONPATH ".VolumeIcon.icns";
 
 const char* PrefsDb::s_sysDefaultWallpaperKey = ".prefsdb.setting.default.wallpaper";
 const char* PrefsDb::s_sysDefaultRingtoneKey = ".prefsdb.setting.default.ringtone";

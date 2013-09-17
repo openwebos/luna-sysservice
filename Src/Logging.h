@@ -27,12 +27,12 @@ extern "C" {
 #endif
 
 
+
+#if defined(USE_PMLOG) && (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#include "PmLogLib.h"
 void outputQtMessages(QtMsgType type,
                     const QMessageLogContext &context,
                     const QString &msg);
-
-#ifdef USE_PMLOG
-#include "PmLogLib.h"
 #define SYSSERVICELOG_MESSAGE_MAX 500
 inline void sysServiceFmtMsg(char *logMsg, char *fmt, ...)
 {
@@ -52,6 +52,11 @@ extern void sysServiceLogInfo(const char * fileName, guint32 lineNbr,const char*
 } while(0)
 
 #else
+void outputQtMessages(QtMsgType type,
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+                    const QMessageLogContext &context,
+#endif
+                    const QString &msg);
 #define __qMessage(...)  do { g_message(__VA_ARGS__); } while (0)
 
 #endif

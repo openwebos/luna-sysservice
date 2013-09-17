@@ -22,7 +22,7 @@
 #include "Logging.h"
 
 
-#ifdef USE_PMLOG
+#if defined(USE_PMLOG) && (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 
 static const size_t MSGID_LENGTH = 30;
 
@@ -87,13 +87,13 @@ void sysServiceLogInfo(const char * fileName, guint32 lineNbr,const char* funcNa
 
 #else  //USE_PMLOG
 
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 void outputQtMessages(QtMsgType type,
-                    const __qMessageLogContext &context,
+            const QMessageLogContext &context,
                     const QString &msg)
 {
     QByteArray utf_text(msg.toUtf8());
     const char *raw(utf_text.constData());
-
     switch (type) {
         default:
     case QtDebugMsg:
@@ -112,4 +112,29 @@ void outputQtMessages(QtMsgType type,
         abort();
     }
 }
+#else
+void outputQtMessages(QtMsgType type, const char *str) {
+    switch(type)
+    {
+    case QtDebugMsg:
+#ifndef NO_LOGGING
+        g_debug("QDebug: %s", str);
+#endif
+        break;
+    case QtWarningMsg:
+        g_warning("QWarning: %s", str);
+        break;
+    case QtCriticalMsg:
+        g_critical("QCritical: %s", str);
+        break;
+    case QtFatalMsg:
+        g_error("QFatal: %s", str);
+        break;
+    default:
+        g_message("QMessage: %s", str);
+        break;
+    }
+}
+#endif
+
 #endif  // #ifdef USE_PMLOG

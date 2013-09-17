@@ -711,6 +711,9 @@ bool ImageServices::ezResize(const std::string& pathToSourceFile,
                              uint32_t widthFinal, uint32_t heightFinal,
                              std::string& r_errorText)
 {
+    __qMessage("From: [%s], To: [%s], target: {Type: [%s], w:%d, h:%d}",
+            pathToSourceFile.c_str(), pathToDestFile.c_str(), destType, widthFinal, heightFinal);
+
     QImageReader reader(QString::fromStdString(pathToSourceFile));
     if(!reader.canRead()) {
         r_errorText = reader.errorString().toStdString();
@@ -751,6 +754,9 @@ bool ImageServices::convertImage(const std::string& pathToSourceFile,
                                  uint32_t widthFinal,uint32_t heightFinal,
                                  std::string& r_errorText)
 {
+    __qMessage("From: [%s], To: [%s], focus:{x:%f,y:%f}, target: {Type: [%s], w:%d, h:%d}, scale: %f",
+            pathToSourceFile.c_str(), pathToDestFile.c_str(), focusX, focusY, destType, widthFinal, heightFinal, scale);
+
     QImageReader reader(QString::fromStdString(pathToSourceFile));
     if(!reader.canRead()) {
         r_errorText = reader.errorString().toStdString();
@@ -769,6 +775,7 @@ bool ImageServices::convertImage(const std::string& pathToSourceFile,
     //TODO: WARN: strict comparison of float to 0 might fail
     if (qFuzzyCompare(scale, 0.0))
         scale = 1.0;
+    __qMessage("After adjustments: scale: %f, focus:{x:%f,y:%f}", scale, focusX, focusY);
 
     QImage image;
     double prescale;
@@ -779,6 +786,7 @@ bool ImageServices::convertImage(const std::string& pathToSourceFile,
 
     //scale the image as requested...factor in whatever the prescaler did
     scale /= prescale;
+    __qMessage("scale after prescale adjustment: %f, prescale: %f", scale, prescale);
 
     QImage dest(widthFinal, heightFinal, image.format());
     QPainter p (&dest);
@@ -797,6 +805,9 @@ bool ImageServices::convertImage(const std::string& pathToSourceFile,
                                  const std::string& pathToDestFile, const char* destType,
                                        std::string& r_errorText)
 {
+    __qMessage("From: [%s], To: [%s], target: {Type: [%s]}",
+            pathToSourceFile.c_str(), pathToDestFile.c_str(), destType);
+
     QImageReader reader(QString::fromStdString(pathToSourceFile));
     if(!reader.canRead()) {
         r_errorText = reader.errorString().toStdString();
