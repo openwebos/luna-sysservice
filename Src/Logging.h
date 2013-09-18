@@ -52,11 +52,14 @@ extern void sysServiceLogInfo(const char * fileName, guint32 lineNbr,const char*
 } while(0)
 
 #else
-void outputQtMessages(QtMsgType type,
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+void outputQtMessages(QtMsgType type,
                     const QMessageLogContext &context,
-#endif
                     const QString &msg);
+#else
+void outputQtMessages(QtMsgType type, const char *str);
+#endif
+
 #define __qMessage(...)  do { g_message(__VA_ARGS__); } while (0)
 
 #endif
