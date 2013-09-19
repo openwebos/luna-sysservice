@@ -23,6 +23,10 @@
 
 #include <QCoreApplication>
 
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+ #include <QGuiApplication>
+#endif
+
 #include <luna-service2/lunaservice.h>
 
 #include "PrefsDb.h"
@@ -156,10 +160,11 @@ int main(int argc, char ** argv)
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
     qInstallMessageHandler(outputQtMessages);
+    QGuiApplication app(argc, argv);
 #else
     qInstallMsgHandler(outputQtMessages);
-#endif
     QCoreApplication app(argc, argv);
+#endif
 
 	parseCommandlineOptions(argc, argv);
 	setLoglevel(Settings::settings()->m_logLevel.c_str());

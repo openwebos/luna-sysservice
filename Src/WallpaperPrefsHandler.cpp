@@ -692,8 +692,7 @@ bool WallpaperPrefsHandler::convertImage(const std::string& pathToSourceFile,
 		scale = 1.0;
 
 
-    qDebug("convertImage(): parameters: scale = %lf , centerX = %lf , centerY = %lf\n",
-            scale,centerX,centerY);
+    __qMessage("parameters: scale = %lf , centerX = %lf , centerY = %lf\n", scale,centerX,centerY);
 
     // used to scale the file before it is actually read to memory
     double prescale = 1.0;
@@ -704,6 +703,7 @@ bool WallpaperPrefsHandler::convertImage(const std::string& pathToSourceFile,
     }
     //scale the image as requested...factor in whatever the prescale did
     scale /= prescale;
+    __qMessage("scale after prescale adjustment: %f, prescale: %f", scale, prescale);
 
     if (scale != 1.0) {
         qDebug("convertImage(): scaling image\n");
@@ -712,7 +712,7 @@ bool WallpaperPrefsHandler::convertImage(const std::string& pathToSourceFile,
 
     if (!justConvert) {
         //now refocus as requested
-        qDebug("convertImage(): calling clipImageBufferToScreenSizeWithFocus...\n");
+        qDebug("convertImage(): Calling clipImageBufferToScreenSizeWithFocus...");
         image = clipImageToScreenSizeWithFocus(image, image.width() * centerX, image.height() * centerY);
 
         destWidth = SCREEN_WIDTH;
@@ -779,7 +779,6 @@ QImage WallpaperPrefsHandler::clipImageToScreenSize(QImage& image, bool center)
 {
     if (image.width() == SCREEN_WIDTH && image.height() == SCREEN_HEIGHT)
         return image;
-
     QImage result(SCREEN_WIDTH, SCREEN_HEIGHT, image.format());
 
     result.fill(Qt::black);
@@ -819,8 +818,7 @@ QImage WallpaperPrefsHandler::clipImageToScreenSizeWithFocus(QImage& image, int 
     if(focus_y >= image.height())
         focus_y = image.height();
 
-    qDebug("clipImageBufferToScreenSizeWithFocus(): srcImg is ( %d , %d )\n",image.width(),image.height());
-    qDebug("clipImageBufferToScreenSizeWithFocus(): focus is ( %d , %d )\n",focus_x,focus_y);
+    __qMessage("srcImg is ( %d , %d ), focus is ( %d , %d )", image.width(),image.height() ,focus_x,focus_y);
 
     QImage result(SCREEN_WIDTH, SCREEN_HEIGHT, image.format());
 
@@ -864,23 +862,11 @@ int WallpaperPrefsHandler::resizeImage(const std::string& sourceFile,
     p.drawImage(QRect(0,0,destImgW, destImgH), image);
     p.end();
 
-    int quality=-1;
-    // png does not save with quality 100 for some reason...
-    if(QString(format) == "jpeg")
-         quality = 100;
-
     QImageWriter w(QString::fromStdString(destFile), format);
     w.setQuality(100);
     qDebug()<<"saving with quality"<<w.quality()<<format;
-    printf("writing...\n");
     w.write(result);
-    printf("done writing...\n");
     qDebug()<<"writer:"<<w.errorString();
-
-/*    if(!result.save(QString::fromStdString(destFile), format, quality)) {
-        qDebug()<<"error saving"<<QString::fromStdString(destFile) <<"as format"<<format;
-        return -1;
-    }*/
 
     return 0;
 }
@@ -1222,7 +1208,7 @@ Once the image has been converted, the wallpaper is stored in the internal list 
 
 \subsection com_palm_systemservice_wallpaper_import_wallpaper_examples Examples:
 \code
-luna-send -n 1 -f luna://com.palm.systemservice/wallpaper/importWallpaper '{ "src": "/media/internal/.wallpapers/flowers.png" }'
+luna-send -n 1 -f luna://com.palm.systemservice/wallpaper/importWallpaper '{ "target": "/media/internal/.wallpapers/flowers.png" }'
 \endcode
 
 Example response for a succesful call:
@@ -1386,11 +1372,13 @@ Done:
 	json_object_object_add(json, (char*) "returnValue", json_object_new_boolean(success));
 	if (!success) {
 		json_object_object_add(json,(char*) "errorText",json_object_new_string(const_cast<char*>(errorText.c_str())));
+		qWarning() << errorText.c_str();
 	}
 	else {
 		std::string wallpaperFile;
 		std::string wallpaperThumbFile;
 		json_object * inner_json = json_object_new_object();
+		__qMessage("target: %s", input.c_str());
 		WallpaperPrefsHandler::makeLocalPathnamesFromWallpaperName(wallpaperFile,wallpaperThumbFile,wallpaperName);
 		json_object_object_add(inner_json,(char*) "wallpaperName",json_object_new_string(const_cast<char*>(wallpaperName.c_str())));
 		json_object_object_add(inner_json,(char*) "wallpaperFile",json_object_new_string(const_cast<char*>(wallpaperFile.c_str())));
@@ -1629,6 +1617,7 @@ static bool cbConvertImage(LSHandle* lsHandle, LSMessage *message,
 		justConvert=false;
 	}
 
+    __qMessage("Src: %s, Dest: %s, Type: %s", destUrlRep.path.c_str(), srcUrlRep.path.c_str(), destTypeStr.c_str());
 	success = wh->convertImage(
 			srcUrlRep.path,
 			destUrlRep.path,
@@ -1844,7 +1833,7 @@ static bool cbGetWallpaperSpec(LSHandle* lsHandle, LSMessage *message,
     // {"wallpaperName": string, "wallpaperFile": string}
     VALIDATE_SCHEMA_AND_RETURN(lsHandle,
                                message,
-                               SCHEMA_2(REQUIRED(wallpaperName, string), REQUIRED(wallpaperFile, string)));
+                               SCHEMA_2(OPTIONAL(wallpaperName, string), OPTIONAL(wallpaperFile, string)));
 
 	const char* str = LSMessageGetPayload(message);
 	if( !str )
@@ -1905,6 +1894,7 @@ Done:
 		json_object_object_add(inner_json,(char *)"wallpaperFile",json_object_new_string((char*) wallpaperFile.c_str()));
 		json_object_object_add(inner_json,(char *)"wallpaperThumbFile",json_object_new_string((char*) wallpaperThumbFile.c_str()));
 		json_object_object_add(json,(char *)"wallpaper",inner_json);
+		__qMessage("Wallpaper: name: %s, file: %s, thumbfile: %s", wallpaperName.c_str(), wallpaperFile.c_str(), wallpaperThumbFile.c_str());
 	}
 	
 	reply = json_object_to_json_string(json);
@@ -2030,6 +2020,7 @@ static bool cbDeleteWallpaper(LSHandle* lsHandle, LSMessage *message,
 		retVal = wh->deleteWallpaper(wallpaperName);
 		if (!retVal)
 			errorText = std::string("invalid wallpaper name specified (perhaps it doesn't exist in the wallpaper dir");
+		else __qMessage("Wallpaper deleted: %s", wallpaperName.c_str());
 		goto Done;
 	}
 

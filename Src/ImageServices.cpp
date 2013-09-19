@@ -26,6 +26,8 @@
 
 #include "ImageServices.h"
 #include <QtGui/QImageReader>
+#include <QtGui/QImageWriter>
+#include <QtGui/QPaintDevice>
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
 #include <QtCore/QtGlobal>
@@ -739,7 +741,7 @@ bool ImageServices::ezResize(const std::string& pathToSourceFile,
     p.drawImage(QRect(0,0,widthFinal, heightFinal), image);
     p.end();
 //    image = image.scaled(widthFinal, heightFinal, Qt::KeepAspectRatioByExpanding);
-
+    __qMessage("About to save image");
     if(!result.save(QString::fromStdString(pathToDestFile), destType, 100)) {
         r_errorText = "ezResize: failed to save destination file";
         return false;

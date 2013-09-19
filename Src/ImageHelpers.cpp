@@ -15,6 +15,7 @@
  */
 
 #include "ImageHelpers.h"
+#include "Logging.h"
 
 #define HALF_DECIMATION_THRESHOLD_H    1500
 #define QUARTER_DECIMATION_THRESHOLD_H 3000
@@ -36,6 +37,7 @@ bool readImageWithPrescale(QImageReader& reader, QImage& image, double& prescale
 
     if(prescaleFactor != 1.0)
         reader.setScaledSize(QSize(reader.size().width() * prescaleFactor, reader.size().height() * prescaleFactor));
+    __qMessage("prescale: %f", prescaleFactor);
 
     return reader.read(&image);
 }
