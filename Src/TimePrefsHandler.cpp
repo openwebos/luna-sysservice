@@ -3147,6 +3147,13 @@ luna-send -n 1 -f luna://com.palm.systemservice/time/setTimeWithNTP '{}'
 bool TimePrefsHandler::cbSetPeriodicWakeupPowerDResponse(LSHandle* lsHandle, LSMessage *message,
 							void *user_data)
 {
+        LSError lsError;
+        char* reply;
+        LSErrorInit(&lsError);
+        bool retVal;
+        json_object* json;
+        json = json_object_new_object();
+
     // {"returnValue": boolean}
     VALIDATE_SCHEMA_AND_RETURN(lsHandle,
                                message,
@@ -3164,7 +3171,18 @@ bool TimePrefsHandler::cbSetPeriodicWakeupPowerDResponse(LSHandle* lsHandle, LSM
 	if (th == NULL)
 	{
         //g_critical("%s: user_data passed as NULL!",__FUNCTION__);
-        qCritical() << "user_data passed as NULL!";
+                qCritical() << "user_data passed as NULL!";
+                json_object_object_add(json,"returnValue",json_object_new_boolean(false));
+                json_object_object_add(json,"errorText",json_object_new_string("Internal Error"));
+                reply = json_object_to_json_string(json);
+                retVal = LSMessageReply(lsHandle, message, reply, &lsError);
+                g_free(reply);
+                if (!retVal)
+                {
+                        qWarning()<<"LSMessageReply failed,Error:"<<lsError.message;
+                        LSErrorFree (&lsError);
+                        return false;
+                }
 		return true;
 	}
 	json_object * root = json_tokener_parse(str);
@@ -3173,6 +3191,8 @@ bool TimePrefsHandler::cbSetPeriodicWakeupPowerDResponse(LSHandle* lsHandle, LSM
 	if ((!root) || is_error(root)) 
 	{
 		root=0;
+        json_object_object_add(json,"returnValue",json_object_new_boolean(false));
+        json_object_object_add(json,"errorText",json_object_new_string("unable to parse json"));
 		goto Done_cbSetPeriodicWakeupPowerDResponse;
 	}
 
@@ -3204,12 +3224,20 @@ bool TimePrefsHandler::cbSetPeriodicWakeupPowerDResponse(LSHandle* lsHandle, LSM
 		//schedule another
 		th->setPeriodicTimeSetWakeup();
 	}
-	
+        json_object_object_add(json,"returnValue",json_object_new_boolean(true));
 Done_cbSetPeriodicWakeupPowerDResponse:
 
 	if (root)
 		json_object_put(root);
-	
+        reply = json_object_to_json_string(json);
+        retVal = LSMessageReply(lsHandle, message, reply, &lsError);
+        g_free(reply);
+        if (!retVal)
+        {
+                qWarning()<<"LSMessageReply failed, Error"<<lsError.message;
+                LSErrorFree (&lsError);
+                return false;
+        }
 	return true;
 }
 
