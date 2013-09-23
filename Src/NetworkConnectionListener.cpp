@@ -35,7 +35,7 @@ NetworkConnectionListener* NetworkConnectionListener::instance()
 NetworkConnectionListener::NetworkConnectionListener()
 	: m_isInternetConnectionAvailable(false)
 {
-	registerForConnectionManager();	   
+	registerForConnectionManager();
 }
 
 NetworkConnectionListener::~NetworkConnectionListener()
@@ -46,7 +46,7 @@ void NetworkConnectionListener::registerForConnectionManager()
 {
 	LSPalmService* palmService = PrefsFactory::instance()->serviceHandle();
 	LSHandle* service = LSPalmServiceGetPrivateConnection(palmService);
-	
+
 	LSError error;
 	LSErrorInit(&error);
 
@@ -59,17 +59,25 @@ void NetworkConnectionListener::registerForConnectionManager()
         qCritical() << "Failed in calling palm://com.palm.lunabus/signal/registerServerStatus:" << error.message;
 		LSErrorFree(&error);
 		return;
-	}	 
+	}
 }
 
 bool NetworkConnectionListener::connectionManagerConnectCallback(LSHandle *sh, LSMessage *message, void *ctx)
 {
-	return NetworkConnectionListener::instance()->connectionManagerConnectCallback(sh, message);	
+    if (LSMessageIsHubErrorMessage(message)) {  // returns false if message is NULL
+        qWarning("The message received is an error message from the hub");
+        return true;
+    }
+	return NetworkConnectionListener::instance()->connectionManagerConnectCallback(sh, message);
 }
 
 bool NetworkConnectionListener::connectionManagerGetStatusCallback(LSHandle* sh, LSMessage* message, void* ctxt)
 {
-	return NetworkConnectionListener::instance()->connectionManagerGetStatusCallback(sh, message);	  
+    if (LSMessageIsHubErrorMessage(message)) {  // returns false if message is NULL
+        qWarning("The message received is an error message from the hub");
+        return true;
+    }
+	return NetworkConnectionListener::instance()->connectionManagerGetStatusCallback(sh, message);
 }
 
 bool NetworkConnectionListener::connectionManagerConnectCallback(LSHandle *sh, LSMessage *message)
@@ -87,7 +95,7 @@ bool NetworkConnectionListener::connectionManagerConnectCallback(LSHandle *sh, L
 	json_object* json = 0;
 	bool connected = false;
 	
-	label = 0;		
+	label = 0;
 	json = json_tokener_parse(payload);
 	if (!json || is_error(json))
 		return true;

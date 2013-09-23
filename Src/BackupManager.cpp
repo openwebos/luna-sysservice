@@ -250,6 +250,10 @@ bool BackupManager::preBackupCallback( LSHandle* lshandle, LSMessage *message, v
 {
     //g_message ("%s: starting",__FUNCTION__);
     __qMessage ("starting");
+    if (LSMessageIsHubErrorMessage(message)) {  // returns false if message is NULL
+        qWarning("The message received is an error message from the hub");
+        return true;
+    }
     BackupManager* pThis = static_cast<BackupManager*>(user_data);
     if (pThis == NULL)
     {

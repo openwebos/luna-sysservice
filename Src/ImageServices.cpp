@@ -26,8 +26,6 @@
 
 #include "ImageServices.h"
 #include <QtGui/QImageReader>
-#include <QtGui/QImageWriter>
-#include <QtGui/QPaintDevice>
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
 #include <QtCore/QtGlobal>

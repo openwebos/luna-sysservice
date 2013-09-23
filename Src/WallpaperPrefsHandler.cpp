@@ -376,6 +376,7 @@ bool WallpaperPrefsHandler::importWallpaperViaImage2(const std::string& imageFil
 	gchar* folderPath = g_path_get_dirname(imageFilepath.c_str());
 
 	if (!fileName || !folderPath) {
+        qWarning() <<  (fileName ? "Path is missing" : (!folderPath ? "Both path and file name are missing" : "filename is missing"));
 		g_free(fileName);
 		g_free(folderPath);
 		return false;
@@ -432,10 +433,12 @@ bool WallpaperPrefsHandler::importWallpaper(std::string& ret_wallpaperName,const
 	gchar* folderPath = g_path_get_dirname(sourcePathAndFile.c_str());
 
 	if (!fileName || !folderPath) {
+        errorText = (fileName ? "Path is missing" : (!folderPath ? "Both path and file name are missing" : "filename is missing"));
 		g_free(fileName);
 		g_free(folderPath);
 		return false;
 	}
+    __qMessage("path: %s, filename: %s, wallpapername: %s", folderPath, fileName, ret_wallpaperName.c_str());
 
 	std::string file = fileName;
 	std::string path = folderPath;
@@ -661,7 +664,8 @@ bool WallpaperPrefsHandler::importWallpaper_lowMem(std::string& ret_wallpaperNam
 	m_wallpapers.push_back(sourceFile);
 	ret_wallpaperName = sourceFile;
 	//all good...
-	qDebug("importWallpaper(): complete\n");
+    if (result) __qMessage("importWallpaper(): complete: %s", destPathAndFile.c_str());
+    else qWarning() << errorText.c_str() << ":" << destPathAndFile.c_str();
 	return result;
 }
 
@@ -865,9 +869,10 @@ int WallpaperPrefsHandler::resizeImage(const std::string& sourceFile,
     QImageWriter w(QString::fromStdString(destFile), format);
     w.setQuality(100);
     qDebug()<<"saving with quality"<<w.quality()<<format;
-    w.write(result);
-    qDebug()<<"writer:"<<w.errorString();
-
+    if (!w.write(result)) {
+       qCritical()<<"writer:"<<w.errorString();
+       return -1;
+    }
     return 0;
 }
 

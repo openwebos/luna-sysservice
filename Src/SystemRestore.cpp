@@ -689,26 +689,46 @@ int SystemRestore::runtimeConsistencyCheck()
 
 bool SystemRestore::msmAvailCallback(LSHandle* handle, LSMessage* message, void* ctxt)
 {
-	return SystemRestore::instance()->msmAvail(message);    
+    if (LSMessageIsHubErrorMessage(message)) {  // returns false if message is NULL
+        qWarning("The message received is an error message from the hub");
+        return true;
+    }
+	return SystemRestore::instance()->msmAvail(message);
 }
 
 bool SystemRestore::msmProgressCallback(LSHandle* handle, LSMessage* message, void* ctxt)
 {
-	return SystemRestore::instance()->msmProgress(message);        
+    if (LSMessageIsHubErrorMessage(message)) {  // returns false if message is NULL
+        qWarning("The message received is an error message from the hub");
+        return true;
+    }
+	return SystemRestore::instance()->msmProgress(message);
 }
 
 bool SystemRestore::msmEntryCallback(LSHandle* handle, LSMessage* message, void* ctxt)
 {
+    if (LSMessageIsHubErrorMessage(message)) {  // returns false if message is NULL
+        qWarning("The message received is an error message from the hub");
+        return true;
+    }
     return SystemRestore::instance()->msmEntry(message);
 }
 
 bool SystemRestore::msmFsckingCallback(LSHandle* handle, LSMessage* message, void* ctxt)
 {
+    if (LSMessageIsHubErrorMessage(message)) {  // returns false if message is NULL
+        qWarning("The message received is an error message from the hub");
+        return true;
+    }
     return SystemRestore::instance()->msmFscking(message);
 }
 
 bool SystemRestore::msmPartitionAvailCallback(LSHandle* handle, LSMessage* message, void* ctxt)
 {
+    if (LSMessageIsHubErrorMessage(message)) {  // returns false if message is NULL
+        qWarning("The message received is an error message from the hub");
+        return true;
+    }
     return SystemRestore::instance()->msmPartitionAvailable(message);
 }
 
