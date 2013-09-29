@@ -39,6 +39,7 @@
 #include "TimeZoneService.h"
 
 #include "BackupManager.h"
+#include "EraseHandler.h"
 
 #include "Utils.h"
 #include "Settings.h"
@@ -263,6 +264,7 @@ int main(int argc, char ** argv)
 	// Initialize the Prefs Factory
 	PrefsFactory::instance()->setServiceHandle(serviceHandle);
 	BackupManager::instance()->setServiceHandle(serviceHandle);
+    EraseHandler::instance()->setServiceHandle(serviceHandle);
 
 	//init the image service
 	ImageServices * imgSvc = ImageServices::instance(mainLoopObj);

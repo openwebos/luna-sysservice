@@ -61,6 +61,9 @@ std::string toSTLString(const T &arg) {
 	return(out.str());
 }
 
+#define LSREPORT(lse) qCritical( "LS2 Error: %s => %s", (lse).func, (lse).message )
+
+
 char* readFile(const char* filePath);
 
 std::string trimWhitespace(const std::string& s,const std::string& drop = "\r\n\t ");

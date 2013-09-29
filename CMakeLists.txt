@@ -85,7 +85,12 @@ endif (NOT Qt5Gui_FOUND)
 pkg_check_modules(URIPARSER REQUIRED liburiparser)
 webos_add_compiler_flags(ALL ${URIPARSER_CFLAGS})
 
-webos_config_build_doxygen(doc Doxyfile)
+#-- check for NYX
+pkg_check_modules(NYXLIB REQUIRED nyx>=6)
+include_directories(${NYXLIB_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${NYXLIB_CFLAGS_OTHER})
+
+#webos_config_build_doxygen(doc Doxyfile)
 
 # -- no way to disable warn_unused_result right now.
 webos_add_compiler_flags(ALL -g -O3 -Wall -Wno-unused-but-set-variable -Wno-unused-variable -fno-exceptions -fno-rtti -fPIC)
@@ -116,6 +121,7 @@ set(SOURCE_FILES Src/Logging.cpp
     Src/NetworkConnectionListener.cpp 
     Src/JSONUtils.cpp 
     Src/ImageHelpers.cpp
+    Src/EraseHandler.cpp
     )
 add_executable(LunaSysService ${SOURCE_FILES})
 target_link_libraries(LunaSysService 
@@ -131,6 +137,7 @@ target_link_libraries(LunaSysService
                       ${QT_LDFLAGS}
                       ${URIPARSER_LDFLAGS}
                       ${PMLOG_LDFLAGS}
+                      ${NYXLIB_LDFLAGS}
                       )
 
 
