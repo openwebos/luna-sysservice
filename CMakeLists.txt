@@ -93,6 +93,7 @@ webos_add_linker_options(ALL --no-undefined)
 
 # -- add local include paths
 include_directories(include/public)
+include_directories(Inc)
 
 set(SOURCE_FILES Src/Logging.cpp
     Src/LocalePrefsHandler.cpp 
