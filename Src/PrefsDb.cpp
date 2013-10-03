@@ -142,7 +142,6 @@ bool PrefsDb::setPref(const std::string& key, const std::string& value)
 	int ret = sqlite3_exec(m_prefsDb, queryStr, NULL, NULL, NULL);
 
 	if (ret) {
-        //g_warning("PrefsDb::setPref(): Failed to execute query for key %s", key.c_str());
         qWarning("Failed to execute query for key %s", key.c_str());
 
 		sqlite3_free(queryStr);
@@ -151,7 +150,6 @@ bool PrefsDb::setPref(const std::string& key, const std::string& value)
 
 	sqlite3_free(queryStr);
 
-    //g_warning("PrefsDb::setPref(): set ( [%s] , [---, length %d] )",key.c_str(),value.size());
     __qMessage("set ( [%s] , [---, length %d] )", key.c_str(), value.size());
 	return true;    
 }
@@ -181,7 +179,6 @@ std::string PrefsDb::getPref(const std::string& key)
 
 	ret = sqlite3_prepare(m_prefsDb, queryStr, -1, &statement, &tail);
 	if (ret) {
-        //g_warning("PrefsDb::getPref() Failed to prepare sql statement: %s", queryStr);
         qWarning("Failed to prepare sql statement: %s", queryStr);
 		goto Done;
 	}
@@ -228,7 +225,6 @@ bool PrefsDb::getPref(const std::string& key,std::string& r_val)
 
 	ret = sqlite3_prepare(m_prefsDb, queryStr, -1, &statement, &tail);
 	if (ret) {
-        //g_warning("PrefsDb::getPref() Failed to prepare sql statement: %s", queryStr);
         qWarning("Failed to prepare sql statement: %s", queryStr);
 		goto Done;
 	}
@@ -268,7 +264,6 @@ std::map<std::string,std::string> PrefsDb::getAllPrefs()
 
 	ret = sqlite3_prepare(m_prefsDb, query.c_str(), -1, &statement, &tail);
 	if (ret) {
-        //g_warning("PrefsDb::getAllPrefs(): Failed to prepare sql statement");
         qWarning() << "Failed to prepare sql statement";
 		goto Done;
 	}
@@ -306,7 +301,6 @@ int PrefsDb::merge(const std::string& sourceDbFilename,bool overwriteSameKeys)
 		bool sqlOk = runSqlCommand(attachCmd.c_str());
 		if (!sqlOk)
 		{
-            //g_warning("%s: Failed to run ATTACH cmd to attach [%s] to this db",__FUNCTION__,sourceDbFilename.c_str());
             qWarning() << "Failed to run ATTACH cmd to attach [" << sourceDbFilename.c_str() << "] to this db";
 			return 0;
 		}
@@ -314,12 +308,10 @@ int PrefsDb::merge(const std::string& sourceDbFilename,bool overwriteSameKeys)
 		sqlOk = runSqlCommand(mergeCmd.c_str());
 		if (!sqlOk)
 		{
-            //g_warning("%s: Failed to run INSERT command to merge [%s] into this db",__FUNCTION__,sourceDbFilename.c_str());
             qWarning() << "Failed to run INSERT command to merge [" << sourceDbFilename.c_str() << "] into this db";
 		}
 		else
 		{
-            //g_message("%s: successfully merged [%s] into this db",__FUNCTION__,sourceDbFilename.c_str());
             __qMessage("successfully merged [%s] into this db", sourceDbFilename.c_str());
 		}
 
@@ -328,7 +320,6 @@ int PrefsDb::merge(const std::string& sourceDbFilename,bool overwriteSameKeys)
 	}
 	else
 	{
-        //g_warning("%s: Non-destructive merge not yet implemented! Nothing merged",__FUNCTION__);
         qWarning() << "Non-destructive merge not yet implemented! Nothing merged";
 		return 0;
 	}
@@ -346,7 +337,6 @@ int PrefsDb::copyKeys(PrefsDb * p_sourceDb,const std::list<std::string>& keys,bo
 	if (p_sourceDb->m_prefsDb == 0)
 		return 0;
 
-    //g_message("%s: source DB file: [%s] , target DB file: [%s] , overwriteSameKeys = %s", __FUNCTION__,
     __qMessage("source DB file: [%s] , target DB file: [%s] , overwriteSameKeys = %s",
             p_sourceDb->m_dbFilename.c_str(), m_dbFilename.c_str(),(overwriteSameKeys ? "YES" : "NO"));
 	int n=0;
@@ -359,7 +349,6 @@ int PrefsDb::copyKeys(PrefsDb * p_sourceDb,const std::list<std::string>& keys,bo
 			std::string myVal;
 			if (!getPref(*it,myVal) || overwriteSameKeys)
 			{
-                //g_message("%s: copying key,value = ( [%s] , [%s] ) , overwriting [%s] ", __FUNCTION__,
                 __qMessage("copying key,value = ( [%s] , [%s] ) , overwriting [%s] ",
                     (*it).c_str(),val.c_str(),myVal.c_str());
 				setPref(*it,val);
@@ -384,7 +373,6 @@ sqlite3_stmt* PrefsDb::runSqlQuery(const std::string& queryStr)
 
 	ret = sqlite3_prepare(m_prefsDb, queryStr.c_str(), -1, &statement, &tail);
 	if (ret != SQLITE_OK) {
-        //g_warning("PrefsDb::runSql(): Failed to prepare sql statement");
         qWarning("Failed to prepare sql statement");
 		if (statement)
 		{
@@ -408,8 +396,6 @@ bool PrefsDb::runSqlCommand(const std::string& cmdStr)
 
 	ret = sqlite3_exec(m_prefsDb, queryStr, NULL, NULL, &pErrMsg);
 	if (ret) {
-        //g_warning("%s: Failed to execute cmd [%s] - extended error: [%s]",
-                //__FUNCTION__,queryStr,(pErrMsg ? pErrMsg : "<none>"));
         qWarning() << "Failed to execute cmd [" << queryStr << "] - extended error: [" << (pErrMsg ? pErrMsg : "<none>") << "]";
 		rc = false;
 	}
@@ -451,7 +437,6 @@ std::map<std::string, std::string> PrefsDb::getPrefs(const std::list<std::string
 
 	ret = sqlite3_prepare(m_prefsDb, query.c_str(), -1, &statement, &tail);
 	if (ret) {
-        //g_warning("PrefsDb::getPrefs(): Failed to prepare sql statement");
         qWarning() << "Failed to prepare sql statement";
 		goto Done;
 	}
@@ -487,14 +472,12 @@ void PrefsDb::openPrefsDb()
 	
 	int ret = sqlite3_open(m_dbFilename.c_str(), &m_prefsDb);
 	if (ret) {
-        //g_warning("PrefsDb::openPrefsDb(): Failed to open preferences db [%s]",m_dbFilename.c_str());
         qWarning() << "Failed to open preferences db [" << m_dbFilename.c_str() << "]";
 		return;
 	}
 
 	if (!checkTableConsistency()) {
 
-        //g_warning("PrefsDb::openPrefsDb(): Failed to create Preferences table");
         qWarning() << "Failed to create Preferences table";
 		sqlite3_close(m_prefsDb);
 		m_prefsDb = 0;
@@ -506,7 +489,6 @@ void PrefsDb::openPrefsDb()
 					   "(key   TEXT NOT NULL ON CONFLICT FAIL UNIQUE ON CONFLICT REPLACE, "
 					   " value TEXT);", NULL, NULL, NULL);
 	if (ret) {
-        //g_warning("PrefsDb::openPrefsDb(): Failed to create Preferences table");
         qWarning() << "Failed to create Preferences table";
 		sqlite3_close(m_prefsDb);
 		m_prefsDb = 0;
@@ -535,7 +517,6 @@ bool PrefsDb::checkTableConsistency()
 
 	if (!integrityCheckDb())
 	{
-        //g_critical("integrity check failed on prefs db and it cannot be recreated");
         qCritical("integrity check failed on prefs db and it cannot be recreated");
 		return false;
 	}
@@ -543,7 +524,6 @@ bool PrefsDb::checkTableConsistency()
 	query = "SELECT value FROM Preferences WHERE key='databaseVersion'";
 	ret = sqlite3_prepare(m_prefsDb, query.c_str(), -1, &statement, &tail);
 	if (ret) {
-        //g_warning("PrefsDb::checkTableConsistency(): Failed to prepare sql statement: %s (%s)",
         qWarning("Failed to prepare sql statement: %s (%s)",
 					  query.c_str(), sqlite3_errmsg(m_prefsDb));
 		sqlite3_finalize(statement);
@@ -579,7 +559,6 @@ Recreate:
 					   "(key   TEXT NOT NULL ON CONFLICT FAIL UNIQUE ON CONFLICT REPLACE, "
 					   " value TEXT);", NULL, NULL, NULL);
 	if (ret) {
-        //g_warning("PrefsDb::checkTableConsistency(): Failed to create Preferences table");
         qWarning() << "Failed to create Preferences table";
 		return false;
 	}
@@ -587,7 +566,6 @@ Recreate:
 	ret = sqlite3_exec(m_prefsDb, "INSERT INTO Preferences VALUES ('databaseVersion', '1.0')",
 					   NULL, NULL, NULL);
 	if (ret) {
-        //g_warning("PrefsDb::checkTableConsistency(): Failed to create Preferences table");
         qWarning() << "Failed to create Preferences table";
 		return false;
 	}
@@ -614,7 +592,6 @@ bool PrefsDb::integrityCheckDb()
 
 	ret = sqlite3_prepare(m_prefsDb, "PRAGMA integrity_check", -1, &statement, &tail);
 	if (ret) {
-        //g_critical("Failed to prepare sql statement for integrity_check");
         qCritical() << "Failed to prepare sql statement for integrity_check";
 	    goto CorruptDb;
 	}
@@ -631,14 +608,12 @@ bool PrefsDb::integrityCheckDb()
 	if (!integrityOk)
 		goto CorruptDb;
 
-    //g_warning("%s: Integrity check for database passed", __PRETTY_FUNCTION__);
     __qMessage("Integrity check for database passed");
 
 	return true;
 
 CorruptDb:
 
-    //g_critical("%s: integrity check failed. recreating database", __PRETTY_FUNCTION__);
     qCritical() << "integrity check failed. recreating database";
 
 	sqlite3_close(m_prefsDb);
@@ -646,7 +621,6 @@ CorruptDb:
 
 	ret = sqlite3_open_v2 (m_dbFilename.c_str(), &m_prefsDb, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
 	if (ret) {
-        //g_critical("%s: Failed to re-open prefs db at [%s]", __PRETTY_FUNCTION__,m_dbFilename.c_str());
         qCritical() << "Failed to re-open prefs db at [" << m_dbFilename.c_str() << "]";
 		return false;
 	}
@@ -658,7 +632,6 @@ void PrefsDb::synchronizeDefaults() {
 	
 	char* jsonStr = Utils::readFile(s_defaultPrefsFile);
 	if (!jsonStr) {
-        //g_warning("PrefsDb::synchronizeDefaults(): Failed to load default prefs file: %s", s_defaultPrefsFile);
         qWarning() << "Failed to load default prefs file:" << s_defaultPrefsFile;
 		return;
 	}
@@ -672,7 +645,6 @@ void PrefsDb::synchronizeDefaults() {
 	root = json_tokener_parse(jsonStr);
 	if (!root || is_error(root)) {
 		delete [] jsonStr;
-        //g_warning("PrefsDb::synchronizeDefaults(): Failed to parse file contents into json");
         qWarning() << "Failed to parse file contents into json";
 		return;
 	}
@@ -681,7 +653,6 @@ void PrefsDb::synchronizeDefaults() {
 
 	label = json_object_object_get(root, "preferences");
 	if (!label || is_error(label)) {
-        //g_warning("PrefsDb::synchronizeDefaults(): Failed to get preferences entry from file");
         qWarning() << "Failed to get preferences entry from file";
 		json_object_put(root);
 		return;
@@ -704,7 +675,6 @@ void PrefsDb::synchronizeDefaults() {
 					"VALUES ('%s', '%s')",
 					key, json_object_to_json_string(val));
 			if (!queryStr) {
-                //g_warning("PrefsDb::synchronizeDefaults(): Failed to allocate query string for key %s",key);
                 qWarning() << "PrefsDb::synchronizeDefaults(): Failed to allocate query string for key:" << key;
 				continue;
 			}
@@ -713,7 +683,6 @@ void PrefsDb::synchronizeDefaults() {
 			g_free(queryStr);
 
 			if (ret) {
-                //g_warning("PrefsDb::synchronizeDefaults(): Failed to execute query for key %s", key);
                 qWarning() << "Failed to execute query for key:" << key;
 				continue;
 			}
@@ -729,7 +698,6 @@ void PrefsDb::synchronizePlatformDefaults() {
 	
 	char* jsonStr = Utils::readFile(s_defaultPlatformPrefsFile);
 	if (!jsonStr) {
-        //g_warning("PrefsDb::synchronizePlatformDefaults(): Failed to load default platform prefs file: %s", s_defaultPlatformPrefsFile);
         qWarning() << "Failed to load default platform prefs file:" << s_defaultPlatformPrefsFile;
 		return;
 	}
@@ -742,14 +710,12 @@ void PrefsDb::synchronizePlatformDefaults() {
 
 	root = json_tokener_parse(jsonStr);
 	if (!root || is_error(root)) {
-        //g_warning("PrefsDb::synchronizePlatformDefaults(): Failed to parse file contents into json");
         qWarning() << "Failed to parse file contents into json";
 		return;
 	}
 
 	label = json_object_object_get(root, "preferences");
 	if (!label || is_error(label)) {
-        //g_warning("PrefsDb::synchronizePlatformDefaults(): Failed to get preferences entry from file");
         qWarning() << "Failed to get preferences entry from file";
 		json_object_put(root);
 		return;
@@ -772,7 +738,6 @@ void PrefsDb::synchronizePlatformDefaults() {
 					"VALUES ('%s', '%s')",
 					key, json_object_to_json_string(val));
 			if (!queryStr) {
-                //g_warning("PrefsDb::synchronizePlatformDefaults(): Failed to allocate query string for key %s",key);
                 qWarning() << "Failed to allocate query string for key:" << key;
 				continue;
 			}
@@ -781,7 +746,6 @@ void PrefsDb::synchronizePlatformDefaults() {
 			g_free(queryStr);
 
 			if (ret) {
-                //g_warning("PrefsDb::synchronizePlatformDefaults(): Failed to execute query for key %s", key);
                 qWarning() << "Failed to execute query for key:" << key;
 				continue;
 			}
@@ -797,7 +761,6 @@ void PrefsDb::synchronizeCustomerCareInfo() {
 	
 	char* jsonStr = Utils::readFile(s_custCareNumberFile);
 	if (!jsonStr) {
-        //g_warning("PrefsDb::synchronizeCustomerCareInfo(): Failed to load customer care file: %s", s_custCareNumberFile);
         qWarning() << "Failed to load customer care file:" << s_custCareNumberFile;
 		return;
 	}
@@ -809,7 +772,6 @@ void PrefsDb::synchronizeCustomerCareInfo() {
 
 	root = json_tokener_parse(jsonStr);
 	if (!root || is_error(root)) {
-        //g_warning("PrefsDb::synchronizeCustomerCareInfo(): Failed to parse file contents into json");
         qWarning() << "Failed to parse file contents into json";
 		return;
 	}
@@ -831,7 +793,6 @@ void PrefsDb::synchronizeCustomerCareInfo() {
 					"VALUES ('%s', '%s')",
 					key, json_object_to_json_string(val));
 			if (!queryStr) {
-                //g_warning("PrefsDb::synchronizeCustomerCareInfo(): Failed to allocate query string for key %s",key);
                 qWarning() << "Failed to allocate query string for key:" << key;
 				continue;
 			}
@@ -840,7 +801,6 @@ void PrefsDb::synchronizeCustomerCareInfo() {
 			g_free(queryStr);
 
 			if (ret) {
-                //g_warning("PrefsDb::synchronizeCustomerCareInfo(): Failed to execute query for key %s", key);
                 qWarning() << "Failed to execute query for key:" << key;
 				continue;
 			}
@@ -859,7 +819,6 @@ void PrefsDb::updateWithCustomizationPrefOverrides()
 {
 	char* jsonStr = Utils::readFile(s_customizationOverridePrefsFile);
 	if (!jsonStr) {
-        //g_warning("%s: Failed to customization's prefs override file: %s",__FUNCTION__, s_customizationOverridePrefsFile);
         qWarning() << "Failed to customization's prefs override file:" << s_customizationOverridePrefsFile;
 		return;
 	}
@@ -873,7 +832,6 @@ void PrefsDb::updateWithCustomizationPrefOverrides()
 	root = json_tokener_parse(jsonStr);
 	if (!root || is_error(root)) {
 		delete [] jsonStr;
-        //g_warning("%s: Failed to parse file contents into json",__FUNCTION__);
         qWarning() << "Failed to parse file contents into json";
 		return;
 	}
@@ -882,7 +840,6 @@ void PrefsDb::updateWithCustomizationPrefOverrides()
 
 	label = json_object_object_get(root, "preferences");
 	if (!label || is_error(label)) {
-        //g_warning("%s: Failed to get preferences entry from file",__FUNCTION__);
         qWarning() << "Failed to get preferences entry from file";
 		json_object_put(root);
 		return;
@@ -897,7 +854,6 @@ void PrefsDb::updateWithCustomizationPrefOverrides()
 				"VALUES ('%s', '%s')",
 				key, json_object_to_json_string(val));
 		if (!queryStr) {
-            //g_warning("%s: Failed to allocate query string for key %s",__FUNCTION__,key);
             qWarning() << "Failed to allocate query string for key:" << key;
 			continue;
 		}
@@ -906,7 +862,6 @@ void PrefsDb::updateWithCustomizationPrefOverrides()
 		g_free(queryStr);
 
 		if (ret) {
-            //g_warning("%s: Failed to execute query for key %s",__FUNCTION__,key);
             qWarning() << "Failed to execute query for key:" << key;
 			continue;
 		}
@@ -923,7 +878,6 @@ void PrefsDb::loadDefaultPrefs()
 {
 	char* jsonStr = Utils::readFile(s_defaultPrefsFile);
 	if (!jsonStr) {
-        //g_warning("PrefsDb::loadDefaultPrefs(): Failed to load default prefs file: %s", s_defaultPrefsFile);
         qWarning() << "Failed to load default prefs file:" << s_defaultPrefsFile;
 		return;
 	}
@@ -939,14 +893,12 @@ void PrefsDb::loadDefaultPrefs()
 
 	root = json_tokener_parse(jsonStr);
 	if (!root || is_error(root)) {
-        //g_warning("PrefsDb::loadDefaultPrefs(): Failed to parse preferences file contents into json");
         qWarning() << "Failed to parse preferences file contents into json";
 		goto Stage1a;
 	}
 
 	label = json_object_object_get(root, "preferences");
 	if (!label || is_error(label)) {
-        //g_warning("PrefsDb::loadDefaultPrefs(): Failed to get preferences entry from file");
         qWarning() << "Failed to get preferences entry from file";
 		goto Stage1a;
 	}
@@ -957,7 +909,6 @@ void PrefsDb::loadDefaultPrefs()
 										  "VALUES ('%s', '%s')",
 										  key, json_object_to_json_string(val));
 		if (!queryStr) {
-            //g_warning("PrefsDb::loadDefaultPrefs(): Failed to allocate query string for key %s",key);
             qWarning() << "Failed to allocate query string for key:" << key;
 			continue;
 		}
@@ -967,7 +918,6 @@ void PrefsDb::loadDefaultPrefs()
 		queryStr = 0;
 		
 		if (ret) {
-            //g_warning("PrefsDb::loadDefaultPrefs(): Failed to execute query for key %s",key);
             qWarning() << "Failed to execute query for key:" << key;
 			continue;
 		}
@@ -990,7 +940,6 @@ Stage1a:
 			"VALUES ('%s', '%s')",
 			s_DBNEWTOKEN[0],s_DBNEWTOKEN[1]);
 	if (!queryStr) {
-        //g_warning("PrefsDb::loadDefaultPrefs(): Failed to allocate query string");
         qWarning() << "Failed to allocate query string";
 		goto Stage2;
 	}
@@ -999,7 +948,6 @@ Stage1a:
 	g_free(queryStr);
 
 	if (ret) {
-        //g_warning("PrefsDb::loadDefaultPrefs(): Failed to execute query: %s", queryStr);
         qWarning() << "Failed to execute query:" << queryStr;
 	}
 
@@ -1018,14 +966,12 @@ Stage2:
 	//customer care number also...this is in a separate file
 	jsonStr = Utils::readFile(s_custCareNumberFile);
 	if (!jsonStr) {
-        //g_warning("PrefsDb::loadDefaultPrefs(): Failed to load customer care # file: %s", s_custCareNumberFile);
         qWarning() << "Failed to load customer care # file:" << s_custCareNumberFile;
 		goto Stage3;
 	}
 
 	root = json_tokener_parse(jsonStr);
 	if (!root || is_error(root)) {
-        //g_warning("PrefsDb::loadDefaultPrefs(): Failed to parse customer care # file contents into json");
         qWarning() << "Failed to parse customer care # file contents into json";
 		goto Stage3;
 	}
@@ -1042,7 +988,6 @@ Stage2:
 				"VALUES ('%s', '%s')",
 				cc_key, json_object_to_json_string(cc_val));
 		if (!queryStr) {
-            //g_warning("PrefsDb::loadDefaultPrefs(): Failed to allocate query string for key %s",cc_key);
             qWarning() << "Failed to allocate query string for key:" << cc_key;
 			continue;
 		}
@@ -1052,11 +997,9 @@ Stage2:
 		queryStr = 0;
 
 		if (ret) {
-            //g_warning("PrefsDb::loadDefaultPrefs(): Failed to execute query %s",queryStr);
             qWarning() << "Failed to execute query:" << queryStr;
 			continue;
 		}
-        //g_warning("PrefsDb::loadDefaultPrefs(): loaded key %s with value %s",cc_key, json_object_to_json_string(cc_val));
         __qMessage("loaded key %s with value %s",cc_key, json_object_to_json_string(cc_val));
 	}
 
@@ -1076,14 +1019,12 @@ Stage3:
 			"VALUES ('%s', '%s')",
 			s_DEFAULT_uaProf[0],s_DEFAULT_uaProf[1]);
 	if (!queryStr) {
-        //g_warning("PrefsDb::loadDefaultPrefs(): [Stage 3] Failed to allocate query string");
         qWarning() << "[Stage 3] Failed to allocate query string";
 		goto Done;
 	}
 
 	ret = sqlite3_exec(m_prefsDb, queryStr, NULL, NULL, NULL);
 	if (ret) {
-        //g_warning("PrefsDb::loadDefaultPrefs(): [Stage 3] Failed to execute query: %s", queryStr);
         qWarning() << "[Stage 3] Failed to execute query:" << queryStr;
 	}
 	g_free(queryStr);
@@ -1091,14 +1032,12 @@ Stage3:
 			"VALUES ('%s', '%s')",
 			s_DEFAULT_uaString[0],s_DEFAULT_uaString[1]);
 	if (!queryStr) {
-        //g_warning("PrefsDb::loadDefaultPrefs(): [Stage 3] Failed to allocate query string");
         qWarning() << "[Stage 3] Failed to allocate query string";
 		goto Done;
 	}
 
 	ret = sqlite3_exec(m_prefsDb, queryStr, NULL, NULL, NULL);
 	if (ret) {
-        //g_warning("PrefsDb::loadDefaultPrefs(): [Stage 3] Failed to execute query: %s", queryStr);
         qWarning() << "Stage 3] Failed to execute query:" << queryStr;
 	}
 	g_free(queryStr);
@@ -1125,7 +1064,6 @@ void PrefsDb::loadDefaultPlatformPrefs()
 {
 	char* jsonStr = Utils::readFile(s_defaultPlatformPrefsFile);
 	if (!jsonStr) {
-        //g_warning("PrefsDb::loadPlatformDefaultPrefs(): Failed to load platform default prefs file: %s", s_defaultPlatformPrefsFile);
         qWarning() << "Failed to load platform default prefs file:" << s_defaultPlatformPrefsFile;
 		return;
 	}
@@ -1140,14 +1078,12 @@ void PrefsDb::loadDefaultPlatformPrefs()
 
 	root = json_tokener_parse(jsonStr);
 	if (!root || is_error(root)) {
-        //g_warning("PrefsDb::loadPlatformDefaultPrefs(): Failed to parse preferences file contents into json");
         qWarning() << "Failed to parse preferences file contents into json";
 		goto Done;
 	}
 
 	label = json_object_object_get(root, "preferences");
 	if (!label || is_error(label)) {
-        //g_warning("PrefsDb::loadPlatformDefaultPrefs(): Failed to get preferences entry from file");
         qWarning() << "Failed to get preferences entry from file";
 		goto Done;
 	}
@@ -1158,7 +1094,6 @@ void PrefsDb::loadDefaultPlatformPrefs()
 				"VALUES ('%s', '%s')",
 				key, json_object_to_json_string(val));
 		if (!queryStr) {
-            //g_warning("PrefsDb::loadPlatformDefaultPrefs(): Failed to allocate query string for key %s",key);
             qWarning() << "Failed to allocate query string for key:" << key;
 			continue;
 		}
@@ -1167,7 +1102,6 @@ void PrefsDb::loadDefaultPlatformPrefs()
 		g_free(queryStr);
 
 		if (ret) {
-            //g_warning("PrefsDb::loadPlatformDefaultPrefs(): Failed to execute query for key %s",key);
             qWarning() << "Failed to execute query for key:" << key;
 			continue;
 		}

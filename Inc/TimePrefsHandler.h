@@ -70,6 +70,7 @@ public:
 		NITZ_Invalid
 	};
 	
+
 	TimePrefsHandler(LSPalmService* service);
 	
 	virtual std::list<std::string> keys() const;
@@ -269,7 +270,7 @@ private:
 
 	time_t m_lastNtpUpdate;
 
-    bool m_nitzTimeZoneAvailable;
+    bool        m_nitzTimeZoneAvailable;
 };
 
 #endif /* TIMEPREFSHANDLER_H */

@@ -28,7 +28,6 @@ bool JsonMessageParser::parse(const char * callerFunction)
 		pbnjson::JSchemaFragment	genericSchema(SCHEMA_ANY);
 		if (!mParser.parse(mJson, genericSchema))
 			errorText = "Invalid json message";
-        //g_critical("%s: %s '%s'", callerFunction, errorText, mJson);
         qCritical() << "Called by:" << callerFunction << ":" << errorText << "\'" << mJson << "\'";
 		return false;
 	}
@@ -71,7 +70,6 @@ std::string	jsonToString(pbnjson::JValue & reply, const char * schema)
 	std::string serialized;
 	pbnjson::JSchemaFragment responseSchema(schema);
 	if (!serializer.toString(reply, responseSchema, serialized)) {
-        //g_critical("serializeJsonReply: failed to generate json reply");
         qCritical() << "serializeJsonReply: failed to generate json reply";
 		return "{\"returnValue\":false,\"errorText\":\"error: Failed to generate a valid json reply...\"}";
 	}
@@ -143,13 +141,11 @@ bool LSMessageJsonParser::parse(const char * callerFunction, LSHandle * lssender
 
         if (notJson)
         {
-            //g_critical("[Schema Error] : [%s : %s]: The message '%s' sent by '%s' is not a valid json message against schema '%s'", callerFunction, getMsgCategoryMethod().c_str(), payload, getSender().c_str(), mSchemaText);
             qCritical("[Schema Error] : [%s : %s]: The message '%s' sent by '%s' is not a valid json message against schema '%s'", callerFunction, getMsgCategoryMethod().c_str(), payload, getSender().c_str(), mSchemaText);
             errorText = "Not a valid json message";
         }
         else
         {
-            //g_critical("[Schema Error] : [%s :%s]: Could not validate json message '%s' sent by '%s' against schema '%s'.", callerFunction, getMsgCategoryMethod().c_str(), payload, getSender().c_str(), mSchemaText);
             qCritical("[Schema Error] : [%s :%s]: Could not validate json message '%s' sent by '%s' against schema '%s'.", callerFunction, getMsgCategoryMethod().c_str(), payload, getSender().c_str(), mSchemaText);
         }
 
@@ -175,7 +171,6 @@ void CLSError::Print(const char * where, int line, GLogLevelFlags logLevel)
 {
     if (LSErrorIsSet(this))
     {
-        //g_log(G_LOG_DOMAIN, logLevel, "%s(%d): Luna Service Error #%d \"%s\",\nin %s line #%d.", where, line, this->error_code, this->message, this->file, this->line);
         qCritical("%s(%d): Luna Service Error #%d \"%s\",\nin %s line #%d.", where, line, this->error_code, this->message, this->file, this->line);
         LSErrorFree(this);
     }

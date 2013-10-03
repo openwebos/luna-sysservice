@@ -75,7 +75,6 @@ void TimeZoneService::setServiceHandle(LSPalmService* service)
 												s_methods, NULL,
 												NULL, this, &lsError);
     if (!result) {
-        //g_critical("Failed in registering timezone handler method: %s", lsError.message);
         qCritical() << "Failed in registering timezone handler method:" << lsError.message;
     	LSErrorFree(&lsError);
     	return;

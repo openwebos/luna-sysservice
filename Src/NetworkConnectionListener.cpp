@@ -55,7 +55,6 @@ void NetworkConnectionListener::registerForConnectionManager()
 					  connectionManagerConnectCallback, this, NULL,
 					  &error);
 	if (!ret) {
-        //g_critical("Failed in calling palm://com.palm.lunabus/signal/registerServerStatus: %s", error.message);
         qCritical() << "Failed in calling palm://com.palm.lunabus/signal/registerServerStatus:" << error.message;
 		LSErrorFree(&error);
 		return;
@@ -124,7 +123,6 @@ bool NetworkConnectionListener::connectionManagerConnectCallback(LSHandle *sh, L
 				 "{\"subscribe\":true}",
 				 connectionManagerGetStatusCallback, NULL, NULL, &error);
 	if (!ret) {
-        //g_critical("Failed in calling palm://com.palm.connectionmanager/getstatus: %s", error.message);
         qCritical() << "Failed in calling palm://com.palm.connectionmanager/getstatus:" << error.message;
 		LSErrorFree(&error);
 	}

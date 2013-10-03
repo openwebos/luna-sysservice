@@ -668,7 +668,6 @@ bool ImageServices::init(MainLoopProvider * p)
 	// Register the service
 	result = LSRegisterPalmService("com.palm.image", &m_service, &lsError);
 	if (!result) {
-        //g_warning("Failed to register service: com.palm.image");
         qCritical() << "Failed to register service: com.palm.image";
 		return false;
 	}
@@ -677,7 +676,6 @@ bool ImageServices::init(MainLoopProvider * p)
 	m_serviceHandlePrivate = LSPalmServiceGetPrivateConnection(m_service);
 	result = LSGmainAttachPalmService(m_service, m_p_mainloop, &lsError);
 	if (!result) {
-        //g_warning("Failed to attach service handle to main loop");
         qCritical() << "Failed to attach service handle to main loop";
 		LSErrorFree(&lsError);
 		LSErrorInit(&lsError);
@@ -691,7 +689,6 @@ bool ImageServices::init(MainLoopProvider * p)
 	result = LSPalmServiceRegisterCategory( m_service, "/", s_methods_public, s_methods_private,
 			NULL, this, &lsError);
 	if (!result) {
-        //g_warning("Failed in registering handler methods on /: %s", lsError.message);
         qCritical() << "Failed in registering handler methods on /:" << lsError.message;
 		LSErrorFree(&lsError);
 		result = LSUnregisterPalmService(m_service,&lsError);

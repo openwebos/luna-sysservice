@@ -2075,20 +2075,17 @@ void WallpaperPrefsHandler::getScreenDimensions()
 			SCREEN_HEIGHT = varinfo.yres;
 			if (((unsigned int)(SCREEN_WIDTH)) > 65536)
 			{
-                //g_message("%s: fb0 opened, but FBIOGET_VSCREENINFO ioctl gave a bad xres value (%d)",__FUNCTION__, varinfo.xres);
                 qWarning() << "fb0 opened, but FBIOGET_VSCREENINFO ioctl gave a bad xres value (%d)" << varinfo.xres;
 				SCREEN_WIDTH = 320;
 			}
 			if (((unsigned int)(SCREEN_HEIGHT)) > 65536)
 			{
-                //g_message("%s: Failed to open framebuffer device fb0",__FUNCTION__);
                 qWarning() << "Failed to open framebuffer device fb0";
 				SCREEN_HEIGHT = 480;
 			}
 		}
 		else
 		{
-            //g_message("%s: fb0 opened, but couldn't execute FBIOGET_VSCREENINFO ioctl",__FUNCTION__);
             qWarning() << "fb0 opened, but couldn't execute FBIOGET_VSCREENINFO ioctl";
 			SCREEN_WIDTH = 320;
 			SCREEN_HEIGHT = 480;
@@ -2097,7 +2094,6 @@ void WallpaperPrefsHandler::getScreenDimensions()
 	}
 	else
 	{
-        //g_message("%s: Failed to open framebuffer device fb0",__FUNCTION__);
         qWarning() << "Failed to open framebuffer device fb0";
 		SCREEN_WIDTH = 320;
 		SCREEN_HEIGHT = 480;

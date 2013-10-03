@@ -205,7 +205,6 @@ void PrefsFactory::postPrefChangeValueIsCompleteString(const std::string& keyStr
 	//**DEBUG validate for correct UTF-8 output
 	if (!g_utf8_validate (reply.c_str(), -1, NULL))
 	{
-        //g_warning("%s: bus reply fails UTF-8 validity check! [%s]",__FUNCTION__,reply.c_str());
         qWarning() << "bus reply fails UTF-8 validity check! [" << reply.c_str() << "]";
 	}
 	// Find out which handle this subscription needs to go to
@@ -288,11 +287,9 @@ void PrefsFactory::runConsistencyChecksOnAllHandlers()
 		if (handler) {
 			//run the verifier on this key to make sure the pref is correct
 			if (handler->isPrefConsistent() == false) {
-                //g_warning("PrefsFactory::runConsistencyChecksOnAllHandlers() reports inconsistency with key [%s]. Restoring default...",key.c_str());
                 qWarning() << "reports inconsistency with key [" << key.c_str() << "]. Restoring default...";
 				handler->restoreToDefault();		//something is wrong with this...try and restore it
 				std::string restoreVal = PrefsDb::instance()->getPref(key);
-                //g_warning("PrefsFactory::runConsistencyChecksOnAllHandlers() key [%s] restored to value [%s]",key.c_str(),restoreVal.c_str());
                 qWarning() << "key [" << key.c_str() << "] restored to value [" << restoreVal.c_str() << "]";
 				PrefsFactory::instance()->postPrefChange(key,restoreVal);
 			}
@@ -389,26 +386,21 @@ static bool cbSetPreferences(LSHandle* lsHandle, LSMessage* message,
 		PrefsHandler* handler = PrefsFactory::instance()->getPrefsHandler(key);
 		
 		if (handler) {
-            //g_warning("setPreference(): setPref found handler for %s",key);
             __qMessage("found handler for %s", key);
 			if (handler->validate(key, val, callerId)) {
-                //g_warning("setPreference(): setPref handler validated value for key [%s]",key);
                 __qMessage("handler validated value for key [%s]",key);
 				savedPref = PrefsDb::instance()->setPref(key, json_object_to_json_string(val));
 			}
 			else {
-                //g_warning("setPreference(): setPref handler DID NOT validate value for key [%s]",key);
                 qWarning() << "handler DID NOT validate value for key:" << key;
 			}
 		}
 		else {
-            //g_warning("setPreference(): setPref did NOT find handler for %s",key);
             qWarning() << "setPref did NOT find handler for:" << key;
 			
 			//filter out 
 			savedPref = PrefsDb::instance()->setPref(key, json_object_to_json_string(val));
 		}
-        //g_warning("setPreference(): setPref saved? %s",(savedPref ? "true" : "false"));
         __qMessage("setPref saved? %s",(savedPref ? "true" : "false"));
 		
 		if (savedPref) {
@@ -623,7 +615,6 @@ static bool cbGetPreferences(LSHandle* lsHandle, LSMessage* message,
 		 it != resultMap.end(); ++it) {
 		json_object* value = json_tokener_parse((*it).second.c_str());
 		if (value && (!is_error(value))) {
-            //g_warning("getPreferences(): resultMap: [%s] -> [---, length %d]",(*it).first.c_str(),(*it).second.size());
             __qMessage("resultMap: [%s] -> [---, length %d]",(*it).first.c_str(),(*it).second.size());
 			json_object_object_add(replyRoot,
 					(char*) (*it).first.c_str(), value);
