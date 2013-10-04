@@ -1404,6 +1404,23 @@ Done:
 	return true;
 }
 
+// ::isValidOverridePath
+// Will check is the specified path is valid, and if necessary, create it
+
+bool isValidOverridePath(const std::string& path) {
+
+    int isValid=false;
+//do not allow /../ in the path. This will avoid complicated parsing to check for valid paths
+    if (path.find("..") != std::string::npos)
+       isValid=false;
+
+    //mkdir -p the path requested just in case
+    if(g_mkdir_with_parents(path.c_str(), 0755) == 0)
+       isValid=true;
+    else
+       isValid=false;
+    return isValid;
+}
 /*!
 \page com_palm_systemservice_wallpaper
 \n
@@ -1505,7 +1522,7 @@ static bool cbConvertImage(LSHandle* lsHandle, LSMessage *message,
 	std::string sourceFile,destFile;
 	std::string sourceFileEncoded,destFileEncoded;
 	std::string tempDestFileExtn;
-	std::string destTypeStr;
+	std::string destTypeStr,destPath;
 
 	LSErrorInit(&lsError);
 
@@ -1561,8 +1578,12 @@ static bool cbConvertImage(LSHandle* lsHandle, LSMessage *message,
 			goto Done;
 		}
 	}
-	
 
+        destPath=destFile.substr(0, destFile.find_last_of("\\/"));
+        if(isValidOverridePath(destPath) == false){
+           errorText = std::string("Can\'t create destination folder:");
+           goto Done;
+        }
 	//parse URLs
 
 	//urlencode the sourceFile and destFile, because they may contain things UrlRep can't deal with..
