@@ -142,6 +142,7 @@ enum ESchemaErrorOptions
     EIgnore = 0,            /**< Ignore the schema */
     EValidateAndContinue,   /**< Validate, Log the error & Continue */
     EValidateAndError,      /**< Validate, Log the error & Reply with correct schema */
+    EValidateAndErrorAlways, /**< Validate, Log the error & Reply with correct schema (even to empty sender) */
     EDefault                /**< Default, loads the value from settings (luna.conf) file  */
 };
 
@@ -169,6 +170,7 @@ class LSMessageJsonParser
 public:
     // Default using any specific schema. Will simply validate that the message is a valid json message.
     LSMessageJsonParser(LSMessage * message, const char * schema);
+    LSMessageJsonParser(LSMessage * message, const pbnjson::JSchema &schema);
 
     /*!
       * \brief Parse the message using the schema passed in constructor.
@@ -202,7 +204,7 @@ public:
 private:
     LSMessage *                 mMessage;
     const char *                mSchemaText;
-    pbnjson::JSchemaFragment    mSchema;
+    pbnjson::JSchema            mSchema;
     pbnjson::JDomParser         mParser;
 };
 

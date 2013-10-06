@@ -79,6 +79,13 @@ std::string	jsonToString(pbnjson::JValue & reply, const char * schema)
 LSMessageJsonParser::LSMessageJsonParser(LSMessage * message, const char * schema)
     : mMessage(message)
     , mSchemaText(schema)
+    , mSchema(pbnjson::JSchemaFragment(schema))
+{
+}
+
+LSMessageJsonParser::LSMessageJsonParser(LSMessage * message, const pbnjson::JSchema &schema)
+    : mMessage(message)
+    , mSchemaText("(compiled)")
     , mSchema(schema)
 {
 }
@@ -149,9 +156,9 @@ bool LSMessageJsonParser::parse(const char * callerFunction, LSHandle * lssender
             qCritical("[Schema Error] : [%s :%s]: Could not validate json message '%s' sent by '%s' against schema '%s'.", callerFunction, getMsgCategoryMethod().c_str(), payload, getSender().c_str(), mSchemaText);
         }
 
-        if (EValidateAndError == validationOption)
+        if (EValidateAndError == validationOption || EValidateAndErrorAlways == validationOption)
         {
-            if ((lssender) && (!getSender().empty()))
+            if ((lssender) && (validationOption == EValidateAndErrorAlways || !getSender().empty()))
             {
                 std::string reply = createJsonReplyString(false, 1, errorText);
                 CLSError lserror;
