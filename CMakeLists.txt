@@ -106,6 +106,7 @@ set(SOURCE_FILES Src/Logging.cpp
     Src/PrefsDb.cpp 
     Src/PrefsFactory.cpp 
     Src/TimePrefsHandler.cpp 
+    Src/BroadcastTime.cpp
     Src/UrlRep.cpp 
     Src/WallpaperPrefsHandler.cpp 
     Src/BuildInfoHandler.cpp 

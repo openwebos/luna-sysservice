@@ -1438,25 +1438,25 @@ void TimePrefsHandler::systemSetTimeZone(const TimeZoneInfo * pZoneInfo)
     __qMessage("TZ env is now [%s]",getenv("TZ"));
 }
 
-//static
 void TimePrefsHandler::systemSetTime(time_t utc)
 {
 	struct timeval timeVal;
 	timeVal.tv_sec = utc;
 	timeVal.tv_usec = 0;
-    qDebug("%s: settimeofday: %u",__FUNCTION__,(unsigned int)timeVal.tv_sec);
-	int rc=settimeofday(&timeVal, 0);
-    __qMessage("settimeofday %s", ( rc == 0 ? "succeeded" : "failed"));
+    systemSetTime(&timeVal);
 
 }
 
-//static
 void TimePrefsHandler::systemSetTime(struct timeval * pTimeVal)
 {
+    time_t originalTime = time(0);
     qDebug("%s: settimeofday: %u",__FUNCTION__,(unsigned int)pTimeVal->tv_sec);
 	int rc=settimeofday(pTimeVal, 0);
     __qMessage("settimeofday %s", ( rc == 0 ? "succeeded" : "failed"));
-
+    if (rc == 0)
+    {
+        m_broadcastTime.adjust(pTimeVal->tv_sec - originalTime);
+    }
 }
 
 
@@ -3129,7 +3129,7 @@ bool TimePrefsHandler::cbSetPeriodicWakeupPowerDResponse(LSHandle* lsHandle, LSM
 			if (getUTCTimeFromNTP(ntpUtc) == 0)
 			{
 				//ok, got it from NTP...
-				systemSetTime(ntpUtc);
+				th->systemSetTime(ntpUtc);
 				th->m_lastNtpUpdate = PrvCurrentUpTimeSeconds();
 			}
 			else {

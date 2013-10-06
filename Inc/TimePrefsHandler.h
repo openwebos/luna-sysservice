@@ -25,6 +25,7 @@
 
 #include "PrefsHandler.h"
 #include "SignalSlot.h"
+#include "BroadcastTime.h"
 
 #define		DEFAULT_NTP_SERVER	"us.pool.ntp.org"
 
@@ -173,8 +174,8 @@ private:
 	
 	void setTimeZone(const TimeZoneInfo * pZoneInfo);				//this one sets it in the prefs db and then calls systemSetTimeZone
 	void systemSetTimeZone(const TimeZoneInfo * pZoneInfo);			//this one does the OS work to set the timezone
-	static void systemSetTime(time_t utc);
-	static void systemSetTime(struct timeval * pTimeVal);
+	void systemSetTime(time_t utc);
+	void systemSetTime(struct timeval * pTimeVal);
 	static bool jsonUtil_ZoneFromJson(json_object * json,TimeZoneInfo& r_zoneInfo);
 	
 	/// PIECEWISE NITZ HANDLING - (new , 11/2009)
@@ -271,6 +272,8 @@ private:
 	time_t m_lastNtpUpdate;
 
     bool        m_nitzTimeZoneAvailable;
+
+    BroadcastTime m_broadcastTime;
 };
 
 #endif /* TIMEPREFSHANDLER_H */
