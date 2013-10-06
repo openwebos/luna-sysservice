@@ -36,7 +36,7 @@
  */
 BackupManager* BackupManager::s_instance = NULL;
 
-std::string BackupManager::s_backupKeylistFilename = "/etc/palm/sysservice-backupkeys.json";
+std::string BackupManager::s_backupKeylistFilename = WEBOS_INSTALL_WEBOS_SYSCONFDIR "/sysservice-backupkeys.json";
 
 /*!
  * \page com_palm_systemservice_backup Service API com.palm.systemservice/backup/

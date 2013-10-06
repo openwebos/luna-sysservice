@@ -21,7 +21,7 @@ cmake_minimum_required(VERSION 2.8.7)
 project(LunaSysService CXX)
 
 include(webOS/webOS)
-webos_modules_init(1 0 0 QUALIFIER RC3)
+webos_modules_init(1 0 0 QUALIFIER RC6)
 webos_component(2 0 1)
 
 include(FindPkgConfig)
@@ -64,6 +64,11 @@ if (NOT DEFINED USE_PMLOG OR USE_PMLOG)
    webos_add_compiler_flags(ALL ${PMLOG_CFLAGS_OTHER} -DUSE_PMLOG)
 endif()
 
+if (DESKTOP)
+    webos_add_compiler_flags(ALL -DDESKTOP)
+endif()
+
+
 pkg_check_modules(Qt5Gui Qt5Gui)
 if (NOT Qt5Gui_FOUND)
     message(STATUS "Using Qt4")
@@ -99,6 +104,9 @@ webos_add_linker_options(ALL --no-undefined)
 # -- add local include paths
 include_directories(include/public)
 include_directories(Inc)
+
+# -- export cmake WEBOS_INSTALL_* variables as C defines
+webos_include_install_paths()
 
 set(SOURCE_FILES Src/Logging.cpp
     Src/LocalePrefsHandler.cpp 

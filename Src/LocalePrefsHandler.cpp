@@ -22,10 +22,10 @@
 #include "LocalePrefsHandler.h"
 
 static const char* s_logChannel = "LocalePrefsHandler";
-static const char* s_defaultLocaleFile = "/etc/palm/locale.txt";
-static const char* s_custLocaleFile = "/usr/lib/luna/customization/locale.txt";
-static const char* s_defaultRegionFile = "/etc/palm/region.json";
-static const char* s_custRegionFile = "/usr/lib/luna/customization/region.json";
+static const char* s_defaultLocaleFile = WEBOS_INSTALL_WEBOS_SYSCONFDIR "/locale.txt";
+static const char* s_custLocaleFile = WEBOS_INSTALL_SYSMGR_DATADIR "/customization/locale.txt";
+static const char* s_defaultRegionFile = WEBOS_INSTALL_WEBOS_SYSCONFDIR "/region.json";
+static const char* s_custRegionFile = WEBOS_INSTALL_SYSMGR_DATADIR "/customization/region.json";
 
 LocalePrefsHandler::LocalePrefsHandler(LSPalmService* service)
 	: PrefsHandler(service)

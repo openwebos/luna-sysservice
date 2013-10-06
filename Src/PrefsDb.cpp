@@ -28,13 +28,13 @@
 #include "SystemRestore.h"
 
 PrefsDb* PrefsDb::s_instance = 0;
-const char* PrefsDb::s_defaultPrefsFile = "/etc/palm/defaultPreferences.txt";
-const char* PrefsDb::s_defaultPlatformPrefsFile = "/etc/palm/defaultPreferences-platform.txt";
-const char* PrefsDb::s_customizationOverridePrefsFile = "/usr/lib/luna/customization/cust-preferences.txt";
-const char* PrefsDb::s_custCareNumberFile = "/etc/palm/CustomerCareNumber.txt";
-const char* PrefsDb::s_prefsDbPath = "/var/luna/preferences/systemprefs.db";
+const char* PrefsDb::s_defaultPrefsFile = WEBOS_INSTALL_WEBOS_SYSCONFDIR "/defaultPreferences.txt";
+const char* PrefsDb::s_defaultPlatformPrefsFile = WEBOS_INSTALL_WEBOS_SYSCONFDIR "/defaultPreferences-platform.txt";
+const char* PrefsDb::s_customizationOverridePrefsFile = WEBOS_INSTALL_SYSMGR_DATADIR "/customization/cust-preferences.txt";
+const char* PrefsDb::s_custCareNumberFile = WEBOS_INSTALL_WEBOS_SYSCONFDIR "/CustomerCareNumber.txt";
+const char* PrefsDb::s_prefsDbPath = WEBOS_INSTALL_SYSMGR_LOCALSTATEDIR "/preferences/systemprefs.db";
 const char* PrefsDb::s_tempBackupDbFilenameOnly = "systemprefs_backup.db";
-const char* PrefsDb::s_prefsPath = "/var/luna/preferences";
+const char* PrefsDb::s_prefsPath = WEBOS_INSTALL_SYSMGR_LOCALSTATEDIR "/preferences";
 
 const char* PrefsDb::s_logChannel = "PrefsDb";
 
@@ -54,7 +54,7 @@ const char* PrefsDb::s_mediaPartitionRingtonesDir = "ringtones";
 const char* PrefsDb::s_sysserviceDir = ".sysservice";
 const char* PrefsDb::s_systemTokenFileAndPath = MEDIAPARTITIONPATH ".sysservice/token";
 
-const char* PrefsDb::s_volumeIconFileAndPathSrc = "/usr/lib/luna/system/luna-systemui/images/castle.icns";
+const char* PrefsDb::s_volumeIconFileAndPathSrc = WEBOS_INSTALL_SYSMGR_DATADIR "/system/luna-systemui/images/castle.icns";
 
 const char* PrefsDb::s_volumeIconFile = ".VolumeIcon.icns";
 

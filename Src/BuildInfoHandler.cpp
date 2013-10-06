@@ -34,7 +34,7 @@
 
 #include <cjson/json_util.h>
 
-#define		BUILDINFO_FILE			"/etc/palm/palm-customization-info"
+#define		BUILDINFO_FILE			WEBOS_INSTALL_WEBOS_SYSCONFDIR "/palm-customization-info"
 
 std::list<std::string> BuildInfoHandler::s_keys;
 

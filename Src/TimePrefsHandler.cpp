@@ -43,8 +43,8 @@
 #include <cjson/json.h>
 #include <cjson/json_util.h>
 
-static const char*	  s_tzFile	=	"/usr/palm/ext-timezones.json";
-static const char*    s_tzFilePath = "/var/luna/preferences/localtime";
+static const char*	  s_tzFile	=	WEBOS_INSTALL_WEBOS_PREFIX "/ext-timezones.json";
+static const char*    s_tzFilePath = WEBOS_INSTALL_PREFERENCESDIR "/preferences/localtime";
 static const char*    s_zoneInfoFolder = "/usr/share/zoneinfo/";
 static const int      s_sysTimeNotificationThreshold = 3000; // 5 mins
 static const char*    s_logChannel = "TimePrefsHandler";

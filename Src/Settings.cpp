@@ -22,8 +22,8 @@
 
 #include "Utils.h"
 
-static const char* kSettingsFile = "/etc/palm/sysservice.conf";
-static const char* kSettingsFilePlatform = "/etc/palm/sysservice-platform.conf";
+static const char* kSettingsFile = WEBOS_INSTALL_WEBOS_SYSCONFDIR "/sysservice.conf";
+static const char* kSettingsFilePlatform = WEBOS_INSTALL_WEBOS_SYSCONFDIR "/sysservice-platform.conf";
 
 Settings* Settings::s_settings = 0;
 
