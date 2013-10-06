@@ -292,8 +292,11 @@ static void tzsetWorkaround(const char * newTZ) __attribute__((unused));
 static LSMethod s_methods[]  = {
 	{ "setSystemTime",     TimePrefsHandler::cbSetSystemTime },
 	{ "setSystemNetworkTime", TimePrefsHandler::cbSetSystemNetworkTime},
+	{ "setBroadcastTime", TimePrefsHandler::cbSetBroadcastTime },
 	{ "getSystemTime",     TimePrefsHandler::cbGetSystemTime },
 	{ "getSystemTimezoneFile", TimePrefsHandler::cbGetSystemTimezoneFile},
+	{ "getBroadcastTime", TimePrefsHandler::cbGetBroadcastTime },
+	{ "getEffectiveBroadcastTime", TimePrefsHandler::cbGetEffectiveBroadcastTime },
 	{ "setTimeChangeLaunch",	TimePrefsHandler::cbSetTimeChangeLaunch},
 	{ "launchTimeChangeApps", TimePrefsHandler::cbLaunchTimeChangeApps},
 	{ "getNTPTime",			TimePrefsHandler::cbGetNTPTime},

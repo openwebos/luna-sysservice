@@ -91,6 +91,7 @@ public:
 	
 	void setHourFormat(const std::string& formatStr);
 	
+	bool isManualTimeUsed() { return !(m_nitzSetting & NITZ_TimeEnable); }
 	bool isNITZTimeEnabled() { return (m_nitzSetting & NITZ_TimeEnable); }
 	bool isNITZTZEnabled() { return (m_nitzSetting & NITZ_TZEnable) && m_nitzTimeZoneAvailable; }
 	bool isNITZDisabled() { return ((!(m_nitzSetting & NITZ_TimeEnable)) && (!(m_nitzSetting & NITZ_TZEnable))); }
@@ -147,6 +148,15 @@ public:
 	
 	static bool cbServiceStateTracker(LSHandle* lsHandle, LSMessage *message,
 								void *user_data);
+
+    static bool cbSetBroadcastTime(LSHandle* lsHandle, LSMessage *message,
+                                   void *userData);
+
+    static bool cbGetBroadcastTime(LSHandle* lsHandle, LSMessage *message,
+                                   void *userData);
+
+    static bool cbGetEffectiveBroadcastTime(LSHandle* lsHandle, LSMessage *message,
+                                            void *userData);
 	
 	 // timeout for NITZ completion
 	 static gboolean source_periodic(gpointer userData);
