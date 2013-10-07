@@ -699,7 +699,7 @@ bool SystemRestore::msmAvail(LSMessage* message)
     // {"mode-avail": boolean}
     VALIDATE_SCHEMA_AND_RETURN(0,
                                message,
-                               SCHEMA_1(REQUIRED(mode-avail, boolean)));
+                               SCHEMA_2(OPTIONAL(mode-avail, boolean),REQUIRED(returnValue,boolean)));
 
 	const char* str = LSMessageGetPayload( message );
 	if( !str )
@@ -745,7 +745,7 @@ bool SystemRestore::msmProgress(LSMessage* message)
     // {"stage": string}
     VALIDATE_SCHEMA_AND_RETURN(0,
                                message,
-                               SCHEMA_1(REQUIRED(stage, string)));
+                               SCHEMA_2(OPTIONAL(stage, string),REQUIRED(returnValue,boolean)));
 
 	const char* str = LSMessageGetPayload( message );
 	if( !str )
@@ -773,8 +773,7 @@ bool SystemRestore::msmEntry(LSMessage* message)
     // {"new-mode": string}
     VALIDATE_SCHEMA_AND_RETURN(0,
                                message,
-                               SCHEMA_1(REQUIRED(new-mode, string)));
-
+                               SCHEMA_2(OPTIONAL(new-mode, string),REQUIRED(returnValue,boolean)));
 	const char* str = LSMessageGetPayload( message );
 	if( !str )
 		return false;
@@ -813,7 +812,7 @@ bool SystemRestore::msmPartitionAvailable(LSMessage* message)
     // {"mount_point": string, "available": boolean}
     VALIDATE_SCHEMA_AND_RETURN(0,
                                message,
-                               SCHEMA_2(REQUIRED(mount_point, string), REQUIRED(available, boolean)));
+                               SCHEMA_3(OPTIONAL(mount_point, string), OPTIONAL(available, boolean),REQUIRED(returnValue,boolean)));
 
 	std::string mountPoint;
 	bool available=false;

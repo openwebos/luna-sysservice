@@ -3078,7 +3078,7 @@ bool TimePrefsHandler::cbSetPeriodicWakeupPowerDResponse(LSHandle* lsHandle, LSM
     // {"returnValue": boolean}
     VALIDATE_SCHEMA_AND_RETURN(lsHandle,
                                message,
-                               SCHEMA_1(REQUIRED(returnValue, boolean)));
+                               SCHEMA_2(OPTIONAL(key,string),REQUIRED(returnValue, boolean)));
 
 	const char* str = LSMessageGetPayload(message);
 	if( !str ) {
