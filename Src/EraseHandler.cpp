@@ -273,7 +273,7 @@ bool cbEraseDeveloper(LSHandle* pHandle, LSMessage* pMessage, void* pUserData)
         qWarning("The message received is an error message from the hub");
         return true;
     }
-    else return ERASE(pHandle, pMessage, EraseHandler::kEraseDeveloper);
+    else return ERASE(pHandle, pMessage, EraseHandler::kEraseMDeveloper);
 }
 
 /**
