@@ -36,8 +36,21 @@
                 }
 
 namespace {
+    const char *effectiveBroadcastKey = "effectiveBroadcastKey";
     pbnjson::JSchemaFragment schemaGeneric("{}");
     pbnjson::JSchemaFragment schemaEmptyObject(JSON({"additionalProperties": false}));
+    pbnjson::JSchemaFragment schemaSubscribeRequest(JSON({
+        "properties": {
+            "subscribe": {
+                "type": "boolean",
+                "description": "Request additional replies that are sent in
+                                case when next reply can't be predicted",
+                "default": false,
+                "optional": true
+            }
+        },
+        "additionalProperties": false
+    }));
 
     // schema for /time/setBroadcastTime
     pbnjson::JSchemaFragment schemaSetBroadcastTime(JSON(
@@ -67,6 +80,10 @@ namespace {
                 "returnValue": {
                     "type": "boolean",
                     "enum": [true]
+                },
+                "subscribed": {
+                    "type": "boolean",
+                    "optional": true
                 },
                 "utc": {
                     "type": "integer",
@@ -209,12 +226,60 @@ namespace {
         }
     }
 
+    /**
+     * Builds JValue which represents answer to getEffectiveBroadcastTime
+     *
+     * @return false if error met and as result answer contains error info
+     */
+    bool answerEffectiveBroadcastTime(pbnjson::JValue &answer, const TimePrefsHandler &timePrefsHandler,
+                                                               const BroadcastTime &broadcastTime)
+    {
+        time_t adjustedUtc, local;
+        if (timePrefsHandler.isSystemTimeBroadcastEffective())
+        {
+            // just use system local time (set by user)
+            adjustedUtc = time(0);
+            local = toLocal(adjustedUtc);
+        }
+        else
+        {
+            if (!broadcastTime.get(adjustedUtc, local))
+            {
+                qWarning() << "Internal logic error (failed to get broadcast time while it is reported avaialble)";
+                adjustedUtc = time(0);
+                local = toLocal(adjustedUtc);
+            }
+            else
+            {
+                // Broadcast sends correct utc and local time (with correct time-zone).
+                // User may set time-zone in an incorrect value.
+                // So instead of using UTC from broadcast we convert broadcast
+                // local time to UTC according to user time-zone.
+                // That allows clients to construct time object in a natural way
+                // (from UTC).
+                adjustedUtc = toUtc(local);
+            }
+        }
+
+        if (local == (time_t)-1) // invalid time
+        {
+            answer.put("errorCode", int32_t(-1));
+            answer.put("errorText", "Failed to get localtime");
+            return false;
+        }
+
+        answer.put("adjustedUtc", toJValue(adjustedUtc));
+        answer.put("local", toJValue(local));
+        addLocalTime(answer, local);
+        return true;
+    }
 }
 
 bool TimePrefsHandler::cbSetBroadcastTime(LSHandle* handle, LSMessage *message,
                                           void *userData)
 {
-    BroadcastTime &broadcastTime = static_cast<TimePrefsHandler*>(userData)->m_broadcastTime;
+    TimePrefsHandler *timePrefsHandler = static_cast<TimePrefsHandler*>(userData);
+    BroadcastTime &broadcastTime = timePrefsHandler->m_broadcastTime;
 
     LSMessageJsonParser parser(message, schemaSetBroadcastTime);
     if (!parser.parse("cbSetBroadcastTime", handle, EValidateAndErrorAlways)) return true;
@@ -222,6 +287,7 @@ bool TimePrefsHandler::cbSetBroadcastTime(LSHandle* handle, LSMessage *message,
     pbnjson::JValue request = parser.get();
 
     broadcastTime.set(toTimeT(request["utc"]), toTimeT(request["local"]));
+    if (!timePrefsHandler->isManualTimeUsed()) timePrefsHandler->postBroadcastEffectiveTimeChange();
 
     return reply(handle, message, createJsonReply(true));
 }
@@ -255,46 +321,61 @@ bool TimePrefsHandler::cbGetEffectiveBroadcastTime(LSHandle* handle, LSMessage *
     TimePrefsHandler *timePrefsHandler = static_cast<TimePrefsHandler*>(userData);
     BroadcastTime &broadcastTime = timePrefsHandler->m_broadcastTime;
 
-    LSMessageJsonParser parser(message, schemaEmptyObject);
+    LSMessageJsonParser parser(message, schemaSubscribeRequest);
     if (!parser.parse("cbGetEffectiveBroadcastTime", handle, EValidateAndErrorAlways)) return true;
 
-    time_t adjustedUtc, local;
-    if (timePrefsHandler->isSystemTimeBroadcastEffective())
-    {
-        // just use system local time (set by user)
-        adjustedUtc = time(0);
-        local = toLocal(adjustedUtc);
-    }
-    else
-    {
-        if (!broadcastTime.get(adjustedUtc, local))
-        {
-            qWarning() << "Internal logic error (failed to get broadcast time while it is reported avaialble)";
-            adjustedUtc = time(0);
-            local = toLocal(adjustedUtc);
-        }
-        else
-        {
-            // Broadcast sends correct utc and local time (with correct time-zone).
-            // User may set time-zone in an incorrect value.
-            // So instead of using UTC from broadcast we convert broadcast
-            // local time to UTC according to user time-zone.
-            // That allows clients to construct time object in a natural way
-            // (from UTC).
-            adjustedUtc = toUtc(local);
-        }
-    }
-
-    if (local == (time_t)-1) // invalid time
-    {
-        return reply(handle, message, createJsonReply(false, -1, "Failed to get localtime"));
-    }
+    pbnjson::JValue request = parser.get();
 
     pbnjson::JValue answer = pbnjson::Object();
+    if (!answerEffectiveBroadcastTime(answer, *timePrefsHandler, broadcastTime))
+    {
+        // error?
+        answer.put("returnValue", false);
+        return reply(handle, message, answer);
+    }
     answer.put("returnValue", true);
-    answer.put("adjustedUtc", toJValue(adjustedUtc));
-    answer.put("local", toJValue(local));
-    addLocalTime(answer, local);
+
+    // handle subscription
+    if (request["subscribe"].asBool())
+    {
+        LSError lsError;
+        LSErrorInit(&lsError);
+        bool subscribed = LSSubscriptionAdd(handle, effectiveBroadcastKey, message, &lsError);
+        if (!subscribed)
+        {
+            qCritical() << " failed, Error:" << lsError.message;
+        }
+        LSErrorFree(&lsError);
+        answer.put("subscribed", subscribed);
+    }
 
     return reply(handle, message, answer, schemaGetBroadcastTimeReply);
+}
+
+void TimePrefsHandler::postBroadcastEffectiveTimeChange()
+{
+    pbnjson::JValue answer = pbnjson::Object();
+
+    // ignore error (will be reported as one of the reply
+    if (!answerEffectiveBroadcastTime(answer, *this, m_broadcastTime))
+    {
+        qWarning() << "Failed to prepare post answer for getEffectiveBroadcastTime subscription (ignoring)";
+        return;
+    }
+
+    std::string serialized;
+
+    pbnjson::JGenerator serializer(NULL);
+    if (!serializer.toString(answer, schemaGeneric, serialized)) {
+        qCritical() << "JGenerator failed";
+        return;
+    }
+
+    LSError lsError;
+    LSErrorInit(&lsError);
+    if(!LSSubscriptionRespond(m_service, effectiveBroadcastKey, serialized.c_str(), &lsError))
+    {
+        qCritical() << "LSSubscriptionRespond failed, Error:" << lsError.message;
+    }
+    LSErrorFree(&lsError);
 }

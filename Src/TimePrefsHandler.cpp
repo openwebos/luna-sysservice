@@ -404,7 +404,15 @@ void TimePrefsHandler::valueChanged(const std::string& key, json_object* value)
 		else {
 			bval = true;
 		}
+
+        if(isManualTimeUsed() == !bval)
+        {
+            qWarning("value userNetworkTime isn't changed (ignoring)");
+            return;
+        }
+
 		setNITZTimeEnable(bval);
+        postBroadcastEffectiveTimeChange();
 		if (bval)
 		{
 			//kick off an update cycle right now (* see the function for restrictions; It won't do anything in some cases)
@@ -461,6 +469,7 @@ void TimePrefsHandler::valueChanged(const std::string& key, json_object* value)
 			transitionNITZValidState((this->getLastNITZValidity() == TimePrefsHandler::NITZ_Valid),true);
 			
 			postSystemTimeChange();	
+            if (isSystemTimeBroadcastEffective()) postBroadcastEffectiveTimeChange();
 			//launch any apps that wanted to be launched when the time/zone changed
 			launchAppsOnTimeChange();
 		}
@@ -2026,6 +2035,7 @@ bool TimePrefsHandler::cbSetSystemTime(LSHandle* lshandle, LSMessage *message,
 
 	TimePrefsHandler::transitionNITZValidState((th->getLastNITZValidity() & TimePrefsHandler::NITZ_Valid),true);
 	th->postSystemTimeChange();
+    if (th->isSystemTimeBroadcastEffective()) th->postBroadcastEffectiveTimeChange();
 	th->launchAppsOnTimeChange();
 
 Done_cbSetSystemTime:
@@ -2676,6 +2686,7 @@ Done_timeoutFunc:
 		m_immNitzTimeValid = nitzParam._timevalid;
 		m_immNitzZoneValid = (nitzParam._tzvalid && nitzParam._dstvalid);
 		postSystemTimeChange();
+        if (isSystemTimeBroadcastEffective()) postBroadcastEffectiveTimeChange();
 		launchAppsOnTimeChange();
 	}
 	

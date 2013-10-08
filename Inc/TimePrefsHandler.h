@@ -83,6 +83,7 @@ public:
 	bool isValidTimeZoneName(const std::string& tzName);
 	
 	void postSystemTimeChange();
+    void postBroadcastEffectiveTimeChange();
 	void postNitzValidityStatus();
 	void launchAppsOnTimeChange();
 	
