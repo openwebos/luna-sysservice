@@ -16,7 +16,24 @@
 #include "JSONUtils.h"
 #include "TimePrefsHandler.h"
 
-#define JSON(content...) #content
+// double macro extension to pre-process content
+#define STRINGIFY(content...) #content
+#define JSON(content...) STRINGIFY(content)
+
+#define SCHEMA_LOCALTIME { \
+                    "type": "object", \
+                    "description": "Local time in components", \
+                    "optional": true, \
+                    "properties": { \
+                        "year": { "type": "integer", "minimum": 1900 }, \
+                        "month": { "type": "integer", "minimum": 1, "maximum": 12 }, \
+                        "day": { "type": "integer", "minimum": 1, "maximum": 31 }, \
+                        "hour": { "type": "integer", "minimum": 0, "maximum": 23 }, \
+                        "minute": { "type": "integer", "minimum": 0, "maximum": 59 }, \
+                        "second": { "type": "integer", "minimum": 0, "maximum": 59 } \
+                    }, \
+                    "additionalProperties": false \
+                }
 
 namespace {
     pbnjson::JSchemaFragment schemaGeneric("{}");
@@ -64,7 +81,8 @@ namespace {
                 "local": {
                     "type": "integer",
                     "description": "Local time in seconds since epoch"
-                }
+                },
+                "localtime": SCHEMA_LOCALTIME
             },
             "additionalProperties": false
         }
@@ -83,7 +101,8 @@ namespace {
                 "local": {
                     "type": "integer",
                     "description": "Local time in seconds since epoch or user set time"
-                }
+                },
+                "localtime": SCHEMA_LOCALTIME
             },
             "additionalProperties": false
         }
@@ -162,6 +181,34 @@ namespace {
             return static_cast<int64_t>(value);
         }
     }
+    pbnjson::JValue toJValue(struct tm &tmValue)
+    {
+        pbnjson::JValue jValue = pbnjson::Object();
+        jValue.put("year", tmValue.tm_year + 1900);
+        jValue.put("month", tmValue.tm_mon + 1);
+        jValue.put("day", tmValue.tm_mday);
+        jValue.put("hour", tmValue.tm_hour);
+        jValue.put("minute", tmValue.tm_min);
+        jValue.put("second", tmValue.tm_sec);
+        return jValue;
+    }
+
+    void addLocalTime(pbnjson::JValue &root, time_t local)
+    {
+        // gmtime/localtime both takes UTC and returns datetime broken into
+        // components either without TZ or with TZ adjustment
+        // Since we already have adjusted value we use gmtime
+        tm tmLocal;
+        if (!gmtime_r(&local, &tmLocal))
+        {
+            qWarning() << "gmtime() call failed - should never happen";
+        }
+        else
+        {
+            root.put("localtime", toJValue(tmLocal));
+        }
+    }
+
 }
 
 bool TimePrefsHandler::cbSetBroadcastTime(LSHandle* handle, LSMessage *message,
@@ -197,6 +244,7 @@ bool TimePrefsHandler::cbGetBroadcastTime(LSHandle* handle, LSMessage *message,
     answer.put("returnValue", true);
     answer.put("utc", toJValue(utc));
     answer.put("local", toJValue(local));
+    addLocalTime(answer, local);
 
     return reply(handle, message, answer, schemaGetBroadcastTimeReply);
 }
@@ -246,6 +294,7 @@ bool TimePrefsHandler::cbGetEffectiveBroadcastTime(LSHandle* handle, LSMessage *
     answer.put("returnValue", true);
     answer.put("adjustedUtc", toJValue(adjustedUtc));
     answer.put("local", toJValue(local));
+    addLocalTime(answer, local);
 
     return reply(handle, message, answer, schemaGetBroadcastTimeReply);
 }
