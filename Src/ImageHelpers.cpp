@@ -37,7 +37,7 @@ bool readImageWithPrescale(QImageReader& reader, QImage& image, double& prescale
 
     if(prescaleFactor != 1.0)
         reader.setScaledSize(QSize(reader.size().width() * prescaleFactor, reader.size().height() * prescaleFactor));
-    __qMessage("prescale: %f", prescaleFactor);
+    qDebug("prescale: %f", prescaleFactor);
 
     return reader.read(&image);
 }

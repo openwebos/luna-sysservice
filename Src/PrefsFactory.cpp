@@ -386,9 +386,9 @@ static bool cbSetPreferences(LSHandle* lsHandle, LSMessage* message,
 		PrefsHandler* handler = PrefsFactory::instance()->getPrefsHandler(key);
 		
 		if (handler) {
-            __qMessage("found handler for %s", key);
+			PMLOG_TRACE("found handler for %s", key);
 			if (handler->validate(key, val, callerId)) {
-                __qMessage("handler validated value for key [%s]",key);
+ 				qDebug("handler validated value for key [%s]",key);
 				savedPref = PrefsDb::instance()->setPref(key, json_object_to_json_string(val));
 			}
 			else {
@@ -401,7 +401,7 @@ static bool cbSetPreferences(LSHandle* lsHandle, LSMessage* message,
 			//filter out 
 			savedPref = PrefsDb::instance()->setPref(key, json_object_to_json_string(val));
 		}
-        __qMessage("setPref saved? %s",(savedPref ? "true" : "false"));
+		qDebug("setPref saved? %s",(savedPref ? "true" : "false"));
 		
 		if (savedPref) {
 			++savecount;
@@ -615,7 +615,7 @@ static bool cbGetPreferences(LSHandle* lsHandle, LSMessage* message,
 		 it != resultMap.end(); ++it) {
 		json_object* value = json_tokener_parse((*it).second.c_str());
 		if (value && (!is_error(value))) {
-            __qMessage("resultMap: [%s] -> [---, length %d]",(*it).first.c_str(),(*it).second.size());
+			qDebug("resultMap: [%s] -> [---, length %d]",(*it).first.c_str(),(*it).second.size());
 			json_object_object_add(replyRoot,
 					(char*) (*it).first.c_str(), value);
 		}

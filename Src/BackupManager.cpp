@@ -120,7 +120,7 @@ void BackupManager::copyKeysToBackupDb()
 	int fileArrayLength = array_list_length (fileArray);
 	int index = 0;
 
-    __qMessage("fileArrayLength = %d", fileArrayLength);
+	qDebug("fileArrayLength = %d", fileArrayLength);
 
 	for (index = 0; index < fileArrayLength; ++index)
 	{
@@ -133,7 +133,7 @@ void BackupManager::copyKeysToBackupDb()
 
 		const char * ckey = json_object_get_string(obj);
 		std::string key = ( ckey ? ckey : "");
-        __qMessage("array[%d] file: %s",index,key.c_str());
+		PMLOG_TRACE("array[%d] file: %s",index,key.c_str());
 
 		if (key.empty())
 		{
@@ -242,7 +242,7 @@ Example response for a succesful call:
  */
 bool BackupManager::preBackupCallback( LSHandle* lshandle, LSMessage *message, void *user_data)
 {
-    __qMessage ("starting");
+    PMLOG_TRACE("%s:starting",__FUNCTION__);
     if (LSMessageIsHubErrorMessage(message)) {  // returns false if message is NULL
         qWarning("The message received is an error message from the hub");
         return true;
@@ -271,7 +271,7 @@ bool BackupManager::preBackupCallback( LSHandle* lshandle, LSMessage *message, v
         qWarning() << "LScallback didn't have any text in the payload! (returning false)";
     	return false;
     }
-    __qMessage("received %s", str);
+    qDebug("received %s", str);
     json_object* root = json_tokener_parse(str);
     if (!root || is_error(root))
     {
@@ -403,7 +403,7 @@ bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message,
         json_object_object_add (response, "returnValue", json_object_new_boolean(false));
         json_object_object_add (response, "errorText", json_object_new_string("Required Arguments Missing"));
 
-        __qMessage ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
+        qDebug ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
         if (!LSMessageReply (lshandle, message, json_object_to_json_string(response), &lserror )) {
                 qWarning() << "Can't send reply to postRestoreCallback error:" <<lserror.message;
                 LSErrorFree (&lserror);
@@ -422,7 +422,7 @@ bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message,
         json_object_object_add (response, "returnValue", json_object_new_boolean(false));
         json_object_object_add (response, "errorText", json_object_new_string("invalid arguments"));
 
-        __qMessage ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
+        qDebug ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
         if (!LSMessageReply (lshandle, message, json_object_to_json_string(response), &lserror )) {
                 qWarning() << "Can't send reply to postRestoreCallback error:" << lserror.message;
                 LSErrorFree (&lserror);
@@ -445,7 +445,7 @@ bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message,
         json_object_object_add (response, "returnValue", json_object_new_boolean(false));
         json_object_object_add (response, "errorText", json_object_new_string("Required Arguments Missing"));
 
-        __qMessage ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
+        qDebug ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
         if (!LSMessageReply (lshandle, message, json_object_to_json_string(response), &lserror )) {
                 qWarning() << "Can't send reply to postRestoreCallback error:" << lserror.message;
                 LSErrorFree (&lserror);
@@ -462,7 +462,7 @@ bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message,
         json_object_object_add (response, "returnValue", json_object_new_boolean(false));
         json_object_object_add (response, "errorText", json_object_new_string("Required Arguments Missing"));
 
-        __qMessage ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
+        qDebug ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
         if (!LSMessageReply (lshandle, message, json_object_to_json_string(response), &lserror )) {
                 qWarning() <<"Can't send reply to postRestoreCallback error:" << lserror.message;
                 LSErrorFree (&lserror);
@@ -476,7 +476,7 @@ bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message,
     int fileArrayLength = array_list_length (fileArray);
     int index = 0;
 
-    __qMessage("fileArrayLength = %d", fileArrayLength);
+    qDebug("fileArrayLength = %d", fileArrayLength);
 
     for (index = 0; index < fileArrayLength; ++index)
     {
@@ -489,7 +489,7 @@ bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message,
 
     	const char * cpath = json_object_get_string(obj);
     	std::string path = ( cpath ? cpath : "");
-        __qMessage("array[%d] file: %s", index,path.c_str());
+        qDebug("array[%d] file: %s", index,path.c_str());
 
     	if (path.empty())
     	{
@@ -561,7 +561,7 @@ bool BackupManager::sendPreBackupResponse(LSHandle* lshandle, LSMessage *message
 		std::list<std::string>::const_iterator i;
 		for (i = fileList.begin(); i != fileList.end(); ++i) {
 				json_object_array_add (files, json_object_new_string(i->c_str()));
-                __qMessage("added file %s to the backup list", i->c_str());
+				PMLOG_TRACE("added file %s to the backup list", i->c_str());
 		}
 	}
 	else
@@ -574,7 +574,7 @@ bool BackupManager::sendPreBackupResponse(LSHandle* lshandle, LSMessage *message
 	LSError lserror;
 	LSErrorInit(&lserror);
 
-    __qMessage ("Sending response to preBackupCallback: %s", json_object_to_json_string (response));
+	qDebug ("Sending response to preBackupCallback: %s", json_object_to_json_string (response));
 	if (!LSMessageReply (lshandle, message, json_object_to_json_string(response), &lserror )) {
         qWarning() << "Can't send reply to preBackupCallback error:" << lserror.message;
 		LSErrorFree (&lserror);
@@ -594,7 +594,7 @@ bool BackupManager::sendPostRestoreResponse(LSHandle* lshandle, LSMessage *messa
 
 	json_object_object_add (response, "returnValue", json_object_new_boolean(true));
 
-    __qMessage ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
+	qDebug ("Sending response to postRestoreCallback: %s", json_object_to_json_string (response));
 	if (!LSMessageReply (lshandle, message, json_object_to_json_string(response), &lserror )) {
         qWarning() << "Can't send reply to postRestoreCallback error:" << lserror.message;
 		LSErrorFree (&lserror);

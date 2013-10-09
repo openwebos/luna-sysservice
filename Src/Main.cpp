@@ -171,7 +171,7 @@ int main(int argc, char ** argv)
 	setLoglevel(Settings::settings()->m_logLevel.c_str());
 
 	g_log_set_default_handler(logFilter, NULL);
-    __qMessage("Started");
+	PMLOG_TRACE("%s:Started",__FUNCTION__);
 
 	SystemRestore::createSpecialDirectories();
 	

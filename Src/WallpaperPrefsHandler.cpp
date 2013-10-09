@@ -214,13 +214,13 @@ json_object* WallpaperPrefsHandler::valuesForKey(const std::string& key)
 void WallpaperPrefsHandler::init()
 {
     //luna_log(s_logChannel,"WallpaperPrefsHandler::init()");
-    __qMessage("start");
+	PMLOG_TRACE("%s:start",__FUNCTION__);
 	bool result;
 	LSError lsError;
 	LSErrorInit(&lsError);
 
 	getScreenDimensions();
-    __qMessage("Screen Width set to %d , Screen Height set to %d",SCREEN_WIDTH,SCREEN_HEIGHT);
+	qDebug("Screen Width set to %d , Screen Height set to %d",SCREEN_WIDTH,SCREEN_HEIGHT);
 	s_wallpaperDir = std::string(PrefsDb::s_mediaPartitionPath) + std::string(PrefsDb::s_mediaPartitionWallpapersDir);
 	s_wallpaperThumbsDir = std::string(PrefsDb::s_mediaPartitionPath) + std::string(PrefsDb::s_mediaPartitionWallpaperThumbsDir);
 	
@@ -312,7 +312,7 @@ static std::string runImage2Binary(json_object * p_jsonRequestObject)
 	argv[3] = NULL;
 
 	//g_warning("%s: executing: %s %s %s",__FUNCTION__,argv[0],argv[1],argv[2]);
-    __qMessage(" executing: %s %s %s",argv[0],argv[1],argv[2]);
+	qDebug(" executing: %s %s %s",argv[0],argv[1],argv[2]);
 
 	gboolean resultStatus = g_spawn_sync(NULL,
 			argv,
@@ -418,7 +418,7 @@ bool WallpaperPrefsHandler::importWallpaperViaImage2(const std::string& imageFil
 	std::string result = runImage2Binary(requestObject);
 
 	//g_message("%s: result: %s",__FUNCTION__,(result.empty() ? "(NO OUTPUT)" : result.c_str()));
-    __qMessage("result: %s", (result.empty() ? "(NO OUTPUT)" : result.c_str()));
+	qDebug("result: %s", (result.empty() ? "(NO OUTPUT)" : result.c_str()));
 
 	return false;
 }
@@ -438,7 +438,7 @@ bool WallpaperPrefsHandler::importWallpaper(std::string& ret_wallpaperName,const
 		g_free(folderPath);
 		return false;
 	}
-    __qMessage("path: %s, filename: %s, wallpapername: %s", folderPath, fileName, ret_wallpaperName.c_str());
+	qDebug("importWallpaper() params are path: %s, filename: %s, wallpapername: %s", folderPath, fileName, ret_wallpaperName.c_str());
 
 	std::string file = fileName;
 	std::string path = folderPath;
@@ -664,7 +664,7 @@ bool WallpaperPrefsHandler::importWallpaper_lowMem(std::string& ret_wallpaperNam
 	m_wallpapers.push_back(sourceFile);
 	ret_wallpaperName = sourceFile;
 	//all good...
-    if (result) __qMessage("importWallpaper(): complete: %s", destPathAndFile.c_str());
+    if (result) qDebug("importWallpaper(): complete: %s", destPathAndFile.c_str());
     else qWarning() << errorText.c_str() << ":" << destPathAndFile.c_str();
 	return result;
 }
@@ -696,7 +696,7 @@ bool WallpaperPrefsHandler::convertImage(const std::string& pathToSourceFile,
 		scale = 1.0;
 
 
-    __qMessage("parameters: scale = %lf , centerX = %lf , centerY = %lf\n", scale,centerX,centerY);
+    qDebug("convertImage parameters: scale = %lf , centerX = %lf , centerY = %lf\n", scale,centerX,centerY);
 
     // used to scale the file before it is actually read to memory
     double prescale = 1.0;
@@ -707,7 +707,7 @@ bool WallpaperPrefsHandler::convertImage(const std::string& pathToSourceFile,
     }
     //scale the image as requested...factor in whatever the prescale did
     scale /= prescale;
-    __qMessage("scale after prescale adjustment: %f, prescale: %f", scale, prescale);
+    qDebug("convertImage(): scale after prescale adjustment: %f, prescale: %f", scale, prescale);
 
     if (scale != 1.0) {
         qDebug("convertImage(): scaling image\n");
@@ -822,7 +822,7 @@ QImage WallpaperPrefsHandler::clipImageToScreenSizeWithFocus(QImage& image, int 
     if(focus_y >= image.height())
         focus_y = image.height();
 
-    __qMessage("srcImg is ( %d , %d ), focus is ( %d , %d )", image.width(),image.height() ,focus_x,focus_y);
+    qDebug("clipImageToScreenSizeWithFocus(): srcImg is ( %d , %d ), focus is ( %d , %d )", image.width(),image.height() ,focus_x,focus_y);
 
     QImage result(SCREEN_WIDTH, SCREEN_HEIGHT, image.format());
 
@@ -1383,7 +1383,7 @@ Done:
 		std::string wallpaperFile;
 		std::string wallpaperThumbFile;
 		json_object * inner_json = json_object_new_object();
-		__qMessage("target: %s", input.c_str());
+		qDebug("target: %s", input.c_str());
 		WallpaperPrefsHandler::makeLocalPathnamesFromWallpaperName(wallpaperFile,wallpaperThumbFile,wallpaperName);
 		json_object_object_add(inner_json,(char*) "wallpaperName",json_object_new_string(const_cast<char*>(wallpaperName.c_str())));
 		json_object_object_add(inner_json,(char*) "wallpaperFile",json_object_new_string(const_cast<char*>(wallpaperFile.c_str())));
@@ -1643,7 +1643,7 @@ static bool cbConvertImage(LSHandle* lsHandle, LSMessage *message,
 		justConvert=false;
 	}
 
-    __qMessage("Src: %s, Dest: %s, Type: %s", destUrlRep.path.c_str(), srcUrlRep.path.c_str(), destTypeStr.c_str());
+	qDebug("convertImage() param Info are Src: %s, Dest: %s, Type: %s", destUrlRep.path.c_str(), srcUrlRep.path.c_str(), destTypeStr.c_str());
 	success = wh->convertImage(
 			srcUrlRep.path,
 			destUrlRep.path,
@@ -1920,7 +1920,7 @@ Done:
 		json_object_object_add(inner_json,(char *)"wallpaperFile",json_object_new_string((char*) wallpaperFile.c_str()));
 		json_object_object_add(inner_json,(char *)"wallpaperThumbFile",json_object_new_string((char*) wallpaperThumbFile.c_str()));
 		json_object_object_add(json,(char *)"wallpaper",inner_json);
-		__qMessage("Wallpaper: name: %s, file: %s, thumbfile: %s", wallpaperName.c_str(), wallpaperFile.c_str(), wallpaperThumbFile.c_str());
+		qDebug("Wallpaper specifications are: Name: %s, file: %s, thumbfile: %s", wallpaperName.c_str(), wallpaperFile.c_str(), wallpaperThumbFile.c_str());
 	}
 	
 	reply = json_object_to_json_string(json);
@@ -2046,7 +2046,7 @@ static bool cbDeleteWallpaper(LSHandle* lsHandle, LSMessage *message,
 		retVal = wh->deleteWallpaper(wallpaperName);
 		if (!retVal)
 			errorText = std::string("invalid wallpaper name specified (perhaps it doesn't exist in the wallpaper dir");
-		else __qMessage("Wallpaper deleted: %s", wallpaperName.c_str());
+		else qDebug("Wallpaper deleted: %s", wallpaperName.c_str());
 		goto Done;
 	}
 

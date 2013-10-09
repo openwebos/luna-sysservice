@@ -376,7 +376,7 @@ bool SystemRestore::isRingtoneSettingConsistent()
 
 	ringToneFileAndPath = json_object_get_string(label);
 	
-    __qMessage("checking [%s]...",ringToneFileAndPath.c_str());
+	qDebug("checking [%s]...",ringToneFileAndPath.c_str());
 	//check to see if file exists
 	if (Utils::doesExistOnFilesystem(ringToneFileAndPath.c_str())) {
 		if (Utils::filesizeOnFilesystem(ringToneFileAndPath.c_str()) > 0)			//TODO: a better check for corruption; see wallpaper consist. checking
@@ -425,7 +425,7 @@ bool SystemRestore::isWallpaperSettingConsistent()
 
 	wallpaperFileAndPath = json_object_get_string(label);
 
-    __qMessage("checking [%s]...",wallpaperFileAndPath.c_str());
+	qDebug("checking [%s]...",wallpaperFileAndPath.c_str());
 	//check to see if file exists
 
     {
@@ -552,7 +552,7 @@ int SystemRestore::createSpecialDirectories()
 int SystemRestore::startupConsistencyCheck() 
 {
 
-    __qMessage("started");
+	PMLOG_TRACE("%s:started",__FUNCTION__);
 	// -- run startup tests to determine the state of the device
 
 	if (Utils::doesExistOnFilesystem(PrefsDb::s_systemTokenFileAndPath) == false) {
@@ -579,7 +579,7 @@ int SystemRestore::startupConsistencyCheck()
 	}
 	else {
 		
-        __qMessage("running - checking wallpaper and ringtone consistency");
+		PMLOG_TRACE("running - checking wallpaper and ringtone consistency");
 		//check consistency of wallpaper setting
 		if (!SystemRestore::instance()->isWallpaperSettingConsistent()) {
 			//run restore on wallpaper
@@ -593,7 +593,7 @@ int SystemRestore::startupConsistencyCheck()
 
 	//check the media icon file
 	if (Utils::filesizeOnFilesystem(PrefsDb::s_volumeIconFileAndPathDest) == 0) {
-        __qMessage("running - restoring volume icon file");
+		PMLOG_TRACE("running - restoring volume icon file");
 		//restore it
 		Utils::fileCopy(PrefsDb::s_volumeIconFileAndPathSrc,PrefsDb::s_volumeIconFileAndPathDest);
 	}
@@ -612,20 +612,20 @@ int SystemRestore::startupConsistencyCheck()
 //	g_warning("SystemRestore::startupConsistencyCheck() running - [%s] returned %d",cmdline.c_str(),exitCode);
 //#endif
 
-    __qMessage("finished");
+	PMLOG_TRACE("%s:finished",__FUNCTION__);
 	return 1;
 }
 
 //static
 int SystemRestore::runtimeConsistencyCheck() 
 {
-    __qMessage("started");
+	PMLOG_TRACE("%s:started",__FUNCTION__);
 	
 	PrefsFactory::instance()->runConsistencyChecksOnAllHandlers();
 	
 	//check the media icon file
 	if (Utils::filesizeOnFilesystem(PrefsDb::s_volumeIconFileAndPathDest) == 0) {
-        __qMessage("running - restoring volume icon file");
+	PMLOG_TRACE("running - restoring volume icon file");
 		//restore it
 		Utils::fileCopy(PrefsDb::s_volumeIconFileAndPathSrc,PrefsDb::s_volumeIconFileAndPathDest);
 	}
@@ -644,7 +644,7 @@ int SystemRestore::runtimeConsistencyCheck()
 //	g_warning("SystemRestore::runtimeConsistencyCheck() running - [%s] returned %d",cmdline.c_str(),exitCode);
 //#endif
 
-    __qMessage("finished");
+	PMLOG_TRACE("%s:finished",__FUNCTION__);
 	return 1;
 }
 
@@ -716,7 +716,7 @@ bool SystemRestore::msmAvail(LSMessage* message)
 	}
 
 	bool available = json_object_get_boolean(modeAvail);
-    __qMessage("msmAvail(): MSM available: %s",( available == TRUE) ? "true" : "false");
+	qDebug("msmAvail(): MSM available: %s",( available == TRUE) ? "true" : "false");
 
 	//attrib it all for good measure  ... necessary because attrib-ing at boot doesn't always work, storaged sometimes lies about partition available
 	//			...so try it again right before the user can go into storage mode and see the hidden files anyways
@@ -761,7 +761,7 @@ bool SystemRestore::msmProgress(LSMessage* message)
 		return false;
 	}
 
-    __qMessage("msmProgress(): MSM stage: [%s]", json_object_get_string(stage));
+	qDebug("msmProgress(): MSM stage: [%s]", json_object_get_string(stage));
 	
 	json_object_put( payload );
 	
@@ -794,7 +794,7 @@ bool SystemRestore::msmEntry(LSMessage* message)
 		}
 	}		
 
-    __qMessage("msmEntry(): MSM mode: [%s]",modeStr.c_str());
+	qDebug("msmEntry(): MSM mode: [%s]",modeStr.c_str());
 	
 	json_object_put(payload );
 
@@ -803,7 +803,7 @@ bool SystemRestore::msmEntry(LSMessage* message)
 
 bool SystemRestore::msmFscking(LSMessage* message)
 {
-    __qMessage("msmFscking()");
+	PMLOG_TRACE("msmFscking()");
 	return true;
 }
 
@@ -816,7 +816,7 @@ bool SystemRestore::msmPartitionAvailable(LSMessage* message)
 
 	std::string mountPoint;
 	bool available=false;
-    __qMessage("msmPartitionAvailable(): signaled");
+	PMLOG_TRACE("%s: signaled",__FUNCTION__);
 	
 	const char* str = LSMessageGetPayload( message );
 	if( !str )
@@ -837,7 +837,7 @@ bool SystemRestore::msmPartitionAvailable(LSMessage* message)
 	if (label && (!is_error(label)))
 		available = json_object_get_boolean(label);
 	
-    __qMessage("msmPartitionAvailable(): mount point: [%s] , available: %s",mountPoint.c_str(),(available ? "true" : "false"));
+	qDebug("msmPartitionAvailable(): mount point: [%s] , available: %s",mountPoint.c_str(),(available ? "true" : "false"));
 			
 	if (available && (mountPoint == "/media/internal")) {
 		SystemRestore::createSpecialDirectories();

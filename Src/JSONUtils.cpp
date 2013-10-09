@@ -110,14 +110,14 @@ std::string LSMessageJsonParser::getSender()
     std::string strSender = "";
 
     if (mMessage) {
-        __qMessage("About to call LSMessageGetSenderServiceName()...");
+        qDebug("About to call LSMessageGetSenderServiceName()...");
         const char * sender = LSMessageGetSenderServiceName(mMessage);
 
         if (sender && *sender) {
-            __qMessage("About to call LSMessageGetSender()...");
+            qDebug("About to call LSMessageGetSender()...");
             if (LSMessageGetSender(mMessage)) {
                 strSender = std::string(LSMessageGetSender(mMessage));
-                __qMessage("sender: %s", strSender.c_str());
+                qDebug("sender: %s", strSender.c_str());
             }
         }
     }

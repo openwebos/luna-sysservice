@@ -100,6 +100,8 @@ webos_add_compiler_flags(ALL ${NYXLIB_CFLAGS_OTHER})
 # -- no way to disable warn_unused_result right now.
 webos_add_compiler_flags(ALL -g -O3 -Wall -Wno-unused-but-set-variable -Wno-unused-variable -fno-exceptions -fno-rtti -fPIC)
 webos_add_linker_options(ALL --no-undefined)
+#Uncomment following line to see Trace logs
+#add_definitions(-DPMLOG_TRACES_ENABLED -DPMLOG_TRACE_COMPONENT="LunaSysService")
 
 # -- add local include paths
 include_directories(include/public)

@@ -150,7 +150,7 @@ bool PrefsDb::setPref(const std::string& key, const std::string& value)
 
 	sqlite3_free(queryStr);
 
-    __qMessage("set ( [%s] , [---, length %d] )", key.c_str(), value.size());
+	qDebug("set ( [%s] , [---, length %d] )", key.c_str(), value.size());
 	return true;    
 }
 
@@ -312,7 +312,7 @@ int PrefsDb::merge(const std::string& sourceDbFilename,bool overwriteSameKeys)
 		}
 		else
 		{
-            __qMessage("successfully merged [%s] into this db", sourceDbFilename.c_str());
+            qDebug("successfully merged [%s] into this db", sourceDbFilename.c_str());
 		}
 
 		closePrefsDb();
@@ -337,7 +337,7 @@ int PrefsDb::copyKeys(PrefsDb * p_sourceDb,const std::list<std::string>& keys,bo
 	if (p_sourceDb->m_prefsDb == 0)
 		return 0;
 
-    __qMessage("source DB file: [%s] , target DB file: [%s] , overwriteSameKeys = %s",
+	qDebug("source DB file: [%s] , target DB file: [%s] , overwriteSameKeys = %s",
             p_sourceDb->m_dbFilename.c_str(), m_dbFilename.c_str(),(overwriteSameKeys ? "YES" : "NO"));
 	int n=0;
 	for (std::list<std::string>::const_iterator it = keys.begin();
@@ -349,7 +349,7 @@ int PrefsDb::copyKeys(PrefsDb * p_sourceDb,const std::list<std::string>& keys,bo
 			std::string myVal;
 			if (!getPref(*it,myVal) || overwriteSameKeys)
 			{
-                __qMessage("copying key,value = ( [%s] , [%s] ) , overwriting [%s] ",
+                PMLOG_TRACE("copying key,value = ( [%s] , [%s] ) , overwriting [%s] ",
                     (*it).c_str(),val.c_str(),myVal.c_str());
 				setPref(*it,val);
 				++n;
@@ -608,7 +608,7 @@ bool PrefsDb::integrityCheckDb()
 	if (!integrityOk)
 		goto CorruptDb;
 
-    __qMessage("Integrity check for database passed");
+	qDebug("Integrity check for database passed");
 
 	return true;
 
@@ -1000,7 +1000,7 @@ Stage2:
             qWarning() << "Failed to execute query:" << queryStr;
 			continue;
 		}
-        __qMessage("loaded key %s with value %s",cc_key, json_object_to_json_string(cc_val));
+        qDebug("loaded key %s with value %s",cc_key, json_object_to_json_string(cc_val));
 	}
 
 Stage3:

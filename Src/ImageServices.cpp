@@ -708,7 +708,7 @@ bool ImageServices::ezResize(const std::string& pathToSourceFile,
                              uint32_t widthFinal, uint32_t heightFinal,
                              std::string& r_errorText)
 {
-    __qMessage("From: [%s], To: [%s], target: {Type: [%s], w:%d, h:%d}",
+    qDebug("From: [%s], To: [%s], target: {Type: [%s], w:%d, h:%d}",
             pathToSourceFile.c_str(), pathToDestFile.c_str(), destType, widthFinal, heightFinal);
 
     QImageReader reader(QString::fromStdString(pathToSourceFile));
@@ -736,7 +736,7 @@ bool ImageServices::ezResize(const std::string& pathToSourceFile,
     p.drawImage(QRect(0,0,widthFinal, heightFinal), image);
     p.end();
 //    image = image.scaled(widthFinal, heightFinal, Qt::KeepAspectRatioByExpanding);
-    __qMessage("About to save image");
+    PMLOG_TRACE("About to save image");
     if(!result.save(QString::fromStdString(pathToDestFile), destType, 100)) {
         r_errorText = "ezResize: failed to save destination file";
         return false;
@@ -751,7 +751,7 @@ bool ImageServices::convertImage(const std::string& pathToSourceFile,
                                  uint32_t widthFinal,uint32_t heightFinal,
                                  std::string& r_errorText)
 {
-    __qMessage("From: [%s], To: [%s], focus:{x:%f,y:%f}, target: {Type: [%s], w:%d, h:%d}, scale: %f",
+    qDebug("From: [%s], To: [%s], focus:{x:%f,y:%f}, target: {Type: [%s], w:%d, h:%d}, scale: %f",
             pathToSourceFile.c_str(), pathToDestFile.c_str(), focusX, focusY, destType, widthFinal, heightFinal, scale);
 
     QImageReader reader(QString::fromStdString(pathToSourceFile));
@@ -772,7 +772,7 @@ bool ImageServices::convertImage(const std::string& pathToSourceFile,
     //TODO: WARN: strict comparison of float to 0 might fail
     if (qFuzzyCompare(scale, 0.0))
         scale = 1.0;
-    __qMessage("After adjustments: scale: %f, focus:{x:%f,y:%f}", scale, focusX, focusY);
+    qDebug("After adjustments: scale: %f, focus:{x:%f,y:%f}", scale, focusX, focusY);
 
     QImage image;
     double prescale;
@@ -783,7 +783,7 @@ bool ImageServices::convertImage(const std::string& pathToSourceFile,
 
     //scale the image as requested...factor in whatever the prescaler did
     scale /= prescale;
-    __qMessage("scale after prescale adjustment: %f, prescale: %f", scale, prescale);
+    qDebug("scale after prescale adjustment: %f, prescale: %f", scale, prescale);
 
     QImage dest(widthFinal, heightFinal, image.format());
     QPainter p (&dest);
@@ -802,7 +802,7 @@ bool ImageServices::convertImage(const std::string& pathToSourceFile,
                                  const std::string& pathToDestFile, const char* destType,
                                        std::string& r_errorText)
 {
-    __qMessage("From: [%s], To: [%s], target: {Type: [%s]}",
+    qDebug("From: [%s], To: [%s], target: {Type: [%s]}",
             pathToSourceFile.c_str(), pathToDestFile.c_str(), destType);
 
     QImageReader reader(QString::fromStdString(pathToSourceFile));

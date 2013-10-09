@@ -53,7 +53,7 @@ RingtonePrefsHandler::~RingtonePrefsHandler()
 
 void RingtonePrefsHandler::init() {
     //luna_log(s_logChannel,"RingtonePrefsHandler::init()");
-    __qMessage("start");
+	PMLOG_TRACE("RingtonePrefsHandler start");
 	bool result;
 	LSError lsError;
 	LSErrorInit(&lsError);

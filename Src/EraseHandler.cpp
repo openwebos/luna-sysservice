@@ -146,27 +146,27 @@ bool EraseHandler::Erase(LSHandle* pHandle, LSMessage* pMessage, EraseType_t typ
     switch (type)
     {
         case kEraseVar:
-            __qMessage("System erase partition type: \'var\'");
+            qDebug("System erase partition type: \'var\'");
             nyx_type = NYX_SYSTEM_ERASE_VAR;
             break;
 
         case kEraseAll:
-            __qMessage("System erase partition type:  \'all\'");
+            qDebug("System erase partition type:  \'all\'");
             nyx_type = NYX_SYSTEM_ERASE_ALL;
             break;
 
         case kEraseMedia:
-            __qMessage("System erase partition type:  \'media\'");
+            qDebug("System erase partition type:  \'media\'");
             nyx_type = NYX_SYSTEM_ERASE_MEDIA;
             break;
 
         case kEraseMDeveloper:
-            __qMessage("System erase partition type:  \'developer\'");
+            qDebug("System erase partition type:  \'developer\'");
             nyx_type =  NYX_SYSTEM_ERASE_DEVELOPER;
             break;
 
         case kSecureWipe:
-            __qMessage("System erase partition type:  \'secure wipe\'");
+            qDebug("System erase partition type:  \'secure wipe\'");
             nyx_type = NYX_SYSTEM_WIPE;
             break;
 
@@ -211,7 +211,7 @@ bool EraseHandler::Erase(LSHandle* pHandle, LSMessage* pMessage, EraseType_t typ
  */
 bool cbEraseVar(LSHandle* pHandle, LSMessage* pMessage, void* pUserData)
 {
-    __qMessage ("starting");
+    PMLOG_TRACE("%s:starting",__FUNCTION__);
     if (LSMessageIsHubErrorMessage(pMessage)) {  // returns false if message is NULL
         qWarning("The message received is an error message from the hub");
         return true;
@@ -230,7 +230,7 @@ bool cbEraseVar(LSHandle* pHandle, LSMessage* pMessage, void* pUserData)
  */
 bool cbEraseAll(LSHandle* pHandle, LSMessage* pMessage, void* pUserData)
 {
-    __qMessage ("starting");
+    PMLOG_TRACE("%s:starting",__FUNCTION__);
     if (LSMessageIsHubErrorMessage(pMessage)) {  // returns false if message is NULL
         qWarning("The message received is an error message from the hub");
         return true;
@@ -249,7 +249,7 @@ bool cbEraseAll(LSHandle* pHandle, LSMessage* pMessage, void* pUserData)
  */
 bool cbEraseMedia(LSHandle* pHandle, LSMessage* pMessage, void* pUserData)
 {
-    __qMessage ("starting");
+    PMLOG_TRACE("%s:starting",__FUNCTION__);
     if (LSMessageIsHubErrorMessage(pMessage)) {  // returns false if message is NULL
         qWarning("The message received is an error message from the hub");
         return true;
@@ -268,7 +268,7 @@ bool cbEraseMedia(LSHandle* pHandle, LSMessage* pMessage, void* pUserData)
  */
 bool cbEraseDeveloper(LSHandle* pHandle, LSMessage* pMessage, void* pUserData)
 {
-    __qMessage ("starting");
+    PMLOG_TRACE("%s:starting",__FUNCTION__);
     if (LSMessageIsHubErrorMessage(pMessage)) {  // returns false if message is NULL
         qWarning("The message received is an error message from the hub");
         return true;
@@ -287,7 +287,7 @@ bool cbEraseDeveloper(LSHandle* pHandle, LSMessage* pMessage, void* pUserData)
  */
 bool cbSecureWipe(LSHandle* pHandle, LSMessage* pMessage, void* pUserData)
 {
-    __qMessage ("starting");
+    PMLOG_TRACE("%s:starting",__FUNCTION__);
     if (LSMessageIsHubErrorMessage(pMessage)) {  // returns false if message is NULL
         qWarning("The message received is an error message from the hub");
         return true;
