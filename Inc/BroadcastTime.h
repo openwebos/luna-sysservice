@@ -48,6 +48,9 @@ public:
      * @param offset from old value (i.e. positive means times moves forward)
      */
     bool adjust(time_t offset);
+
+    bool avail() const
+    { return m_type != None; }
 };
 
 #endif

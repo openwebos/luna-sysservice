@@ -56,6 +56,11 @@ namespace {
                     "description": "UTC time in seconds since epoch",
                     "optional": true
                 },
+                "adjustedUtc": {
+                    "type": "integer",
+                    "description": "UTC time in seconds since epoch adjusted with Time-Zone from local time",
+                    "optional": true
+                },
                 "local": {
                     "type": "integer",
                     "description": "Local time in seconds since epoch"
@@ -117,6 +122,19 @@ namespace {
         // re-convert to time_t pretending that we converting from UTC
         // (while converting from local)
         return timegm(&localTm);
+    }
+
+    time_t toUtc(time_t local)
+    {
+        // this is another hack to find which UTC time corresponds to one
+        // stored in time_t that represents local time
+
+        tm localTm;
+        if (!gmtime_r(&local, &localTm)) return (time_t)-1;
+
+        localTm.tm_isdst = -1; // mktime should lookup TZ rules
+
+        return timelocal(&localTm);
     }
 
     time_t toTimeT(const pbnjson::JValue &value)
@@ -192,19 +210,30 @@ bool TimePrefsHandler::cbGetEffectiveBroadcastTime(LSHandle* handle, LSMessage *
     LSMessageJsonParser parser(message, schemaEmptyObject);
     if (!parser.parse("cbGetEffectiveBroadcastTime", handle, EValidateAndErrorAlways)) return true;
 
-    time_t local;
-    if (timePrefsHandler->isManualTimeUsed())
+    time_t adjustedUtc, local;
+    if (timePrefsHandler->isSystemTimeBroadcastEffective())
     {
         // just use system local time (set by user)
-        local = toLocal(time(0));
+        adjustedUtc = time(0);
+        local = toLocal(adjustedUtc);
     }
     else
     {
-        time_t utc;
-        if (!broadcastTime.get(utc, local))
+        if (!broadcastTime.get(adjustedUtc, local))
         {
-            qWarning() << "No broadcast time available. Will use system local time (set by NTP/NITZ/RTC etc)";
-            local = toLocal(time(0));
+            qWarning() << "Internal logic error (failed to get broadcast time while it is reported avaialble)";
+            adjustedUtc = time(0);
+            local = toLocal(adjustedUtc);
+        }
+        else
+        {
+            // Broadcast sends correct utc and local time (with correct time-zone).
+            // User may set time-zone in an incorrect value.
+            // So instead of using UTC from broadcast we convert broadcast
+            // local time to UTC according to user time-zone.
+            // That allows clients to construct time object in a natural way
+            // (from UTC).
+            adjustedUtc = toUtc(local);
         }
     }
 
@@ -215,6 +244,7 @@ bool TimePrefsHandler::cbGetEffectiveBroadcastTime(LSHandle* handle, LSMessage *
 
     pbnjson::JValue answer = pbnjson::Object();
     answer.put("returnValue", true);
+    answer.put("adjustedUtc", toJValue(adjustedUtc));
     answer.put("local", toJValue(local));
 
     return reply(handle, message, answer, schemaGetBroadcastTimeReply);

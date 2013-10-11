@@ -91,7 +91,8 @@ public:
 	
 	void setHourFormat(const std::string& formatStr);
 	
-	bool isManualTimeUsed() { return !(m_nitzSetting & NITZ_TimeEnable); }
+    bool isManualTimeUsed() const { return !(m_nitzSetting & NITZ_TimeEnable); }
+    bool isSystemTimeBroadcastEffective() const { return isManualTimeUsed() || !m_broadcastTime.avail(); }
 	bool isNITZTimeEnabled() { return (m_nitzSetting & NITZ_TimeEnable); }
 	bool isNITZTZEnabled() { return (m_nitzSetting & NITZ_TZEnable) && m_nitzTimeZoneAvailable; }
 	bool isNITZDisabled() { return ((!(m_nitzSetting & NITZ_TimeEnable)) && (!(m_nitzSetting & NITZ_TZEnable))); }
