@@ -23,7 +23,6 @@
 #define SCHEMA_LOCALTIME { \
                     "type": "object", \
                     "description": "Local time in components", \
-                    "optional": true, \
                     "properties": { \
                         "year": { "type": "integer", "minimum": 1900 }, \
                         "month": { "type": "integer", "minimum": 1, "maximum": 12 }, \
@@ -32,6 +31,7 @@
                         "minute": { "type": "integer", "minimum": 0, "maximum": 59 }, \
                         "second": { "type": "integer", "minimum": 0, "maximum": 59 } \
                     }, \
+                    "required": [ "year", "month", "day", "hour", "minute", "second" ], \
                     "additionalProperties": false \
                 }
 
@@ -43,10 +43,8 @@ namespace {
         "properties": {
             "subscribe": {
                 "type": "boolean",
-                "description": "Request additional replies that are sent in
-                                case when next reply can't be predicted",
-                "default": false,
-                "optional": true
+                "description": "Request additional replies that are sent in case when next reply can't be predicted",
+                "default": false
             }
         },
         "additionalProperties": false
@@ -67,6 +65,7 @@ namespace {
                     "description": "Local time in seconds since epoch"
                 }
             },
+            "required": [ "utc", "local" ],
             "additionalProperties": false
         }
     ));
@@ -82,18 +81,15 @@ namespace {
                     "enum": [true]
                 },
                 "subscribed": {
-                    "type": "boolean",
-                    "optional": true
+                    "type": "boolean"
                 },
                 "utc": {
                     "type": "integer",
-                    "description": "UTC time in seconds since epoch",
-                    "optional": true
+                    "description": "UTC time in seconds since epoch"
                 },
                 "adjustedUtc": {
                     "type": "integer",
-                    "description": "UTC time in seconds since epoch adjusted with Time-Zone from local time",
-                    "optional": true
+                    "description": "UTC time in seconds since epoch adjusted with Time-Zone from local time"
                 },
                 "local": {
                     "type": "integer",
@@ -101,26 +97,7 @@ namespace {
                 },
                 "localtime": SCHEMA_LOCALTIME
             },
-            "additionalProperties": false
-        }
-    ));
-
-    // schema for /time/getEffectiveBroadcastTime
-    pbnjson::JSchemaFragment schemaGetEffectiveBroadcastTimeReply(JSON(
-        {
-            "type": "object",
-            "description": "Effective local time for apps that relay on broadcast time",
-            "properties": {
-                "returnValue": {
-                    "type": "boolean",
-                    "enum": [true]
-                },
-                "local": {
-                    "type": "integer",
-                    "description": "Local time in seconds since epoch or user set time"
-                },
-                "localtime": SCHEMA_LOCALTIME
-            },
+            "required": [ "returnValue", "local" ],
             "additionalProperties": false
         }
     ));
