@@ -3132,6 +3132,9 @@ bool TimePrefsHandler::cbSetPeriodicWakeupPowerDResponse(LSHandle* lsHandle, LSM
 		//this is a response to a call...
 		th->m_sendWakeupSetToPowerD = !(json_object_get_boolean(label));
 		//if it was true, then the call succeeded so supress sending it again if the service disconnects+reconnects (by setting the m_sendWakeupSetToPowerD to false)
+
+        // no need to reply on response to call
+        return true;
 	}
 	else
 	{
