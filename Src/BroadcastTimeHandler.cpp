@@ -263,7 +263,13 @@ bool TimePrefsHandler::cbSetBroadcastTime(LSHandle* handle, LSMessage *message,
 
     pbnjson::JValue request = parser.get();
 
-    broadcastTime.set(toTimeT(request["utc"]), toTimeT(request["local"]));
+    if (!broadcastTime.set(
+            toTimeT(request["utc"]),
+            toTimeT(request["local"]),
+            timePrefsHandler->currentStamp()))
+    {
+        return reply(handle, message, createJsonReply(false, -2, "Failed to update broadcast time offsets"));
+    }
     if (!timePrefsHandler->isManualTimeUsed()) timePrefsHandler->postBroadcastEffectiveTimeChange();
 
     return reply(handle, message, createJsonReply(true));

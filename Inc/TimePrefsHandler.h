@@ -188,6 +188,12 @@ private:
 	void systemSetTimeZone(const TimeZoneInfo * pZoneInfo);			//this one does the OS work to set the timezone
 	void systemSetTime(time_t utc);
 	void systemSetTime(struct timeval * pTimeVal);
+
+    /**
+     * Ask system time to be set from one of available time sources
+     */
+    void updateSystemTime();
+
 	static bool jsonUtil_ZoneFromJson(json_object * json,TimeZoneInfo& r_zoneInfo);
 	
 	/// PIECEWISE NITZ HANDLING - (new , 11/2009)
@@ -224,7 +230,12 @@ private:
 	
 	void setPeriodicTimeSetWakeup();
 	bool isNTPAllowed();
-	
+
+    /**
+     * Amount of seconds that increases during whole up-time
+     */
+    static time_t currentStamp();
+
 	void signalReceivedNITZUpdate(bool time,bool zone);
 	void slotNetworkConnectionStateChanged(bool connected);
 

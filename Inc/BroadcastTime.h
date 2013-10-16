@@ -28,14 +28,23 @@ class BroadcastTime
 
     time_t m_utcOffset;
     time_t m_localOffset;
+    time_t m_stamp;
 
 public:
     BroadcastTime();
 
     /**
      * Tie up new broadcast time to system clocks
+     *
+     * @param utc are seconds since epoch for UTC time
+     * @param local are seconds since epoch for local time
+     * @param stamp is next number that forms monotonically increasing sequence
+     *        of non-negative numbers and will be returned by getStamp() method
+     *
+     * @return true if time offsets was updated and stamp param. isn't lower
+     *         than value from prev call.
      */
-    void set(time_t utc, time_t local);
+    bool set(time_t utc, time_t local, time_t stamp);
 
     /**
      * Retrieve estimated broadcast time
@@ -48,6 +57,12 @@ public:
      * @param offset from old value (i.e. positive means times moves forward)
      */
     bool adjust(time_t offset);
+
+    /**
+     * Value of stamp parameter for last set
+     */
+    time_t stamp() const
+    { return m_stamp; }
 
     bool avail() const
     { return m_type != None; }

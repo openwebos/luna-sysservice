@@ -19,15 +19,21 @@
 #include "BroadcastTime.h"
 
 BroadcastTime::BroadcastTime() :
-    m_type(None)
+    m_type(None),
+    m_stamp(0)
 {}
 
-void BroadcastTime::set(time_t utc, time_t local)
+bool BroadcastTime::set(time_t utc, time_t local, time_t stamp)
 {
+    // ensure that stamp only increases
+    if (stamp < m_stamp) return false;
+
     time_t currentTime = time(0);
     m_type = UtcAndLocal;
     m_utcOffset = utc - currentTime;
     m_localOffset = local - currentTime;
+    m_stamp = stamp;
+    return true;
 }
 
 bool BroadcastTime::get(time_t &utc, time_t &local) const

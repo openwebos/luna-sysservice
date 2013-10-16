@@ -327,7 +327,7 @@ static inline bool isSpaceOrNull(char v) {
 	return (v == 0 || isspace(v));
 }
 
-static time_t PrvCurrentUpTimeSeconds()
+time_t TimePrefsHandler::currentStamp()
 {
 #if !defined(DESKTOP)
 	// FIXME: CLOCK_UPTIME doesn't work
@@ -1471,6 +1471,74 @@ void TimePrefsHandler::systemSetTime(struct timeval * pTimeVal)
     }
 }
 
+void TimePrefsHandler::updateSystemTime()
+{
+    if (isManualTimeUsed())
+    {
+        qWarning("updateSystemTime() should never be called when using manual time (ignored)");
+        return;
+    }
+
+    const time_t timeDriftPeriod = 4*60*60; // TODO: make configurable rather than 4 hours
+    time_t timeStamp = currentStamp();
+    time_t driftedStamp = timeStamp - timeDriftPeriod; // latest stamp which considered as outdated
+
+    // prefer NTP over anything else if allowed
+    if (isNTPAllowed())
+    {
+        if (driftedStamp < m_lastNtpUpdate)
+        {
+            qDebug("NTP is still valid (ignoring updateSystemTime())");
+            return;
+        }
+
+        //get NTP time if possible
+        time_t ntpUtc;
+        bool haveNTP = (getUTCTimeFromNTP(ntpUtc) == 0);
+
+        // prev call may take some time so update stamps
+        timeStamp = currentStamp();
+        driftedStamp = timeStamp - timeDriftPeriod;
+
+        if (haveNTP)
+        {
+            //ok, got it from NTP...
+            m_lastNtpUpdate = timeStamp;
+            systemSetTime(ntpUtc);
+            return;
+        }
+    }
+
+    // lets see other passive sources
+    // TODO: NITZ should be checked here as well
+
+    // see if we have m_broadcastTime
+    if (m_broadcastTime.avail())
+    {
+        if (driftedStamp < m_broadcastTime.stamp())
+        {
+            qDebug("Broadcast is still valid (ignoring updateSystemTime())");
+            return;
+        }
+
+        time_t utc, local;
+
+        // we want to sync system localtime to broadcast localtime
+        // lets pull out calendar time while pretending that time is in UTC
+        tm tmLocal;
+        gmtime_r(&local, &tmLocal);
+
+        // now lets-get actual UTC from local calendar time according to system
+        // time-zone
+        utc = timelocal(&tmLocal);
+
+        systemSetTime( utc );
+        return;
+    }
+
+    qWarning("No time source was used for system time update in response to updateSystemTime()");
+}
+
 
 //static
 bool TimePrefsHandler::jsonUtil_ZoneFromJson(json_object * json,TimeZoneInfo& r_zoneInfo)
@@ -2440,21 +2508,7 @@ int  TimePrefsHandler::nitzHandlerTimeValue(NitzParameters& nitz,int& flags,std:
 	if ((flags & NITZHANDLER_FLAGBIT_NTPALLOW) == 0)
 		return NITZHANDLER_RETURN_SUCCESS;			//no NTP allowed...nothing left to do
 
-	//get NTP time if possible
-	time_t ntpUtc;
-	if (getUTCTimeFromNTP(ntpUtc) == 0)
-	{
-		//ok, got it from NTP...
-		nitz._timevalid = true;
-		memcpy(&(nitz._timeStruct),gmtime(&ntpUtc),sizeof(struct tm));		//for posterity; try to keep the working copy in sync so that down-chain stuff can use it if it wants
-		systemSetTime(ntpUtc);
-		signalReceivedNITZUpdate(true,false);
-
-		m_lastNtpUpdate = PrvCurrentUpTimeSeconds();
-	}
-	else {
-		m_lastNtpUpdate = 0;
-	}
+    updateSystemTime();
 
 	return NITZHANDLER_RETURN_SUCCESS;
 
@@ -2815,21 +2869,7 @@ int  TimePrefsHandler::timeoutNitzHandlerTimeValue(NitzParameters& nitz,int& fla
 		return NITZHANDLER_RETURN_SUCCESS;			//no NTP allowed...nothing left to do
 	}
 	
-	//get NTP time if possible
-	time_t ntpUtc;
-	if (getUTCTimeFromNTP(ntpUtc) == 0)
-	{
-		//ok, got it from NTP...
-		nitz._timevalid = true;
-		memcpy(&(nitz._timeStruct),gmtime(&ntpUtc),sizeof(struct tm));		//for posterity; try to keep the working copy in sync so that down-chain stuff can use it if it wants
-		systemSetTime(ntpUtc);
-		signalReceivedNITZUpdate(true,false);
-		m_lastNtpUpdate = PrvCurrentUpTimeSeconds();
-		return NITZHANDLER_RETURN_SUCCESS;
-	}
-	else {
-		m_lastNtpUpdate = 0;
-	}
+    updateSystemTime();
 	
 	return NITZHANDLER_RETURN_SUCCESS;
 
@@ -3139,20 +3179,7 @@ bool TimePrefsHandler::cbSetPeriodicWakeupPowerDResponse(LSHandle* lsHandle, LSM
 	else
 	{
 		//it's an actual event...
-		if (th->isNITZTimeEnabled() && th->isNTPAllowed())
-		{
-			//get NTP time if possible
-			time_t ntpUtc;
-			if (getUTCTimeFromNTP(ntpUtc) == 0)
-			{
-				//ok, got it from NTP...
-				th->systemSetTime(ntpUtc);
-				th->m_lastNtpUpdate = PrvCurrentUpTimeSeconds();
-			}
-			else {
-				th->m_lastNtpUpdate = 0;
-			}
-		}
+        th->updateSystemTime();
 
 		//schedule another
 		th->setPeriodicTimeSetWakeup();
@@ -4246,7 +4273,7 @@ void TimePrefsHandler::slotNetworkConnectionStateChanged(bool connected)
 	if ((timev < 300) || (timev > 86400))
 		timev = 86399; //24 hour default (23h.59m.59s actually)
 
-	time_t currTime = PrvCurrentUpTimeSeconds();
+	time_t currTime = currentStamp();
     __qMessage("currTime: %d, lastNtpUpdate: %d, interval: %d",
            (int)currTime, (int)m_lastNtpUpdate, timev);
 	if ((m_lastNtpUpdate > 0) && (time_t)(m_lastNtpUpdate + timev) > currTime)
