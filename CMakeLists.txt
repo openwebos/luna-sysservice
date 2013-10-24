@@ -134,6 +134,8 @@ set(SOURCE_FILES Src/Logging.cpp
     Src/JSONUtils.cpp 
     Src/ImageHelpers.cpp
     Src/EraseHandler.cpp
+    Src/OsInfoService.cpp
+    Src/DeviceInfoService.cpp
     )
 add_executable(LunaSysService ${SOURCE_FILES})
 target_link_libraries(LunaSysService 

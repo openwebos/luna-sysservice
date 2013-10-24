@@ -40,6 +40,8 @@ This service supports the following methods, which are described in detail in th
 *  com.palm.systemservice/wallpaper/info
 *  com.palm.systemservice/wallpaper/refresh
 
+*  com.palm.systemservice/osInfo/query
+*  com.palm.systemservice/deviceInfo/query
 
 How to Build on Linux
 =====================
@@ -120,17 +122,18 @@ This component of webOS can be built as a standalone piece that does not depend 
 
 Below are the tools and libraries (and their minimum versions) required to build this package:
 
-* openwebos/cmake-modules-webos 1.0.0 RC2
 * cmake (version required by openwebos/cmake-modules-webos)
 * glib-2.0
 * gthread-2.0
-* libxml-2.0
-* sqlite3
-* openwebos/cjson
-* openwebos/pbnjson
-* openwebos/luna-service2
-* qt4 4.8.2
 * liburiparser
+* libxml-2.0
+* openwebos/cjson
+* openwebos/cmake-modules-webos 1.0.0 RC2
+* openwebos/luna-service2
+* openwebos/nyx-lib 6.0.0
+* openwebos/pbnjson
+* qt4 4.8.2
+* sqlite3
 
 ### Building Standalone
 

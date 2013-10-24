@@ -37,6 +37,8 @@
 #include "Mainloop.h"
 #include "ImageServices.h"
 #include "TimeZoneService.h"
+#include "OsInfoService.h"
+#include "DeviceInfoService.h"
 
 #include "BackupManager.h"
 #include "EraseHandler.h"
@@ -264,17 +266,25 @@ int main(int argc, char ** argv)
 	// Initialize the Prefs Factory
 	PrefsFactory::instance()->setServiceHandle(serviceHandle);
 	BackupManager::instance()->setServiceHandle(serviceHandle);
-    EraseHandler::instance()->setServiceHandle(serviceHandle);
+        EraseHandler::instance()->setServiceHandle(serviceHandle);
 
 	//init the image service
-	ImageServices * imgSvc = ImageServices::instance(mainLoopObj);
+	ImageServices *imgSvc = ImageServices::instance(mainLoopObj);
 	if (!imgSvc) {
         qCritical() << "Image service failed init!";
 	}
 
 	//init the timezone service;
-	TimeZoneService* tzSvc = TimeZoneService::instance();
+	TimeZoneService *tzSvc = TimeZoneService::instance();
 	tzSvc->setServiceHandle(serviceHandle);
+
+        //init the osinfo service;
+	OsInfoService *osiSvc = OsInfoService::instance();
+	osiSvc->setServiceHandle(serviceHandle);
+
+	//init the deviceinfo service;
+	DeviceInfoService *diSvc = DeviceInfoService::instance();
+	diSvc->setServiceHandle(serviceHandle);
 	
 	// Run the main loop
 	g_main_loop_run(g_gmainLoop);

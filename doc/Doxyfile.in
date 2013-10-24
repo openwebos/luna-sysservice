@@ -654,7 +654,9 @@ INPUT                  = ../Src/ImageServices.cpp \
                          ../Src/BackupManager.cpp \
                          ../Src/TimePrefsHandler.cpp \
                          ../Src/TimeZoneService.cpp \
-			 ../Src/PrefsFactory.cpp
+                         ../Src/OsInfoService.cpp \
+                         ../Src/DeviceInfoService.cpp \
+                         ../Src/PrefsFactory.cpp
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
