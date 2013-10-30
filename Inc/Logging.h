@@ -26,13 +26,10 @@
 extern "C" {
 #endif
 
+#if defined(USE_PMLOG)
 
-
-#if defined(USE_PMLOG) && (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #include "PmLogLib.h"
-void outputQtMessages(QtMsgType type,
-                    const QMessageLogContext &context,
-                    const QString &msg);
+
 #define SYSSERVICELOG_MESSAGE_MAX 500
 inline void sysServiceFmtMsg(char *logMsg, char *fmt, ...)
 {
@@ -51,7 +48,18 @@ extern void sysServiceLogInfo(const char * fileName, guint32 lineNbr,const char*
       sysServiceLogInfo(__FILE__, __LINE__, __func__, logMsg); \
 } while(0)
 
-#else
+#else // !defined(USE_PMLOG)
+// Work-arounds to build without PmLogLib (sometimes used to simplify debugging).
+
+// Probably we should drop possibility to build without USE_PMLOG or we shouldn't use
+// PMLOG_TRACES without appropriate guard.
+
+#define __qMessage(...)  do { g_message(__VA_ARGS__); } while (0)
+#define PMLOG_TRACE(...) __qMessage(__VA_ARGS__)
+
+#endif // USE_PMLOG
+
+// Qt handler for logging
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 void outputQtMessages(QtMsgType type,
                     const QMessageLogContext &context,
@@ -60,10 +68,6 @@ void outputQtMessages(QtMsgType type,
 void outputQtMessages(QtMsgType type, const char *str);
 #endif
 
-#define __qMessage(...)  do { g_message(__VA_ARGS__); } while (0)
-
-#endif
-	
 #ifdef __cplusplus
 }
 #endif	

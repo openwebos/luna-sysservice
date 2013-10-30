@@ -21,9 +21,7 @@
 
 #include "Logging.h"
 
-
-#if defined(USE_PMLOG) && (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-
+#if defined(USE_PMLOG)
 static const size_t MSGID_LENGTH = 30;
 
 static char * fmtUniqueLogId(char *dest, const char *pFile, guint32 lineNbr)
@@ -37,6 +35,26 @@ static char * fmtUniqueLogId(char *dest, const char *pFile, guint32 lineNbr)
     return dest;
 }
 
+void sysServiceLogInfo(const char * fileName, guint32 lineNbr,const char* funcName, const char *logMsg)
+{
+    PmLogContext pmContext;
+    PmLogGetContext("LunaSysService", &pmContext);
+    // Length will be an arbitrary short string with length up to 31
+    char msgId[MSGID_LENGTH+1];
+
+    PmLogInfo(pmContext, fmtUniqueLogId(msgId, fileName, lineNbr),
+            1, PMLOGKS("FUNC", funcName),
+            "%s", logMsg);
+}
+#endif // USE_PMLOG
+
+
+// Qt message handlers
+// (combination of Qt API x USE_PMLOG flag produces 4 variants)
+
+#if defined(USE_PMLOG)
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 void outputQtMessages(QtMsgType type,
                     const QMessageLogContext &context,
                     const QString &msg)
@@ -71,19 +89,33 @@ void outputQtMessages(QtMsgType type,
         abort();
     }
 }
-
-
-void sysServiceLogInfo(const char * fileName, guint32 lineNbr,const char* funcName, const char *logMsg)
-{
+#else // QT_VERSION < 5.0.0
+void outputQtMessages(QtMsgType type, const char *str) {
     PmLogContext pmContext;
     PmLogGetContext("LunaSysService", &pmContext);
-    // Length will be an arbitrary short string with length up to 31
-    char msgId[MSGID_LENGTH+1];
 
-    PmLogInfo(pmContext, fmtUniqueLogId(msgId, fileName, lineNbr),
-            1, PMLOGKS("FUNC", funcName),
-            "%s", logMsg);
+    // before Qt 5.0 we had no context information (no filename and line number)
+    // so lets use one predefined MSGID
+    static char *msgId = "QTLOG";
+
+    switch (type) {
+    case QtDebugMsg:
+#ifndef NO_LOGGING
+        PmLogDebug(pmContext, "%s", str);
+#endif
+        break;
+    case QtWarningMsg:
+        PmLogWarning(pmContext, msgId, 0, "%s", str);
+        break;
+    case QtCriticalMsg:
+        PmLogError(pmContext, msgId, 0, "%s", str);
+        break;
+    case QtFatalMsg:
+        PmLogCritical(pmContext, msgId, 0, "%s", str);
+        abort();
+    }
 }
+#endif // QT_VERSION
 
 #else  //USE_PMLOG
 
