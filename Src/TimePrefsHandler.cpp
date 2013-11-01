@@ -44,7 +44,7 @@
 #include <cjson/json_util.h>
 
 static const char*	  s_tzFile	=	WEBOS_INSTALL_WEBOS_PREFIX "/ext-timezones.json";
-static const char*    s_tzFilePath = WEBOS_INSTALL_PREFERENCESDIR "/preferences/localtime";
+static const char*    s_tzFilePath = WEBOS_INSTALL_SYSMGR_LOCALSTATEDIR "/preferences/localtime";
 static const char*    s_zoneInfoFolder = "/usr/share/zoneinfo/";
 static const int      s_sysTimeNotificationThreshold = 3000; // 5 mins
 static const char*    s_logChannel = "TimePrefsHandler";
@@ -1446,6 +1446,10 @@ void TimePrefsHandler::systemSetTimeZone(const std::string &tzFileActual, const 
 		unlink(s_tzFilePath);
 	}
 
+    // Note that /etc/localtime should point to this file
+    // s_tzFilePath ( /var/luna/preferences/localtime )
+    // which is symlink to current time-zone
+    // This allows to have read-only /etc/localtime
 	symlink(tzFileActual.c_str(), s_tzFilePath);
     __qMessage("Setting Time Zone: %s, utc Offset: %d",
 			zoneInfo.name.c_str(), zoneInfo.offsetToUTC);
@@ -4101,25 +4105,6 @@ static void tzsetWorkaround(const char * newTZ) {
 	tzset();
 	setenv("TZ",newTZ, 1);
 	tzset();
-
-// Link the /etc/localtime data to the correct file in /usr/share/zoneinfo.
-// Only do this when not on Desktop, since desktop will prob default to the system timezone.
-
-#if !defined(DESKTOP)
-    gchar* cmdline = g_find_program_in_path("ln");
-    if(cmdline) {
-        gchar *fullcmd = g_strdup_printf("%s -sf /usr/share/zoneinfo/%s /etc/localtime", cmdline, newTZ);
-        int err = system(fullcmd);
-        if(err != 0) {
-            qWarning("Error %d linking zoneinfo file from /usr/share/zoneinfo/%s to /etc/localtime", err, newTZ);
-        } 
-        g_free(cmdline); 
-        cmdline = NULL;
-        g_free(fullcmd);
-    } else {
-        qWarning("Couldn't find ln in PATH to set timezone file");
-    }
-#endif
 }
 
 /*
