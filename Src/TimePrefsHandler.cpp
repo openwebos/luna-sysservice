@@ -1423,31 +1423,34 @@ void TimePrefsHandler::setTimeZone(const TimeZoneInfo * pZoneInfo)
         qWarning() << "passed in NULL for the zone. Failsafe activated! setting failsafe-default zone: [" << pZoneInfo->name.c_str() << "]";
 	}
 
+	std::string tzFileActual = s_zoneInfoFolder + pZoneInfo->name;
+
+	if (access(tzFileActual.c_str(), F_OK))
+	{
+		qWarning() << "Missing timezone data for [" << pZoneInfo->name.c_str() << "]."
+			" Failsafe activated! setting failsafe-default zone: [" << s_failsafeDefaultZone.name.c_str() << "]";
+		pZoneInfo = &s_failsafeDefaultZone;
+		tzFileActual = s_zoneInfoFolder + pZoneInfo->name;
+	}
+
 	m_cpCurrentTimeZone = pZoneInfo;
 	PrefsDb::instance()->setPref("timeZone",pZoneInfo->jsonStringValue);
-	systemSetTimeZone(pZoneInfo);
+	systemSetTimeZone(tzFileActual, *pZoneInfo);
 }
 
-void TimePrefsHandler::systemSetTimeZone(const TimeZoneInfo * pZoneInfo)
+void TimePrefsHandler::systemSetTimeZone(const std::string &tzFileActual, const TimeZoneInfo &zoneInfo)
 {
-	if (pZoneInfo == NULL)
-		return;
-
 	// Do we have a timezone file in place?
 	struct stat stBuf;
 	if (lstat(s_tzFilePath, &stBuf) == 0) {
 		unlink(s_tzFilePath);
 	}
 
-	std::string tzFileActual = s_zoneInfoFolder;
-	tzFileActual += pZoneInfo->name;
-
 	symlink(tzFileActual.c_str(), s_tzFilePath);
     __qMessage("Setting Time Zone: %s, utc Offset: %d",
-			pZoneInfo->name.c_str(), pZoneInfo->offsetToUTC);
-	std::string tzsetting = pZoneInfo->name;
-	tzsetWorkaround(tzsetting.c_str());
-    __qMessage("TZ env is now [%s]",getenv("TZ"));
+			zoneInfo.name.c_str(), zoneInfo.offsetToUTC);
+	tzsetWorkaround(zoneInfo.name.c_str());
+    __qMessage("TZ env is now [%s]", getenv("TZ"));
 }
 
 void TimePrefsHandler::systemSetTime(time_t utc)

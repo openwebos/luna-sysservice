@@ -184,8 +184,9 @@ private:
 	void readCurrentNITZSettings();
 	void readCurrentTimeSettings();
 	
-	void setTimeZone(const TimeZoneInfo * pZoneInfo);				//this one sets it in the prefs db and then calls systemSetTimeZone
-	void systemSetTimeZone(const TimeZoneInfo * pZoneInfo);			//this one does the OS work to set the timezone
+	void setTimeZone(const TimeZoneInfo * pZoneInfo);       //this one sets it in the prefs db and then calls systemSetTimeZone
+	void systemSetTimeZone(const std::string &tzFileActual,
+	                       const TimeZoneInfo &zoneInfo);   //this one does the OS work to set the timezone
 	void systemSetTime(time_t utc);
 	void systemSetTime(struct timeval * pTimeVal);
 
