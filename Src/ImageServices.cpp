@@ -231,7 +231,7 @@ bool ImageServices::lsConvertImage(LSHandle* lsHandle, LSMessage* message,void* 
 	}
 	if ((label = Utils::JsonGetObject(root,"cropW")) != NULL) {
 		cropW = json_object_get_double(label);
-		if (cropW < 0) {
+		if (json_object_get_double(label) < 0) {
 			errorText = "'cropW' parameter out of range (must be > 0 )";
 			goto Done_lsConvertImage;
 		}
@@ -239,7 +239,7 @@ bool ImageServices::lsConvertImage(LSHandle* lsHandle, LSMessage* message,void* 
 	}
 	if ((label = Utils::JsonGetObject(root,"cropH")) != NULL) {
 		cropH = json_object_get_double(label);
-		if (cropH < 0) {
+		if (json_object_get_double(label) < 0) {
 			errorText = "'cropH' parameter out of range (must be > 0 )";
 			goto Done_lsConvertImage;
 		}
@@ -577,7 +577,6 @@ bool ImageServices::lsImageInfo(LSHandle* lsHandle, LSMessage* message,void* use
         QImageReader reader(QString::fromStdString(srcfile));
         if(!reader.canRead()) {
             errorText = reader.errorString().toStdString();
-            return false;
             goto Done_lsImageInfo;
         }
         srcWidth = reader.size().width();

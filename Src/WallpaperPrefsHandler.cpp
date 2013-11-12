@@ -1398,8 +1398,7 @@ Done:
 	if (!retVal)
 		LSErrorFree (&lsError);
 
-	if (json)
-		json_object_put(json);
+	json_object_put(json);
 
 	return true;
 }
@@ -1680,8 +1679,7 @@ static bool cbConvertImage(LSHandle* lsHandle, LSMessage *message,
 	if (!retVal)
 		LSErrorFree (&lsError);
 
-	if (json)
-		json_object_put(json);
+	json_object_put(json);
 
 	return true;
 }
@@ -1763,8 +1761,7 @@ static bool cbRefreshWallpaperIndex(LSHandle* lsHandle, LSMessage *message,
 	if (!retVal)
 		LSErrorFree (&lsError);
 
-	if (json)
-		json_object_put(json);
+	json_object_put(json);
 
 	return true;
 }
@@ -1930,8 +1927,7 @@ Done:
 	if (!retVal)
 		LSErrorFree (&lsError);
 	
-	if (json)
-		json_object_put(json);
+	json_object_put(json);
 
 	return true;
 }
@@ -2074,8 +2070,7 @@ static bool cbDeleteWallpaper(LSHandle* lsHandle, LSMessage *message,
 	if (!retVal)
 		LSErrorFree (&lsError);
 
-	if (json)
-		json_object_put(json);
+	json_object_put(json);
 
 	return true;
 		

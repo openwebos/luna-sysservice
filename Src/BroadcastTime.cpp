@@ -42,6 +42,7 @@ bool BroadcastTime::get(time_t &utc, time_t &local) const
     time_t currentTime = time(0);
     utc = m_utcOffset + currentTime;
     local = m_localOffset + currentTime;
+	return true;
 }
 
 bool BroadcastTime::adjust(time_t offset)
@@ -49,4 +50,5 @@ bool BroadcastTime::adjust(time_t offset)
     if (m_type == None) return false;
     m_utcOffset -= offset;
     m_localOffset -= offset;
+	return true;
 }

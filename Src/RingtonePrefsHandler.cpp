@@ -288,8 +288,7 @@ static bool cbAddRingtone(LSHandle* lsHandle, LSMessage *message,void *user_data
 		    LSErrorFree(&lsError);
 		}
 
-		if (response)
-			json_object_put(response);
+		json_object_put(response);
 
 	return true;
 }
@@ -442,8 +441,7 @@ static bool cbDeleteRingtone(LSHandle* lsHandle, LSMessage *message, void *user_
 		    LSErrorFree(&lsError);
 		}
 
-		if (response)
-			json_object_put(response);
+		json_object_put(response);
 
 	return true;
 	

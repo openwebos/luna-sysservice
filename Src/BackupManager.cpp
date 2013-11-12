@@ -369,19 +369,20 @@ bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message,
 {
         LSError lserror;
         LSErrorInit(&lserror);
-        json_object* response = json_object_new_object();
+
     // {"tempDir": string, "files": array}
     VALIDATE_SCHEMA_AND_RETURN(lshandle,
                                message,
                                SCHEMA_2(REQUIRED(tempDir, string), REQUIRED(files, array)));
 
-	BackupManager* pThis = static_cast<BackupManager*>(user_data);
-	if (pThis == NULL)
-	{
+    BackupManager* pThis = static_cast<BackupManager*>(user_data);
+    if (pThis == NULL)
+    {
         qWarning() << "LScallback didn't preserve user_data ptr! (returning false)";
-		return false;
-	}
+        return false;
+    }
     const char* str = LSMessageGetPayload(message);
+    json_object* response = json_object_new_object();
     if (!str)
     {
         qWarning() << "LScallback didn't have any text in the payload! (returning false)";
@@ -524,6 +525,7 @@ bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message,
     		}
     	}
     }
+	json_object_put (response);
 
     // if for whatever reason the main db got closed, reopen it (the function will act ok if already open)
     PrefsDb::instance()->openPrefsDb();

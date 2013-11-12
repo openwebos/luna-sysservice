@@ -28,12 +28,12 @@ bool readImageWithPrescale(QImageReader& reader, QImage& image, double& prescale
     prescaleFactor = 1.0;
 
     int height = reader.size().height();
-    if(height > HALF_DECIMATION_THRESHOLD_H)
-        prescaleFactor = 0.5;
+    if (height > EIGHTH_DECIMATION_THRESHOLD_H)
+        prescaleFactor = 0.125;
     else if(height > QUARTER_DECIMATION_THRESHOLD_H)
         prescaleFactor = 0.25;
-    else if(height > EIGHTH_DECIMATION_THRESHOLD_H)
-        prescaleFactor = 0.125;
+    else if(height > HALF_DECIMATION_THRESHOLD_H)
+        prescaleFactor = 0.5;
 
     if(prescaleFactor != 1.0)
         reader.setScaledSize(QSize(reader.size().width() * prescaleFactor, reader.size().height() * prescaleFactor));

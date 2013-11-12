@@ -71,34 +71,39 @@ void _dbgprintf(const char * format, ...)
 
 char* readFile(const char* filePath)
 {
-	if (!filePath)
-		return 0;
-	
-	FILE* f = fopen(filePath,"r");
-	
-	if (!f)
-		return 0;
+    if (!filePath)
+        return 0;
 
-	fseek(f, 0L, SEEK_END);
-	long sz = ftell(f);
-	fseek( f, 0L, SEEK_SET );
-	if (!sz) {
-		fclose(f);
-		return 0;
-	}
+    FILE* f = fopen(filePath,"r");
 
-	char* ptr = new char[sz+1];
-	if( !ptr )
-	{
-		fclose(f);
-		return 0;
-	}
-	ptr[sz] = 0;
-	
-	fread(ptr, sz, 1, f);
-	fclose(f);
+    if (!f)
+    return 0;
 
-	return ptr;
+    fseek(f, 0L, SEEK_END);
+    long sz = ftell(f);
+    fseek( f, 0L, SEEK_SET );
+    if (sz <= 0) {
+        fclose(f);
+        return 0;
+    }
+
+    char* ptr = new char[sz+1];
+    if( !ptr )
+    {
+        fclose(f);
+        return 0;
+    }
+    ptr[sz] = 0;
+
+    size_t result = fread(ptr, sz, 1, f);
+    if(result != (size_t)sz)
+    {
+        fclose(f);
+        return 0;
+    }
+    fclose(f);
+
+    return ptr;
 }
 
 std::string trimWhitespace(const std::string& s,const std::string& drop)
@@ -724,6 +729,9 @@ int createTempFile(const std::string& baseDir,const std::string& tag,const std::
 
 	std::string templateStr = baseDir + std::string("/file_")+std::string(tag)+std::string("_XXXXXX");
 	char * templateFileName = new char[templateStr.length()+2];
+	if (!templateFileName){
+		return 0;
+	}
 	strcpy(templateFileName,templateStr.c_str());
 	int fd = mkstemp(templateFileName);
 	templateStr = std::string(templateFileName);

@@ -612,6 +612,12 @@ bool TimeZoneService::cbGetTimeZoneFromEasData(LSHandle* lsHandle, LSMessage *me
 	{
 		// Get all timezones matching the current offset
 		PrefsHandler* handler = PrefsFactory::instance()->getPrefsHandler("timeZone");
+		if (!handler)
+		{
+			reply = "{\"returnValue\": false, "
+					" \"errorText\": \"Failed to find timeZone preference\"}";
+			goto Done;
+		}
 		TimePrefsHandler* tzHandler = static_cast<TimePrefsHandler*>(handler);
 		TimeZoneService* tzService = TimeZoneService::instance();
 

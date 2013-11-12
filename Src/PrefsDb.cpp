@@ -1047,17 +1047,11 @@ Done:
 	if (root && !is_error(root))
 		json_object_put(root);
 
-	if (jsonStr) {
-		delete [] jsonStr;
-	}
-
 	//back up the defaults for certain prefs
 	backupDefaultPrefs();
 	//refresh system restore
 	SystemRestore::instance()->refreshDefaultSettings();
 
-	if (queryStr)
-		g_free(queryStr);
 }
 
 void PrefsDb::loadDefaultPlatformPrefs()

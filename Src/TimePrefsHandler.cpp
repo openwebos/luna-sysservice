@@ -700,10 +700,9 @@ std::string TimePrefsHandler::getDefaultTZFromJson(TimeZoneInfo * r_pZoneInfo)
 				*r_pZoneInfo = s_failsafeDefaultZone;
 				return (s_failsafeDefaultZone.jsonStringValue);
 			}
+			else
+			    return (r_pZoneInfo->jsonStringValue);
 		}
-
-		return (r_pZoneInfo->jsonStringValue);
-
 	}
 
 	if (r_pZoneInfo)
@@ -3131,7 +3130,6 @@ bool TimePrefsHandler::cbSetPeriodicWakeupPowerDResponse(LSHandle* lsHandle, LSM
         LSErrorInit(&lsError);
         bool retVal;
         json_object* json;
-        json = json_object_new_object();
 
     // {"returnValue": boolean}
     VALIDATE_SCHEMA_AND_RETURN(lsHandle,
@@ -3145,6 +3143,7 @@ bool TimePrefsHandler::cbSetPeriodicWakeupPowerDResponse(LSHandle* lsHandle, LSM
 
 	qDebug("received message %s", str);
 
+	json = json_object_new_object();
 	TimePrefsHandler* th = (TimePrefsHandler*) user_data;
 	if (th == NULL)
 	{
@@ -3180,8 +3179,12 @@ bool TimePrefsHandler::cbSetPeriodicWakeupPowerDResponse(LSHandle* lsHandle, LSM
 		th->m_sendWakeupSetToPowerD = !(json_object_get_boolean(label));
 		//if it was true, then the call succeeded so supress sending it again if the service disconnects+reconnects (by setting the m_sendWakeupSetToPowerD to false)
 
+		if (json)
+			json_object_put(json);
+		if (root)
+			json_object_put(root);
         // no need to reply on response to call
-        return true;
+		return true;
 	}
 	else
 	{
@@ -3504,8 +3507,7 @@ bool TimePrefsHandler::cbGetSystemTimezoneFile(LSHandle* lsHandle, LSMessage *me
 	if (!retVal)
 		LSErrorFree (&lsError);
 
-	if (json)
-		json_object_put(json);
+	json_object_put(json);
 
 	return true;
 }
@@ -3728,10 +3730,11 @@ Store:
 	//store the pref back, in string form
 	rawCurrentPref = json_object_to_json_string(storedJson);
 	PrefsDb::instance()->setPref("timeChangeLaunch",rawCurrentPref.c_str());
-	json_object_put(storedJson);
 
 Done:
-	
+	if (storedJson)
+		json_object_put(storedJson);
+
 	if (jsonInput)
 		json_object_put(jsonInput);
 
@@ -4129,6 +4132,7 @@ int TimePrefsHandler::getUTCTimeFromNTP(time_t& adjustedTime)
 	}
 	gchar * g_stdoutBuffer = NULL;
 	gchar * g_stderrBuffer = NULL;
+	gchar **offsetStr = NULL;
 
 	int rc=0;
 	char * pFoundStr;
@@ -4200,12 +4204,14 @@ int TimePrefsHandler::getUTCTimeFromNTP(time_t& adjustedTime)
     //sntp offset_calculation:	t21: 0.099049		 t34: -0.110320
     //        delta: 0.209369	 offset: -0.005636
     //get time offset from sntp's return output : "offset: -0.005636"
-    if (sscanf(pFoundStr,"offset: %lf",&offsetValue) != 1) {
-        //parse error...couldn't find the time offset in the string
-        rc = -1;
-        qWarning() << "Failed in specific (offset) output parse: raw output was:" << g_stdoutBuffer;
-        goto Done_getUTCTimeFromNTP;
-    }
+	offsetStr = g_strsplit(pFoundStr," ",2);
+	if (offsetStr[0] == NULL || offsetStr[1] == NULL) {
+	//parse error...couldn't find the time offset in the string
+		rc = -1;
+		qWarning() << "Failed in specific (offset) output parse: raw output was:" << g_stdoutBuffer;
+		goto Done_getUTCTimeFromNTP;
+	}
+	offsetValue = atoi(offsetStr[1]);
 	
 	/*
 	 * Note the following works only if the system clock is set to UTC, or in other words only 1 system time is maintained.
@@ -4230,6 +4236,7 @@ Done_getUTCTimeFromNTP:
 		g_error_free(gerr);
 	}
 
+	g_strfreev(offsetStr);
 	return rc;
 }
 
