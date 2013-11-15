@@ -156,6 +156,9 @@ bool NetworkConnectionListener::connectionManagerGetStatusCallback(LSHandle *sh,
 	if (label && !is_error(label)) {
 		isInternetConnectionAvailable = json_object_get_boolean(label);
 	}
+    else {
+        isInternetConnectionAvailable = false;
+    }
 
 	json_object_put(json);
 

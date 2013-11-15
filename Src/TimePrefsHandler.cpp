@@ -1528,18 +1528,24 @@ void TimePrefsHandler::updateSystemTime()
         }
 
         time_t utc, local;
+        if (m_broadcastTime.get(utc, local))
+        {
+            // we want to sync system localtime to broadcast localtime
+            // lets pull out calendar time while pretending that time is in UTC
+            tm tmLocal;
+            gmtime_r(&local, &tmLocal);
 
-        // we want to sync system localtime to broadcast localtime
-        // lets pull out calendar time while pretending that time is in UTC
-        tm tmLocal;
-        gmtime_r(&local, &tmLocal);
+            // now lets-get actual UTC from local calendar time according to system
+            // time-zone
+            utc = timelocal(&tmLocal);
 
-        // now lets-get actual UTC from local calendar time according to system
-        // time-zone
-        utc = timelocal(&tmLocal);
-
-        systemSetTime( utc );
-        return;
+            systemSetTime( utc );
+            return;
+        }
+        else
+        {
+            qDebug("Failed to get broadcast time by unknown reason");
+        }
     }
 
     qWarning("No time source was used for system time update in response to updateSystemTime()");

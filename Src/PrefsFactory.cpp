@@ -353,7 +353,7 @@ static bool cbSetPreferences(LSHandle* lsHandle, LSMessage* message,
 {
 	json_object* root = 0;
 	bool result;
-	bool success;
+    bool success = true;
 	LSError lsError;
 	LSErrorInit(&lsError);
 	std::string errorText;

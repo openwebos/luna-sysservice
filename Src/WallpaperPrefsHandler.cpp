@@ -1738,14 +1738,9 @@ static bool cbRefreshWallpaperIndex(LSHandle* lsHandle, LSMessage *message,
 	std::string errorText;
 
 	WallpaperPrefsHandler* wh = (WallpaperPrefsHandler*) user_data;
-	if (wh) {
-		wh->scanForWallpapers(true);
-		retVal=true;
-	}
-	else {
-		retVal=false;
-		errorText = std::string("lunabus handler error; luna didn't pass a valid instance var to handler");
-	}
+    assert( wh );
+    wh->scanForWallpapers(true);
+    retVal=true;
 
 	json = json_object_new_object();
 	json_object_object_add(json, (char*) "returnValue", json_object_new_boolean(retVal));
@@ -1757,9 +1752,11 @@ static bool cbRefreshWallpaperIndex(LSHandle* lsHandle, LSMessage *message,
 	reply = json_object_to_json_string(json);
 
 	if (reply)
+    {
 		retVal = LSMessageReply(lsHandle, message, reply, &lsError);
-	if (!retVal)
-		LSErrorFree (&lsError);
+        if (!retVal)
+            LSErrorFree (&lsError);
+    }
 
 	json_object_put(json);
 
