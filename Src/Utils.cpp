@@ -96,7 +96,7 @@ char* readFile(const char* filePath)
     ptr[sz] = 0;
 
     size_t result = fread(ptr, sz, 1, f);
-    if(result != (size_t)sz)
+    if(result != 1)
     {
         fclose(f);
         return 0;
@@ -741,7 +741,7 @@ int createTempFile(const std::string& baseDir,const std::string& tag,const std::
 		return 0;
 	}
 	//write nothing and close, to assure file is on disk; this will prevent mkstemp from assigning the same name by chance (if the filename isn't used to create a file in the meantime)
-	write (fd,templateStr.data(),0);	//.data() just used to avoid null param. arbitrary
+	(void) write (fd,"",0);
 	close(fd);
 	r_fileAndPath = templateStr+extension;
 	if (rename(templateStr.c_str(),r_fileAndPath.c_str()) == -1) {
