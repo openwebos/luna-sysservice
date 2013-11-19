@@ -124,7 +124,6 @@ Below are the tools and libraries (and their minimum versions) required to build
 
 * cmake (version required by openwebos/cmake-modules-webos)
 * glib-2.0
-* gthread-2.0
 * liburiparser
 * libxml-2.0
 * openwebos/cjson

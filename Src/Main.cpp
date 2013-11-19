@@ -266,7 +266,13 @@ int main(int argc, char ** argv)
 	// Initialize the Prefs Factory
 	PrefsFactory::instance()->setServiceHandle(serviceHandle);
 	BackupManager::instance()->setServiceHandle(serviceHandle);
-        EraseHandler::instance()->setServiceHandle(serviceHandle);
+
+	// Initialize erase handler
+	if (!EraseHandler::instance()->init())
+	{
+		PmLogError(sysServiceLogContext(), "ERASE_FAILURE", 0, "Failed to init EraseHandler (functionality disabled)");
+	}
+	EraseHandler::instance()->setServiceHandle(serviceHandle);
 
 	//init the image service
 	ImageServices *imgSvc = ImageServices::instance(mainLoopObj);

@@ -42,6 +42,7 @@ public:
 
 
     static EraseHandler*    instance();
+    bool    init();
     void    setServiceHandle(LSPalmService* service);
     bool    Erase(LSHandle* pHandle, LSMessage* pMessage, EraseType_t type);
 
@@ -49,8 +50,6 @@ public:
 private:
     EraseHandler    ();
     ~EraseHandler   ();
-
-    bool    init();
 
 
     static LSMethod    s_EraseServerMethods[];

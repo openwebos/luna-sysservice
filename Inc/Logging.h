@@ -30,6 +30,8 @@ extern "C" {
 
 #include "PmLogLib.h"
 
+PmLogContext sysServiceLogContext();
+
 #define SYSSERVICELOG_MESSAGE_MAX 500
 inline void sysServiceFmtMsg(char *logMsg, char *fmt, ...)
 {

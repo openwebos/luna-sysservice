@@ -30,10 +30,6 @@ include(FindPkgConfig)
 pkg_check_modules(GLIB2 REQUIRED glib-2.0)
 webos_add_compiler_flags(ALL ${GLIB2_CFLAGS})
 
-# -- check for gthread 2.0
-pkg_check_modules(GTHREAD2 REQUIRED gthread-2.0)
-webos_add_compiler_flags(ALL ${GTHREAD2_CFLAGS})
-
 # -- check for libxml 2.0
 pkg_check_modules(GXML2 REQUIRED libxml-2.0)
 webos_add_compiler_flags(ALL ${GXML2_CFLAGS})
@@ -140,7 +136,6 @@ set(SOURCE_FILES Src/Logging.cpp
 add_executable(LunaSysService ${SOURCE_FILES})
 target_link_libraries(LunaSysService 
                       ${GLIB2_LDFLAGS} 
-                      ${GTHREAD2_LDFLAGS}
                       ${GXML2_LDFLAGS}
                       ${SQLITE3_LDFLAGS}
                       ${CJSON_LDFLAGS}

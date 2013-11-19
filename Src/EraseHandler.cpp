@@ -75,6 +75,18 @@ EraseHandler::EraseHandler()
  */
 bool EraseHandler::init()
 {
+    if (!nyxSystem)
+    {
+        int ret = nyx_device_open(NYX_DEVICE_SYSTEM, "Main", &nyxSystem);
+
+        if (ret != NYX_ERROR_NONE)
+        {
+            PmLogError(sysServiceLogContext(), "NYX_DEVICE_OPEN_FAIL", 1,
+                    PMLOGKFV("NYX_ERROR", "%d", ret), "Unable to open the nyx device System");
+            nyxSystem = 0;
+            return false
+        }
+    }
     return true;
 }
 
@@ -135,6 +147,10 @@ bool EraseHandler::Erase(LSHandle* pHandle, LSMessage* pMessage, EraseType_t typ
 {
     if(!m_service) {
         qCritical() << "EraseHandler called before it has been initialized";
+        return false;
+    }
+    if(!nyxSystem) {
+        PmLogWarning(sysServiceLogContext(), "ERASE_BROKEN", 1, PMLOGKFV("ERASE_TYPE", "%d", type), "Call for erase when no working provider available");
         return false;
     }
     LSError lserror;

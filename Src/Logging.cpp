@@ -22,6 +22,13 @@
 #include "Logging.h"
 
 #if defined(USE_PMLOG)
+
+PmLogContext sysServiceLogContext()
+{
+    static PmLogContext logContext = PmLogGetContextInline("LunaSysService");
+    return logContext;
+}
+
 static const size_t MSGID_LENGTH = 30;
 
 static char * fmtUniqueLogId(char *dest, const char *pFile, guint32 lineNbr)
@@ -37,8 +44,7 @@ static char * fmtUniqueLogId(char *dest, const char *pFile, guint32 lineNbr)
 
 void sysServiceLogInfo(const char * fileName, guint32 lineNbr,const char* funcName, const char *logMsg)
 {
-    PmLogContext pmContext;
-    PmLogGetContext("LunaSysService", &pmContext);
+    PmLogContext pmContext = sysServiceLogContext();
     // Length will be an arbitrary short string with length up to 31
     char msgId[MSGID_LENGTH+1];
 
@@ -59,8 +65,7 @@ void outputQtMessages(QtMsgType type,
                     const QMessageLogContext &context,
                     const QString &msg)
 {
-    PmLogContext pmContext;
-    PmLogGetContext("LunaSysService", &pmContext);
+    PmLogContext pmContext = sysServiceLogContext();
     // Length will be an arbitrary short string with length up to 31
     char msgId[MSGID_LENGTH+1];
 
@@ -91,8 +96,7 @@ void outputQtMessages(QtMsgType type,
 }
 #else // QT_VERSION < 5.0.0
 void outputQtMessages(QtMsgType type, const char *str) {
-    PmLogContext pmContext;
-    PmLogGetContext("LunaSysService", &pmContext);
+    PmLogContext pmContext = sysServiceLogContext();
 
     // before Qt 5.0 we had no context information (no filename and line number)
     // so lets use one predefined MSGID
