@@ -1492,7 +1492,7 @@ void TimePrefsHandler::updateSystemTime()
     // prefer NTP over anything else if allowed
     if (isNTPAllowed())
     {
-        if (driftedStamp < m_lastNtpUpdate)
+        if (m_lastNtpUpdate > 0 && driftedStamp < m_lastNtpUpdate)
         {
             qDebug("NTP is still valid (ignoring updateSystemTime())");
             return;
@@ -1510,8 +1510,13 @@ void TimePrefsHandler::updateSystemTime()
         {
             //ok, got it from NTP...
             m_lastNtpUpdate = timeStamp;
+            qDebug("Got NTP response %ld", ntpUtc);
             systemSetTime(ntpUtc);
             return;
+        }
+        else
+        {
+            qDebug("No valid NTP response");
         }
     }
 
@@ -1538,6 +1543,8 @@ void TimePrefsHandler::updateSystemTime()
             // now lets-get actual UTC from local calendar time according to system
             // time-zone
             utc = timelocal(&tmLocal);
+
+            qDebug("Using broadcast local time %ld (adjusted as utc %ld)", local, utc);
 
             systemSetTime( utc );
             return;
