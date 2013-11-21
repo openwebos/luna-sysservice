@@ -59,10 +59,11 @@ int gLoggerLevel = G_LOG_LEVEL_WARNING;
 
 static void turnNovacomOn(LSHandle * lshandle);
 
-static void parseCommandlineOptions(int argc, char** argv)
+static bool parseCommandlineOptions(int argc, char** argv)
 {
     GError* error = NULL;
     GOptionContext* context = NULL;
+	bool succeed = true;
 
 	static GOptionEntry entries[] = {
 		{ "logger", 'l', 0, G_OPTION_ARG_STRING,  &s_logLevelStr, "log level", "level"},
@@ -72,7 +73,12 @@ static void parseCommandlineOptions(int argc, char** argv)
 
 	context = g_option_context_new(NULL);
 	g_option_context_add_main_entries (context, entries, NULL);
-	g_option_context_parse (context, &argc, &argv, &error);
+	if (! g_option_context_parse (context, &argc, &argv, &error) )
+	{
+		g_printerr("Error: %s\n", error->message);
+		g_error_free(error);
+		succeed = false;
+	}
 
     if (s_logLevelStr)
     {
@@ -91,6 +97,8 @@ static void parseCommandlineOptions(int argc, char** argv)
     }
 
 	g_option_context_free(context);
+
+	return succeed;
 }
 
 static void setLoglevel(const char * loglstr)
@@ -169,7 +177,11 @@ int main(int argc, char ** argv)
     QCoreApplication app(argc, argv);
 #endif
 
-	parseCommandlineOptions(argc, argv);
+	if (!parseCommandlineOptions(argc, argv))
+	{
+		// error already reported
+		return 1;
+	}
 	setLoglevel(Settings::settings()->m_logLevel.c_str());
 
 	g_log_set_default_handler(logFilter, NULL);

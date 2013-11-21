@@ -84,7 +84,7 @@ bool EraseHandler::init()
             PmLogError(sysServiceLogContext(), "NYX_DEVICE_OPEN_FAIL", 1,
                     PMLOGKFV("NYX_ERROR", "%d", ret), "Unable to open the nyx device System");
             nyxSystem = 0;
-            return false
+            return false;
         }
     }
     return true;

@@ -21,7 +21,6 @@
 #include <errno.h>
 #include <dirent.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <linux/fb.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
@@ -384,7 +383,6 @@ bool WallpaperPrefsHandler::importWallpaperViaImage2(const std::string& imageFil
 
 	std::string file = fileName;
 	std::string path = folderPath;
-	struct stat stBuf;
 
 	g_free(fileName);
 	g_free(folderPath);
@@ -392,10 +390,9 @@ bool WallpaperPrefsHandler::importWallpaperViaImage2(const std::string& imageFil
 	//TODO: going to ignore the thumbnail versions. They were never used anyways
 	std::string destPathAndFile = s_wallpaperDir + std::string("/")+file;
 
-	if (lstat(destPathAndFile.c_str(), &stBuf) == 0) {
-		//yes...destroy it
-		unlink(destPathAndFile.c_str());
-	}
+	// destroy if already exists
+	(void) unlink(destPathAndFile.c_str());
+
 	std::list<std::string>::iterator iter=m_wallpapers.begin();
 	while (iter != m_wallpapers.end()) {
 		if (*iter == file)
@@ -466,15 +463,9 @@ bool WallpaperPrefsHandler::importWallpaper(std::string& ret_wallpaperName, cons
     std::string destPathAndFile = s_wallpaperDir + std::string("/")+sourceFile;
     std::string destThumbPathAndFile = s_wallpaperThumbsDir +  std::string("/")+sourceFile;
 
-    struct stat stBuf;
-    if (lstat(destPathAndFile.c_str(), &stBuf) == 0) {
-        //yes...destroy it
-        unlink(destPathAndFile.c_str());
-    }
-    if (lstat(destThumbPathAndFile.c_str(), &stBuf) == 0) {
-        //the thumbnail too?...destroy it
-        unlink(destThumbPathAndFile.c_str());
-    }
+	// destroy both files (including thumbnail) if they exists
+	(void) unlink(destPathAndFile.c_str());
+	(void) unlink(destThumbPathAndFile.c_str());
 
     std::list<std::string>::iterator iter=m_wallpapers.begin();
     while (iter != m_wallpapers.end()) {
@@ -564,15 +555,9 @@ bool WallpaperPrefsHandler::importWallpaper_lowMem(std::string& ret_wallpaperNam
     std::string destPathAndFile = s_wallpaperDir + std::string("/")+sourceFile;
     std::string destThumbPathAndFile = s_wallpaperThumbsDir +  std::string("/")+sourceFile;
 
-    struct stat stBuf;
-    if (lstat(destPathAndFile.c_str(), &stBuf) == 0) {
-        //yes...destroy it
-        unlink(destPathAndFile.c_str());
-    }
-    if (lstat(destThumbPathAndFile.c_str(), &stBuf) == 0) {
-        //the thumbnail too?...destroy it
-        unlink(destThumbPathAndFile.c_str());
-    }
+	// destroy both files (including thumbnail) if they exists
+	(void) unlink(destPathAndFile.c_str());
+	(void) unlink(destThumbPathAndFile.c_str());
 
     std::list<std::string>::iterator iter=m_wallpapers.begin();
     while (iter != m_wallpapers.end()) {
@@ -737,21 +722,24 @@ bool WallpaperPrefsHandler::deleteWallpaper(std::string wallpaperName) {
 	std::string destThumbPathAndFile = s_wallpaperThumbsDir +  std::string("/")+wallpaperName;
 
 	bool found;		//a "loose" indicator of success. It will be true if *any* action was taken
-	struct stat stBuf;
 	//if the wallpaper is the current one set, then return false
 	if (wallpaperName == this->m_currentWallpaperName)
 		return false;
 	
-	if (lstat(destPathAndFile.c_str(), &stBuf) == 0) {
-		//yes...destroy it
-		unlink(destPathAndFile.c_str());
+	if (access(destPathAndFile.c_str(), F_OK) == 0 ||
+		access(destThumbPathAndFile.c_str(), F_OK) == 0)
+	{
+		// either wallpaper or its thumbnail exists - we have some actions to
+		// take
 		found = true;
 	}
-	if (lstat(destThumbPathAndFile.c_str(), &stBuf) == 0) {
-		//the thumbnail too?...destroy it
-		unlink(destThumbPathAndFile.c_str());
-		found=true;
-	}
+	// destroy both files (including thumbnail) if they exists
+	(void) unlink(destPathAndFile.c_str());
+	(void) unlink(destThumbPathAndFile.c_str());
+
+	// note that if we were not been able to remove wallpaper file we'll remove
+	// reference to it from internal list anyway effectively hiding it/making
+	// invalid
 
 	std::list<std::string>::iterator iter=m_wallpapers.begin();
 	while (iter != m_wallpapers.end()) {
