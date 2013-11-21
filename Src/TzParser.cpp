@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -113,25 +114,39 @@ TzTransitionList parseTimeZone(const char* tzName)
 	filePath += tzName;
 	
 	struct stat stBuf;
-	if (stat(filePath.c_str(), &stBuf) != 0) {
-		printf("Failed to stat file: %s\n", filePath.c_str());
+	FILE* fp = fopen(filePath.c_str(), "r");
+	if (!fp && errno == ENOENT)
+	{
+		// if file not found - try alternative filePath
+		printf("Failed to find file: %s\n", filePath.c_str());
 
 		filePath = etcZoneInfoDir;
 		filePath += tzName;
 
-		if (stat(filePath.c_str(), &stBuf) != 0) {
-			printf("Failed to stat second try file: %s\n", filePath.c_str());
+		fp = fopen(filePath.c_str(), "r");
+		if (!fp && errno == ENOENT)
+		{
+			printf("Failed to find second try file: %s\n", filePath.c_str());
 			return TzTransitionList();
 		}
 	}
+	if (fp)
+	{
+		if (fstat(fileno(fp), &stBuf) != 0)
+		{
+			printf("Failed to stat opened file: %s\n", filePath.c_str());
+			fclose(fp);
+			return TzTransitionList();
+		}
 
-	if (stBuf.st_size <= (int) sizeof(tzhead)) {
-		printf("file too short to be a tz file: %s\n", filePath.c_str());
-		return TzTransitionList();
+		if (stBuf.st_size <= (int) sizeof(tzhead)) {
+			printf("file too short to be a tz file: %s\n", filePath.c_str());
+			fclose(fp);
+			return TzTransitionList();
+		}
 	}
-	
-	FILE* fp = fopen(filePath.c_str(), "r");
-	if (!fp) {
+	else
+	{
 		printf("Failed to open file: %s\n", filePath.c_str());
 		return TzTransitionList();
 	}	
