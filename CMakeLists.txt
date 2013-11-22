@@ -147,6 +147,7 @@ target_link_libraries(LunaSysService
                       ${URIPARSER_LDFLAGS}
                       ${PMLOG_LDFLAGS}
                       ${NYXLIB_LDFLAGS}
+                      rt
                       )
 
 
