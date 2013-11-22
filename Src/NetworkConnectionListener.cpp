@@ -134,10 +134,15 @@ bool NetworkConnectionListener::connectionManagerConnectCallback(LSHandle *sh, L
 bool NetworkConnectionListener::connectionManagerGetStatusCallback(LSHandle *sh, LSMessage *message)
 {
     // {"isInternetConnectionAvailable": boolean}
-    VALIDATE_SCHEMA_AND_RETURN(sh,
-                               message,
-                               SCHEMA_5(OPTIONAL(wifi,object),OPTIONAL(isInternetConnectionAvailable,
- boolean),REQUIRED(returnValue,boolean),OPTIONAL(subscribed,boolean),OPTIONAL(wired,object)));
+	VALIDATE_SCHEMA_AND_RETURN( sh, message, RELAXED_SCHEMA(
+		PROPS_3(
+			REQUIRED(returnValue, boolean),
+			OPTIONAL(subscribed, boolean),
+			OPTIONAL(isInternetConnectionAvailable, boolean)
+		)
+
+		REQUIRED_1( returnValue )
+	));
 
 	if (!message)
 		return true;

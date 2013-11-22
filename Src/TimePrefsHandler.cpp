@@ -75,6 +75,24 @@ extern GMainLoop * g_gmainLoop;
 extern char *strptime (__const char *__restrict __s,
 		       __const char *__restrict __fmt, struct tm *__tp);
 
+namespace {
+	bool convert(const pbnjson::JValue &value, time_t &timeValue)
+	{
+		if (!value.isNumber()) return false;
+
+		// this check will be compiled-out due to static condition
+		if (sizeof(time_t) <= sizeof(int32_t))
+		{
+			timeValue = value.asNumber<int32_t>();
+		}
+		else
+		{
+			timeValue = value.asNumber<int64_t>();
+		}
+		return true;
+	}
+} // anonymous namespace
+
 static void
 print_tzvars (void)
 {
@@ -2017,7 +2035,7 @@ Set system time.
 \subsection com_palm_systemservice_time_set_system_time_syntax Syntax:
 \code
 {
-    "utc": string
+    "utc": integer/string
 }
 \endcode
 
@@ -2038,6 +2056,11 @@ Set system time.
 
 \subsection com_palm_systemservice_time_set_system_time_examples Examples:
 
+\code
+luna-send -n 1 -f luna://com.palm.systemservice/time/setSystemTime '{"utc": 1346149624 }'
+\endcode
+
+Deprecated:
 \code
 luna-send -n 1 -f luna://com.palm.systemservice/time/setSystemTime '{"utc": "1346149624" }'
 \endcode
@@ -2062,72 +2085,56 @@ Example response for a failed call:
 bool TimePrefsHandler::cbSetSystemTime(LSHandle* lshandle, LSMessage *message,
 							void *user_data)
 {
-    // {"utc": string}
-    VALIDATE_SCHEMA_AND_RETURN(lshandle,
-                               message,
-                               SCHEMA_1(REQUIRED(utc, string)));
+    // {"utc": integer/string}
+	LSMessageJsonParser parser( message, STRICT_SCHEMA(
+		PROPS_1(
+			"\"utc\":{\"type\":[\"integer\",\"string\"]}"
+		)
+
+		REQUIRED_1( utc )
+	));
+	ESchemaErrorOptions schErrOption = static_cast<ESchemaErrorOptions>(Settings::settings()->schemaValidationOption);
+	if (!parser.parse(__FUNCTION__, lshandle, schErrOption))
+		return true;
 
     LSError lserror;
     LSErrorInit(&lserror);
 
-	const char* str = LSMessageGetPayload(message);
-    if( !str )
+	if( !parser.getPayload() )
 		return false;
 
-	struct json_object* root = json_tokener_parse(str);
-	struct json_object* label = 0;
-
-	std::string utcTimeInSecsStr;
+	time_t utcTimeInSecs = 0;
 	std::string errorText;
-	std::string errorCode;
-
-	long utcTimeInSecs=0;
-	bool utcTimeValid=true;
-
-	struct timeval timeVal;	
-	int rc=0;
 
 	TimePrefsHandler* th = (TimePrefsHandler*) user_data;
 
-	if (!root || (is_error(root))) {
-		root = 0;
-		errorText = "malformed json";
-		goto Done_cbSetSystemTime;
-	}
-
-	label = json_object_object_get(root, "utc");
-
-	if ((!label) || is_error(label))
+	if (!convert(parser.get()["utc"], utcTimeInSecs))
 	{
-		utcTimeValid=false;
+		std::string utcTimeInSecsStr;
 
-	}
-	else
-	{
-		utcTimeValid = true;
-		utcTimeInSecsStr = json_object_get_string(label);
-	}
-
-	errno = 0;
-	if (utcTimeValid) {
-		utcTimeInSecs   = strtoul(utcTimeInSecsStr.c_str(), 0, 10);
-		if (errno != 0 && utcTimeInSecs == 0) 
+		if (parser.get("utc", utcTimeInSecsStr))
 		{
-			errorText = "conversion of utc value failed";
+			errno = 0;
+			char *endptr;
+			utcTimeInSecs = strtoul(utcTimeInSecsStr.c_str(), &endptr, 10);
+			if ((errno != 0 && utcTimeInSecs == 0) ||
+				*endptr != '\0' ||
+				utcTimeInSecsStr.empty())
+			{
+				errorText = "conversion of utc value failed";
+				goto Done_cbSetSystemTime;
+			}
+		}
+		else
+		{
+			errorText = "accessing utc integer/string value failed";
 			goto Done_cbSetSystemTime;
 		}
-		//a new time was specified
-		timeVal.tv_sec = utcTimeInSecs;
-		timeVal.tv_usec = 0;
-        g_warning("%s: settimeofday: %u",__FUNCTION__,(unsigned int)timeVal.tv_sec);
-        qDebug("%s: settimeofday: %u",__FUNCTION__,(unsigned int)timeVal.tv_sec);
-		rc=settimeofday(&timeVal, 0);
-        qDebug("settimeofday %s", ( rc == 0 ? "succeeded" : "failed"));
-
 	}
 
-	// if we had valid NTP in our system-time we destroy it here
-	th->m_lastNtpUpdate = 0;
+	//a new time was specified
+	g_warning("%s: settimeofday: %u",__FUNCTION__,(unsigned int)utcTimeInSecs);
+	th->systemSetTime(utcTimeInSecs);
 
 	TimePrefsHandler::transitionNITZValidState((th->getLastNITZValidity() & TimePrefsHandler::NITZ_Valid),true);
 	th->postSystemTimeChange();
@@ -2136,9 +2143,7 @@ bool TimePrefsHandler::cbSetSystemTime(LSHandle* lshandle, LSMessage *message,
 
 Done_cbSetSystemTime:
 
-	if (root)
-		json_object_put(root);
-
+	struct json_object* root;
 	root = json_object_new_object();
 
 	if (errorText.empty())

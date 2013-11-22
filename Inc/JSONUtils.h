@@ -64,6 +64,12 @@ extern const char * STANDARD_JSON_SUCCESS;
 
 #define SCHEMA_15(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15) "{\"type\":\"object\",\"properties\":{" p1 "," p2 "," p3 "," p4 "," p5 "," p6 "," p7 "," p8 ","  p9 "," p10 "," p11 "," p12 "," p13 "," p14 "," p15 "," SYSTEM_PARAMETERS "},\"additionalProperties\":false}"
 
+#define PROPS_1(p1)                             ",\"properties\":{" p1 "," SYSTEM_PARAMETERS "}"
+#define PROPS_3(p1, p2, p3)                     ",\"properties\":{" p1 "," p2 "," p3 "," SYSTEM_PARAMETERS "}"
+#define REQUIRED_1(p1)                          ",\"required\":[\"" #p1 "\"]"
+#define STRICT_SCHEMA(attributes)               "{\"type\":\"object\"" attributes ",\"additionalProperties\":false}"
+#define RELAXED_SCHEMA(attributes)              "{\"type\":\"object\"" attributes ",\"additionalProperties\":true}"
+
 // Macros to use in place of the parameters in the SCHEMA_xxx macros above
 #define REQUIRED(name, type) "\"" #name "\":{\"type\":\"" #type "\"}"
 #define OPTIONAL(name, type) "\"" #name "\":{\"type\":\"" #type "\",\"optional\":true}"
