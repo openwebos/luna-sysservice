@@ -1463,6 +1463,8 @@ void TimePrefsHandler::systemSetTime(time_t utc)
 	timeVal.tv_usec = 0;
     systemSetTime(&timeVal);
 
+	// if we had valid NTP in our system-time we destroy it here
+	m_lastNtpUpdate = 0;
 }
 
 void TimePrefsHandler::systemSetTime(struct timeval * pTimeVal)
@@ -1509,9 +1511,9 @@ void TimePrefsHandler::updateSystemTime()
         if (haveNTP)
         {
             //ok, got it from NTP...
-            m_lastNtpUpdate = timeStamp;
             qDebug("Got NTP response %ld", ntpUtc);
             systemSetTime(ntpUtc);
+            m_lastNtpUpdate = timeStamp;
             return;
         }
         else
@@ -1801,6 +1803,10 @@ bool TimePrefsHandler::setNITZTimeEnable(bool time_en) {	//returns old value
 	else {
 		//clear the flag
 		m_nitzSetting &= (~TimePrefsHandler::NITZ_TimeEnable);
+
+		// assume that NTP is no more stored in system-time useful to force
+		// update from NTP server through turning off/on useNetworkTime
+		m_lastNtpUpdate = 0;
 	}
 
 	return rv;
@@ -2119,6 +2125,9 @@ bool TimePrefsHandler::cbSetSystemTime(LSHandle* lshandle, LSMessage *message,
         qDebug("settimeofday %s", ( rc == 0 ? "succeeded" : "failed"));
 
 	}
+
+	// if we had valid NTP in our system-time we destroy it here
+	th->m_lastNtpUpdate = 0;
 
 	TimePrefsHandler::transitionNITZValidState((th->getLastNITZValidity() & TimePrefsHandler::NITZ_Valid),true);
 	th->postSystemTimeChange();
