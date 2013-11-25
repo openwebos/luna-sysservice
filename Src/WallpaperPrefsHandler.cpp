@@ -1717,7 +1717,6 @@ static bool cbRefreshWallpaperIndex(LSHandle* lsHandle, LSMessage *message,
 {
     EMPTY_SCHEMA_RETURN(lsHandle,message);
 
-	bool        retVal;
 	LSError     lsError;
 	std::string result;
 	const char* reply = 0;
@@ -1725,24 +1724,19 @@ static bool cbRefreshWallpaperIndex(LSHandle* lsHandle, LSMessage *message,
 
 	std::string errorText;
 
+	LSErrorInit( &lsError );
 	WallpaperPrefsHandler* wh = (WallpaperPrefsHandler*) user_data;
     assert( wh );
     wh->scanForWallpapers(true);
-    retVal=true;
 
 	json = json_object_new_object();
-	json_object_object_add(json, (char*) "returnValue", json_object_new_boolean(retVal));
-	if (!retVal) {
-		json_object_object_add(json,(char*) "errorText",json_object_new_string(const_cast<char*>(errorText.c_str())));
-        qWarning(errorText.c_str());
-	}
+	json_object_object_add(json, (char*) "returnValue", json_object_new_boolean(true));
 
 	reply = json_object_to_json_string(json);
 
 	if (reply)
     {
-		retVal = LSMessageReply(lsHandle, message, reply, &lsError);
-        if (!retVal)
+		if (!LSMessageReply(lsHandle, message, reply, &lsError))
             LSErrorFree (&lsError);
     }
 

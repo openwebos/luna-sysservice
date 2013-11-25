@@ -98,6 +98,7 @@ char* readFile(const char* filePath)
     size_t result = fread(ptr, sz, 1, f);
     if(result != 1)
     {
+        delete[] ptr;
         fclose(f);
         return 0;
     }

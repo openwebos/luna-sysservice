@@ -54,7 +54,6 @@ public:
 	static bool msmFsckingCallback(LSHandle* handle, LSMessage* message, void* ctxt);
 	static bool msmPartitionAvailCallback(LSHandle* handle, LSMessage* message, void* ctxt);
 	
-	LSMessageToken * getLSStorageToken() 	{ return &m_storageDaemonToken;}
 	MSMState getMSMState() 					{ return m_msmState;}
 	
 protected:
@@ -81,8 +80,6 @@ protected:
 	bool msmEntry(LSMessage* message);
 	bool msmFscking(LSMessage* message);
 	bool msmPartitionAvailable(LSMessage* message);
-	
-	LSMessageToken m_storageDaemonToken;
 	
 	MSMState m_msmState;
 };

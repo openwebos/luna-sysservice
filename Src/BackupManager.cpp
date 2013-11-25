@@ -159,8 +159,10 @@ void BackupManager::initFilesForBackup(bool useFilenameWithoutPath)
 			}
 			else
 			{
-				const char * cstr = basename(m_p_backupDb->databaseFile().c_str());
-				std::string filename = ( cstr ? std::string(cstr) : std::string(cstr));
+				char *dbFilename = strdup(m_p_backupDb->databaseFile().c_str());
+				const char * cstr = basename(dbFilename);
+				std::string filename = ( cstr ? std::string(cstr) : std::string());
+				free(dbFilename);
 				if (filename.find("/") != std::string::npos)
 					filename = std::string("");			///all for safety
 				m_backupFiles.push_back(filename);

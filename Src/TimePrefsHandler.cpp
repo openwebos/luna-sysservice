@@ -1457,17 +1457,21 @@ void TimePrefsHandler::setTimeZone(const TimeZoneInfo * pZoneInfo)
 
 void TimePrefsHandler::systemSetTimeZone(const std::string &tzFileActual, const TimeZoneInfo &zoneInfo)
 {
-	// Do we have a timezone file in place?
-	struct stat stBuf;
-	if (lstat(s_tzFilePath, &stBuf) == 0) {
-		unlink(s_tzFilePath);
-	}
+	// Do we have a timezone file in place? remove if yes
+	(void) unlink(s_tzFilePath);
 
     // Note that /etc/localtime should point to this file
     // s_tzFilePath ( /var/luna/preferences/localtime )
     // which is symlink to current time-zone
     // This allows to have read-only /etc/localtime
-	symlink(tzFileActual.c_str(), s_tzFilePath);
+	if (symlink(tzFileActual.c_str(), s_tzFilePath))
+	{
+		PmLogError(sysServiceLogContext(), "CHANGETZ_FAILURE", 2,
+		           PMLOGKS("TZFILE_TARGET", tzFileActual.c_str()),
+		           PMLOGKS("TZFILE_LINK", s_tzFilePath),
+		           "Failed to change system time-zone through making symlink");
+		return;
+	}
     __qMessage("Setting Time Zone: %s, utc Offset: %d",
 			zoneInfo.name.c_str(), zoneInfo.offsetToUTC);
 	tzsetWorkaround(zoneInfo.name.c_str());
@@ -2526,9 +2530,16 @@ int  TimePrefsHandler::nitzHandlerTimeValue(NitzParameters& nitz,int& flags,std:
 
 	if (flags & NITZHANDLER_FLAGBIT_IGNORE_TIL_SET)
 	{
-		int utc = timegm(&(nitz._timeStruct));
-		systemSetTime(utc);
-		nitz._timevalid = true;
+		time_t utc = timegm(&(nitz._timeStruct));
+		if (utc == (time_t)-1) // timegm error
+		{
+			nitz._timevalid = false;
+		}
+		else
+		{
+			systemSetTime(utc);
+			nitz._timevalid = true;
+		}
 	}
 
 	if (nitz._timevalid)

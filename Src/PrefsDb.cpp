@@ -953,16 +953,6 @@ Stage1a:
 
 Stage2:
 
-	if (jsonStr) {
-		delete [] jsonStr;
-	}
-	if (root && !is_error(root))
-		json_object_put(root);
-
-	root = 0;
-	label = 0;
-	jsonStr = 0;
-
 	//customer care number also...this is in a separate file
 	jsonStr = Utils::readFile(s_custCareNumberFile);
 	if (!jsonStr) {

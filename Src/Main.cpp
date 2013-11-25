@@ -243,35 +243,35 @@ int main(int argc, char ** argv)
 	result = LSCall(serviceHandlePrivate,
 			"palm://com.palm.lunabus/signal/addmatch",
 			"{\"category\":\"/storaged\", \"method\":\"MSMAvail\"}",
-			SystemRestore::msmAvailCallback, NULL, SystemRestore::instance()->getLSStorageToken(), &lsError);
+			SystemRestore::msmAvailCallback, NULL, NULL, &lsError);
 	if (!result)
 		return -1;
 
 	result = LSCall(serviceHandlePrivate,
 			"palm://com.palm.lunabus/signal/addmatch",
 			"{\"category\":\"/storaged\", \"method\":\"MSMProgress\"}",
-			SystemRestore::msmProgressCallback, NULL, SystemRestore::instance()->getLSStorageToken(), &lsError);
+			SystemRestore::msmProgressCallback, NULL, NULL, &lsError);
 	if (!result)
 		return -1;
 
 	result = LSCall(serviceHandlePrivate,
 			"palm://com.palm.lunabus/signal/addmatch",
 			"{\"category\":\"/storaged\", \"method\":\"MSMEntry\"}",
-			SystemRestore::msmEntryCallback, NULL, SystemRestore::instance()->getLSStorageToken(), &lsError);
+			SystemRestore::msmEntryCallback, NULL, NULL, &lsError);
 	if (!result)
 		return -1;
 
 	result = LSCall(serviceHandlePrivate,
 			"palm://com.palm.lunabus/signal/addmatch",
 			"{\"category\":\"/storaged\", \"method\":\"MSMFscking\"}",
-			SystemRestore::msmFsckingCallback, NULL, SystemRestore::instance()->getLSStorageToken(), &lsError);
+			SystemRestore::msmFsckingCallback, NULL, NULL, &lsError);
 	if (!result)
 		return -1;
 
 	result = LSCall(serviceHandlePrivate,
 			"palm://com.palm.lunabus/signal/addmatch",
 			"{\"category\":\"/storaged\", \"method\":\"PartitionAvail\"}",
-			SystemRestore::msmPartitionAvailCallback, NULL, SystemRestore::instance()->getLSStorageToken(), &lsError);
+			SystemRestore::msmPartitionAvailCallback, NULL, NULL, &lsError);
 	if (!result)
 		return -1;
 
