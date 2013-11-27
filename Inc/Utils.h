@@ -93,15 +93,6 @@ bool extractFromJson(struct json_object * root,const std::string& key,std::strin
 //Wrapper on CJSON to avoid ptr values of -1 (and the use of is_error)
 struct json_object * JsonGetObject(struct json_object * root,const std::string& key);
 
-#define ERRMASK_POSTSUBUPDATE_PUBLIC	1
-#define ERRMASK_POSTSUBUPDATE_PRIVATE	2
-int postSubscriptionUpdate(const std::string& key,const std::string& postMessage,LSHandle * serviceHandlePublic,LSHandle * serviceHandlePrivate);
-bool processSubscription(LSHandle * serviceHandle, LSMessage * message,const std::string& key);
-uint32_t removeSubscriptions(const std::string& key,LSHandle * serviceHandlePublic,LSHandle * serviceHandlePrivate);
-
-uint32_t countSubscribers(const std::string& key,LSHandle * serviceHandlePublic,LSHandle * serviceHandlePrivate);
-bool 	hasSubscribers(const std::string& key,LSHandle * serviceHandlePublic,LSHandle * serviceHandlePrivate);
-
 void _dbgprintf(const char * format,...);
 
 int createTempFile(const std::string& baseDir,const std::string& tag,const std::string& extension,std::string& r_fileAndPath);
