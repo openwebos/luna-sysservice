@@ -36,6 +36,7 @@
 #include "NetworkConnectionListener.h"
 #include "PrefsDb.h"
 #include "PrefsFactory.h"
+#include "ClockHandler.h"
 #include "Logging.h"
 #include "Utils.h"
 #include "JSONUtils.h"
@@ -67,6 +68,11 @@ static const char*    s_logChannel = "TimePrefsHandler";
 
 #define TIMEOUT_INTERVAL_SEC	5
 
+namespace {
+	// when no time source used for system time
+	const int lowestTimeSourcePriority = INT_MIN; // mark for overriding
+} // anonymous namespace
+
 json_object * TimePrefsHandler::s_timeZonesJson = NULL;
 TimePrefsHandler * TimePrefsHandler::s_inst = NULL;
 
@@ -89,6 +95,29 @@ namespace {
 		{
 			timeValue = value.asNumber<int64_t>();
 		}
+		return true;
+	}
+
+	bool convertUnique(const char *function, const char *value, std::vector<std::string> &unique)
+	{
+		using namespace pbnjson;
+
+
+		JsonMessageParser parser( value,
+			"{\"type\":\"array\",\"items\": {\"type\":\"string\"},\"uniqueItems\":true}"
+		);
+
+		if (!parser.parse(function)) return false;
+
+		pbnjson::JValue array = parser.get();
+
+		unique.clear();
+		unique.reserve(array.arraySize());
+		for (size_t i = 0; i < array.arraySize(); ++i)
+		{
+			unique.push_back(array[i].asString());
+		}
+
 		return true;
 	}
 } // anonymous namespace
@@ -376,6 +405,8 @@ TimePrefsHandler::TimePrefsHandler(LSPalmService* service)
     , m_sendWakeupSetToPowerD(true)
 	, m_lastNtpUpdate(0)
     , m_nitzTimeZoneAvailable(true)
+	, m_currentTimeSourcePriority(lowestTimeSourcePriority)
+	, m_nextSyncTime(0)
 {
 	if (!s_inst)
 		s_inst=this;
@@ -966,7 +997,32 @@ void TimePrefsHandler::readCurrentTimeSettings()
 		//TODO: fix that ...it's not very robust
 	}
 
+	std::string timeSourcesJson;
+	if (!PrefsDb::instance()->getPref("timeSources", timeSourcesJson))
+	{
+		// default hard-coded value
+		// we should get proper value from luna-init defaultPreferences.txt
+		timeSourcesJson = "[\"ntp\",\"sdp\",\"nitz\",\"broadcast\"]";
+		PrefsDb::instance()->setPref("timeSources", timeSourcesJson);
+		PmLogError(
+			sysServiceLogContext(), "MISSING_PREF_TIMESOURCES", 1,
+			PMLOGKS("HARDCODED", timeSourcesJson.c_str()),
+			"No timeSources preference defined falling back to hard-coded"
+		);
+	}
+	if (!convertUnique(__FUNCTION__, timeSourcesJson.c_str(), m_timeSources))
+	{
+		// converUnique will log error
+		static const std::string fallback[] = { "ntp", "sdp", "nitz", "broadcast" };
+		m_timeSources.assign(fallback+0, fallback+(sizeof(fallback)/sizeof(fallback[0])));
+	}
+	else
+	{
+		PmLogDebug(sysServiceLogContext(), "Using next time sources order: %s",
+		           timeSourcesJson.c_str());
+	}
 }
+
 std::string TimePrefsHandler::tzNameFromJsonValue(json_object * pValue)
 {
 	if (pValue == NULL)
@@ -1478,18 +1534,15 @@ void TimePrefsHandler::systemSetTimeZone(const std::string &tzFileActual, const 
     __qMessage("TZ env is now [%s]", getenv("TZ"));
 }
 
-void TimePrefsHandler::systemSetTime(time_t utc)
+bool TimePrefsHandler::systemSetTime(time_t utc)
 {
 	struct timeval timeVal;
 	timeVal.tv_sec = utc;
 	timeVal.tv_usec = 0;
-    systemSetTime(&timeVal);
-
-	// if we had valid NTP in our system-time we destroy it here
-	m_lastNtpUpdate = 0;
+	return systemSetTime(&timeVal);
 }
 
-void TimePrefsHandler::systemSetTime(struct timeval * pTimeVal)
+bool TimePrefsHandler::systemSetTime(struct timeval * pTimeVal)
 {
     time_t originalTime = time(0);
     qDebug("%s: settimeofday: %u",__FUNCTION__,(unsigned int)pTimeVal->tv_sec);
@@ -1497,8 +1550,17 @@ void TimePrefsHandler::systemSetTime(struct timeval * pTimeVal)
 	qDebug("settimeofday %s", ( rc == 0 ? "succeeded" : "failed"));
     if (rc == 0)
     {
-        m_broadcastTime.adjust(pTimeVal->tv_sec - originalTime);
+		time_t deltaTime = pTimeVal->tv_sec - originalTime;
+
+		// TODO: drop direct broadcastTime adjust in favor of signal and clocks
+		m_broadcastTime.adjust(deltaTime);
+
+		systemTimeChanged.fire(deltaTime);
     }
+
+	// if we had valid NTP in our system-time we destroy it here
+	m_lastNtpUpdate = 0;
+	return (rc == 0);
 }
 
 void TimePrefsHandler::updateSystemTime()
@@ -1534,8 +1596,11 @@ void TimePrefsHandler::updateSystemTime()
         {
             //ok, got it from NTP...
             qDebug("Got NTP response %ld", ntpUtc);
-            systemSetTime(ntpUtc);
-            m_lastNtpUpdate = timeStamp;
+			// TODO: replace with ClockHandler "ntp"
+			if (systemSetTime(ntpUtc))
+			{
+				m_lastNtpUpdate = timeStamp;
+			}
             return;
         }
         else
@@ -1569,8 +1634,7 @@ void TimePrefsHandler::updateSystemTime()
             utc = timelocal(&tmLocal);
 
             qDebug("Using broadcast local time %ld (adjusted as utc %ld)", local, utc);
-
-            systemSetTime( utc );
+            (void) systemSetTime( utc );
             return;
         }
         else
@@ -1806,6 +1870,8 @@ time_t TimePrefsHandler::offsetToUtcSecs() const
 bool TimePrefsHandler::setNITZTimeEnable(bool time_en) {	//returns old value
 
 	bool rv = (m_nitzSetting & TimePrefsHandler::NITZ_TimeEnable);
+
+	isManualTimeChanged.fire(!time_en);
 
 #if defined(HAVE_LUNA_PREFS)	
 	LPAppHandle lpHandle = 0;
@@ -2138,7 +2204,13 @@ bool TimePrefsHandler::cbSetSystemTime(LSHandle* lshandle, LSMessage *message,
 
 	//a new time was specified
 	g_warning("%s: settimeofday: %u",__FUNCTION__,(unsigned int)utcTimeInSecs);
-	th->systemSetTime(utcTimeInSecs);
+
+	// TODO: request ClocksHandler for manual clock update
+	if (!th->systemSetTime(utcTimeInSecs))
+	{
+		errorText = "Failed to set system time";
+		goto Done_cbSetSystemTime;
+	}
 
 	TimePrefsHandler::transitionNITZValidState((th->getLastNITZValidity() & TimePrefsHandler::NITZ_Valid),true);
 	th->postSystemTimeChange();
@@ -2537,7 +2609,7 @@ int  TimePrefsHandler::nitzHandlerTimeValue(NitzParameters& nitz,int& flags,std:
 		}
 		else
 		{
-			systemSetTime(utc);
+			(void) systemSetTime(utc);
 			nitz._timevalid = true;
 		}
 	}
@@ -4376,4 +4448,50 @@ bool TimePrefsHandler::cbTelephonyPlatformQuery(LSHandle* lsHandle, LSMessage *m
 
     json_object_put(root);
     return false;
+}
+
+void TimePrefsHandler::clockChanged(const std::string &clockTag, int priority, time_t systemOffset)
+{
+	const time_t timeDriftPeriod = 4*60*60; // TODO: make configurable rather than 4 hours
+
+	int effectivePriority = priority;
+
+	if (isManualTimeUsed())
+	{
+		if (clockTag == ClockHandler::manual)
+		{
+			PmLogDebug(sysServiceLogContext(),
+			           "In manual mode priority for user time source (%d) treated as %d",
+			           priority, INT_MAX);
+			effectivePriority = INT_MAX; // override everything
+		}
+		else
+		{
+			// only user can override in manual mode
+			PmLogDebug(sysServiceLogContext(),
+			           "In manual mode we ignore time source %s (%d) with their offset %ld",
+			           clockTag.c_str(), priority, systemOffset);
+			return;
+		}
+	}
+
+	time_t currentTime = time(0);
+
+	// note that we only allow to increase priority or re-sync time if we
+	// already passed through nextSyncTime
+	if ( effectivePriority < m_currentTimeSourcePriority &&
+	     currentTime < m_nextSyncTime )
+	{
+		PmLogDebug(sysServiceLogContext(),
+		           "Ignoring time-source %s (%d) in favor of current (%d)",
+		           clockTag.c_str(), priority, m_currentTimeSourcePriority);
+		return;
+	}
+
+	// so we actually going to apply this update to our system time
+	if (systemSetTime(currentTime + systemOffset))
+	{
+		m_currentTimeSourcePriority = priority;
+		m_nextSyncTime = currentTime + timeDriftPeriod; // when we should sync our time again
+	}
 }

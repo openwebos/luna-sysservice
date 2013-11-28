@@ -20,6 +20,7 @@
 
 #include <map>
 #include <list>
+#include <vector>
 
 #include <glib.h>
 
@@ -70,7 +71,8 @@ public:
 		NITZ_Valid,
 		NITZ_Invalid
 	};
-	
+
+	typedef std::vector<std::string> TimeSources;
 
 	TimePrefsHandler(LSPalmService* service);
 	
@@ -79,6 +81,7 @@ public:
 	virtual void valueChanged(const std::string& key, json_object* value);
 	virtual json_object* valuesForKey(const std::string& key);
 
+	static TimePrefsHandler *instance() { return s_inst; }
 	json_object * timeZoneListAsJson();
 	bool isValidTimeZoneName(const std::string& tzName);
 	
@@ -105,8 +108,28 @@ public:
 	void markLastNITZValid() { m_lastNitzValidity = NITZ_Valid;}
 	void clearLastNITZValidity() { m_lastNitzValidity = NITZ_Unknown;}
 
+	const TimeSources &timeSources() const { return m_timeSources; }
+
 	std::list<std::string> getTimeZonesForOffset(int offset);
-	
+
+	/**
+	 * Signal emmited when system-wide time changed with time delta (positive
+	 * when time moves forward, i.e. new time is greater than old one)
+	 */
+	void clockChanged(const std::string &clockTag, int priority, time_t systemOffset);
+
+	/**
+	 * Signal emmited when system-wide time changed with time delta (positive
+	 * when time moves forward, i.e. new time is greater than old one)
+	 */
+	Signal<time_t> systemTimeChanged;
+
+	/**
+	 * Signal emmited when user prefers manually set system-wide time.
+	 * Value true passed in case of switching to manual mode
+	 */
+	Signal<bool> isManualTimeChanged;
+
 	static std::string getQualifiedTZIdFromName(const std::string& tzName);
 	static std::string getQualifiedTZIdFromJson(const std::string& jsonTz);
 	static std::string tzNameFromJsonValue(json_object * pValue);
@@ -190,8 +213,8 @@ private:
 	void setTimeZone(const TimeZoneInfo * pZoneInfo);       //this one sets it in the prefs db and then calls systemSetTimeZone
 	void systemSetTimeZone(const std::string &tzFileActual,
 	                       const TimeZoneInfo &zoneInfo);   //this one does the OS work to set the timezone
-	void systemSetTime(time_t utc);
-	void systemSetTime(struct timeval * pTimeVal);
+	bool systemSetTime(time_t utc);
+	bool systemSetTime(struct timeval * pTimeVal);
 
     /**
      * Ask system time to be set from one of available time sources
@@ -301,6 +324,10 @@ private:
     bool        m_nitzTimeZoneAvailable;
 
     BroadcastTime m_broadcastTime;
+
+	TimeSources m_timeSources;
+	int         m_currentTimeSourcePriority;
+	time_t      m_nextSyncTime;
 };
 
 #endif /* TIMEPREFSHANDLER_H */

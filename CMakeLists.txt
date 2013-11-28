@@ -130,6 +130,7 @@ set(SOURCE_FILES Src/Logging.cpp
     Src/JSONUtils.cpp 
     Src/ImageHelpers.cpp
     Src/EraseHandler.cpp
+    Src/ClockHandler.cpp
     Src/OsInfoService.cpp
     Src/DeviceInfoService.cpp
     )

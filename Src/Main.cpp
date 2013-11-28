@@ -42,6 +42,8 @@
 
 #include "BackupManager.h"
 #include "EraseHandler.h"
+#include "TimePrefsHandler.h"
+#include "ClockHandler.h"
 
 #include "Utils.h"
 #include "Settings.h"
@@ -56,6 +58,32 @@ static gchar* s_logLevelStr = NULL;
 static gboolean s_useSysLog = false;
 
 int gLoggerLevel = G_LOG_LEVEL_WARNING;
+
+namespace {
+
+	void setupClockHandler(ClockHandler &clockHandler, LSPalmService* serviceHandle)
+	{
+		assert( serviceHandle );
+
+		(void) clockHandler.setServiceHandle(serviceHandle);
+
+		clockHandler.manualOverride(TimePrefsHandler::instance()->isManualTimeUsed());
+
+		// setup properties bindings
+		TimePrefsHandler::instance()->systemTimeChanged.connect(&clockHandler, &ClockHandler::adjust);
+		TimePrefsHandler::instance()->isManualTimeChanged.connect(&clockHandler, &ClockHandler::manualOverride);
+		clockHandler.clockChanged.connect(TimePrefsHandler::instance(), &TimePrefsHandler::clockChanged);
+
+		// setup time sources for clock handler
+		int basePriority = 1;
+		const TimePrefsHandler::TimeSources &sources = TimePrefsHandler::instance()->timeSources();
+		for (size_t i = 0; i < sources.size(); ++i)
+		{
+			int priority = sources.size()-1 - i + basePriority;
+			clockHandler.setup(sources[i], priority);
+		}
+	}
+} // anonymous namespace
 
 static void turnNovacomOn(LSHandle * lshandle);
 
@@ -301,6 +329,10 @@ int main(int argc, char ** argv)
 		PmLogError(sysServiceLogContext(), "ERASE_FAILURE", 0, "Failed to init EraseHandler (functionality disabled)");
 	}
 	EraseHandler::instance()->setServiceHandle(serviceHandle);
+
+	// Clock handler
+	ClockHandler clockHandler;
+	setupClockHandler(clockHandler, serviceHandle);
 
 	//init the image service
 	ImageServices *imgSvc = ImageServices::instance(mainLoopObj);
