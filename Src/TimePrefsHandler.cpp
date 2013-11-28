@@ -3031,7 +3031,7 @@ void TimePrefsHandler::setPeriodicTimeSetWakeup()
 		
 		std::string payload = std::string("{\"key\":\"sysservice_ntp_periodic\",\"in\":\"")
 								+timeStr
-								+std::string("\",\"wakeup\":false,\"uri\":\"palm://com.palm.systemservice/time/setTimeWithNTP\",\"params\":\"{'source':'periodic'}\"}");
+								+std::string("\",\"wakeup\":false,\"uri\":\"palm://com.palm.systemservice/time/setTimeWithNTP\",\"params\":\"{\\\"source\\\":\\\"periodic\\\"}\"}");
 		
 		qDebug("scheduling event for %s in the future or when the device next wakes, whichever is later", timeStr.c_str());
 		bool lsCallResult = LSCall(getPrivateHandle(),
