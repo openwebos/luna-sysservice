@@ -142,6 +142,9 @@ public:
 	static bool cbGetNTPTime(LSHandle* lsHandle, LSMessage *message,
 								void *user_data);
 	
+	static bool cbSetTimeWithNTP(LSHandle* lsHandle, LSMessage *message,
+	                             void *user_data);
+
 	static bool cbSetPeriodicWakeupPowerDResponse(LSHandle* lsHandle, LSMessage *message,
 								void *user_data);
 	

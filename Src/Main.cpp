@@ -94,6 +94,22 @@ static bool parseCommandlineOptions(int argc, char** argv)
         	gLoggerLevel = G_LOG_LEVEL_INFO;
         else if (0 == strcasecmp(s_logLevelStr, "debug"))
         	gLoggerLevel = G_LOG_LEVEL_DEBUG;
+
+		// map to PmLog levels
+		PmLogLevel pmLogLevel;
+		switch (gLoggerLevel)
+		{
+		case G_LOG_LEVEL_ERROR: pmLogLevel = kPmLogLevel_Error; break;
+		case G_LOG_LEVEL_CRITICAL: pmLogLevel = kPmLogLevel_Critical; break;
+		case G_LOG_LEVEL_WARNING: pmLogLevel = kPmLogLevel_Warning; break;
+		case G_LOG_LEVEL_MESSAGE: pmLogLevel = kPmLogLevel_Notice; break;
+		case G_LOG_LEVEL_INFO: pmLogLevel = kPmLogLevel_Info; break;
+		case G_LOG_LEVEL_DEBUG: pmLogLevel = kPmLogLevel_Debug; break;
+		default: pmLogLevel = kPmLogLevel_Info; break;
+		}
+
+		// try to set log level for PmLog
+		(void) PmLogSetContextLevel(sysServiceLogContext(), pmLogLevel);
     }
 
 	g_option_context_free(context);

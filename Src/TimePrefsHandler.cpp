@@ -318,7 +318,7 @@ static LSMethod s_methods[]  = {
 	{ "setTimeChangeLaunch",	TimePrefsHandler::cbSetTimeChangeLaunch},
 	{ "launchTimeChangeApps", TimePrefsHandler::cbLaunchTimeChangeApps},
 	{ "getNTPTime",			TimePrefsHandler::cbGetNTPTime},
-	{ "setTimeWithNTP",		TimePrefsHandler::cbSetPeriodicWakeupPowerDResponse},
+	{ "setTimeWithNTP",		TimePrefsHandler::cbSetTimeWithNTP},
 	{ "convertDate",		TimePrefsHandler::cbConvertDate},
     { 0, 0 },
 };
@@ -3160,92 +3160,103 @@ luna-send -n 1 -f luna://com.palm.systemservice/time/setTimeWithNTP '{}'
 \endcode
 */
 //static
-bool TimePrefsHandler::cbSetPeriodicWakeupPowerDResponse(LSHandle* lsHandle, LSMessage *message,
-							void *user_data)
+bool TimePrefsHandler::cbSetTimeWithNTP(LSHandle* lsHandle, LSMessage *message,
+                                        void *user_data)
 {
-        LSError lsError;
-        char* reply;
-        LSErrorInit(&lsError);
-        bool retVal;
-        json_object* json;
+	LSMessageJsonParser parser( message, STRICT_SCHEMA(
+		PROPS_1(
+			WITHDEFAULT(source, string, "unknown")
+		)
+	));
 
-    // {"returnValue": boolean}
-    VALIDATE_SCHEMA_AND_RETURN(lsHandle,
-                               message,
-                               SCHEMA_2(OPTIONAL(key,string),REQUIRED(returnValue, boolean)));
+	ESchemaErrorOptions schErrOption = static_cast<ESchemaErrorOptions>(Settings::settings()->schemaValidationOption);
+	if (!parser.parse(__FUNCTION__, lsHandle, schErrOption))
+		return true;
 
-	const char* str = LSMessageGetPayload(message);
-	if( !str ) {
+	const char* str = parser.getPayload();
+	if ( !str )
+	{
+		PmLogDebug(sysServiceLogContext(), "Received LSMessage with NULL payload (in call)");
 		return false;
 	}
 
-	qDebug("received message %s", str);
+	PmLogDebug(sysServiceLogContext(), "received message %s", parser.getPayload());
 
-	json = json_object_new_object();
 	TimePrefsHandler* th = (TimePrefsHandler*) user_data;
-	if (th == NULL)
-	{
-        qCritical() << "user_data passed as NULL!";
-        json_object_object_add(json,"returnValue",json_object_new_boolean(false));
-        json_object_object_add(json,"errorText",json_object_new_string("Internal Error"));
-        reply = json_object_to_json_string(json);
-        retVal = LSMessageReply(lsHandle, message, reply, &lsError);
-        g_free(reply);
-        if (!retVal)
-        {
-            qWarning()<<"LSMessageReply failed,Error:"<<lsError.message;
-            LSErrorFree (&lsError);
-            return false;
-        }
-		return true;
-	}
-	json_object * root = json_tokener_parse(str);
-	json_object * label = 0;
 
-	if ((!root) || is_error(root)) 
+	// category associated with this callback should be registered correctly
+	assert( th );
+
+	// it's an actual event...
+	th->updateSystemTime();
+
+	// schedule another
+	th->setPeriodicTimeSetWakeup();
+
+	// simple response
+	LSError lsError;
+	LSErrorInit(&lsError);
+	if (!LSMessageReply(lsHandle, message, "{\"returnValue\":true}", &lsError))
 	{
-		root=0;
-        json_object_object_add(json,"returnValue",json_object_new_boolean(false));
-        json_object_object_add(json,"errorText",json_object_new_string("unable to parse json"));
-		goto Done_cbSetPeriodicWakeupPowerDResponse;
+		PmLogError(sysServiceLogContext(), "LSMESSAGEREPLY_FAILURE",
+		           1, PMLOGKS("MESSAGE", lsError.message),
+		           "LSMessageReply failed");
+		LSErrorFree(&lsError);
+		return false;
 	}
 
-	label = Utils::JsonGetObject(root,"returnValue");
-	if (label)
+	return true;
+}
+
+//static
+bool TimePrefsHandler::cbSetPeriodicWakeupPowerDResponse(LSHandle* lsHandle, LSMessage *message,
+							void *user_data)
+{
+	const char* str = LSMessageGetPayload(message);
+	if ( !str )
 	{
-		//this is a response to a call...
-		th->m_sendWakeupSetToPowerD = !(json_object_get_boolean(label));
-		//if it was true, then the call succeeded so supress sending it again if the service disconnects+reconnects (by setting the m_sendWakeupSetToPowerD to false)
-
-		if (json)
-			json_object_put(json);
-		if (root)
-			json_object_put(root);
-        // no need to reply on response to call
-		return true;
+		PmLogDebug(sysServiceLogContext(), "Received LSMessage with NULL payload (in reply to call)");
+		return false;
 	}
-	else
+
+	// {"returnValue": boolean}
+	JsonMessageParser parser( str, STRICT_SCHEMA(
+		PROPS_4(
+			OPTIONAL(key, string),
+			REQUIRED(returnValue, boolean),
+			OPTIONAL(errorCode, integer),
+			OPTIONAL(errorText, string)
+		)
+
+		REQUIRED_1(returnValue)
+	));
+
+	if (!parser.parse(__FUNCTION__))
+		return false;
+
+	PmLogDebug(sysServiceLogContext(), "received message %s", str);
+
+	TimePrefsHandler* th = (TimePrefsHandler*) user_data;
+
+	// call associated with this callback should be sent correctly
+	assert( th );
+
+	bool returnValue;
+	bool getOk = parser.get("returnValue", returnValue);
+	assert( getOk ); // schema validation should ensure type and presence
+
+	if (!returnValue)
 	{
-		//it's an actual event...
-        th->updateSystemTime();
-
-		//schedule another
-		th->setPeriodicTimeSetWakeup();
+		std::string errorText = "(none)";
+		(void) parser.get("errorText", errorText);
+		PmLogDebug(sysServiceLogContext(), "Error received in wakeup powerd response %s", errorText.c_str());
 	}
-        json_object_object_add(json,"returnValue",json_object_new_boolean(true));
-Done_cbSetPeriodicWakeupPowerDResponse:
 
-	if (root)
-		json_object_put(root);
-        reply = json_object_to_json_string(json);
-        retVal = LSMessageReply(lsHandle, message, reply, &lsError);
-        g_free(reply);
-        if (!retVal)
-        {
-                qWarning()<<"LSMessageReply failed, Error"<<lsError.message;
-                LSErrorFree (&lsError);
-                return false;
-        }
+	//this is a response to a call...
+	th->m_sendWakeupSetToPowerD = !returnValue;
+	//if it was true, then the call succeeded so supress sending it again if the service disconnects+reconnects (by setting the m_sendWakeupSetToPowerD to false)
+
+	// no need to reply on response to call
 	return true;
 }
 
