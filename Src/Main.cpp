@@ -65,6 +65,10 @@ namespace {
 	{
 		assert( serviceHandle );
 
+		// Right now we have no reasonable handling for inability to register
+		// category with specific methods so just ignore answer.
+		// Nevertheless we have some functionality in ClockHandler through
+		// which TimePrefsHandler manages system time synchronization
 		(void) clockHandler.setServiceHandle(serviceHandle);
 
 		clockHandler.manualOverride(TimePrefsHandler::instance()->isManualTimeUsed());
@@ -72,6 +76,7 @@ namespace {
 		// setup properties bindings
 		TimePrefsHandler::instance()->systemTimeChanged.connect(&clockHandler, &ClockHandler::adjust);
 		TimePrefsHandler::instance()->isManualTimeChanged.connect(&clockHandler, &ClockHandler::manualOverride);
+		TimePrefsHandler::instance()->deprecatedClockChange.connectVoid(&clockHandler, &ClockHandler::update);
 		clockHandler.clockChanged.connect(TimePrefsHandler::instance(), &TimePrefsHandler::clockChanged);
 
 		// setup time sources for clock handler

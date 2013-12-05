@@ -130,6 +130,11 @@ public:
 	 */
 	Signal<bool> isManualTimeChanged;
 
+	/**
+	 * Signal emmited when deprecated API used to update time-source
+	 */
+	Signal<time_t, const std::string &> deprecatedClockChange;
+
 	static std::string getQualifiedTZIdFromName(const std::string& tzName);
 	static std::string getQualifiedTZIdFromJson(const std::string& jsonTz);
 	static std::string tzNameFromJsonValue(json_object * pValue);

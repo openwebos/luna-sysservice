@@ -1002,7 +1002,7 @@ void TimePrefsHandler::readCurrentTimeSettings()
 	{
 		// default hard-coded value
 		// we should get proper value from luna-init defaultPreferences.txt
-		timeSourcesJson = "[\"ntp\",\"sdp\",\"nitz\",\"broadcast\"]";
+		timeSourcesJson = "[\"ntp\",\"sdp\",\"nitz\",\"broadcast-adjusted\",\"broadcast\"]";
 		PrefsDb::instance()->setPref("timeSources", timeSourcesJson);
 		PmLogError(
 			sysServiceLogContext(), "MISSING_PREF_TIMESOURCES", 1,
@@ -1013,7 +1013,7 @@ void TimePrefsHandler::readCurrentTimeSettings()
 	if (!convertUnique(__FUNCTION__, timeSourcesJson.c_str(), m_timeSources))
 	{
 		// converUnique will log error
-		static const std::string fallback[] = { "ntp", "sdp", "nitz", "broadcast" };
+		static const std::string fallback[] = { "ntp", "sdp", "nitz", "broadcast-adjusted", "broadcast" };
 		m_timeSources.assign(fallback+0, fallback+(sizeof(fallback)/sizeof(fallback[0])));
 	}
 	else
@@ -1596,11 +1596,9 @@ void TimePrefsHandler::updateSystemTime()
         {
             //ok, got it from NTP...
             qDebug("Got NTP response %ld", ntpUtc);
-			// TODO: replace with ClockHandler "ntp"
-			if (systemSetTime(ntpUtc))
-			{
-				m_lastNtpUpdate = timeStamp;
-			}
+
+			// route to proper handler
+			deprecatedClockChange.fire(ntpUtc - time(0), "ntp");
             return;
         }
         else
@@ -2205,13 +2203,22 @@ bool TimePrefsHandler::cbSetSystemTime(LSHandle* lshandle, LSMessage *message,
 	//a new time was specified
 	g_warning("%s: settimeofday: %u",__FUNCTION__,(unsigned int)utcTimeInSecs);
 
-	// TODO: request ClocksHandler for manual clock update
+	// We know that /time/setSystemTime was used both for setting time from
+	// settings (manual time) and for setting time form different services on
+	// boot or whatever.
+	// But right now we can't distinguish them, so assume that this is manual
+	// set time.
+	th->deprecatedClockChange.fire(utcTimeInSecs - time(0), ClockHandler::manual);
+
+	// Old behaviour would be to set time regardless of "useNetworkTime". So
+	// we'll keep that for a while until major version will be changed.
 	if (!th->systemSetTime(utcTimeInSecs))
 	{
 		errorText = "Failed to set system time";
 		goto Done_cbSetSystemTime;
 	}
 
+	// TODO: consider moving this code to systemSetTime
 	TimePrefsHandler::transitionNITZValidState((th->getLastNITZValidity() & TimePrefsHandler::NITZ_Valid),true);
 	th->postSystemTimeChange();
     if (th->isSystemTimeBroadcastEffective()) th->postBroadcastEffectiveTimeChange();
