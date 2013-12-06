@@ -272,7 +272,7 @@ bool ClockHandler::cbGetTime(LSHandle* lshandle, LSMessage *message, void *user_
 		{
 			reply = createJsonReply(true);
 			pbnjson::JValue offset = pbnjson::Object();
-			offset.put("value", it->second.systemOffset);
+			offset.put("value", (int64_t)it->second.systemOffset);
 			offset.put("source", system);
 			reply.put("offset", offset);
 			reply.put("utc", (int64_t)(time(0) + it->second.systemOffset));
