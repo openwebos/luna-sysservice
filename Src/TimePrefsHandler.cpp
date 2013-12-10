@@ -4273,11 +4273,20 @@ int TimePrefsHandler::getUTCTimeFromNTP(time_t& adjustedTime)
 		ntpServer = DEFAULT_NTP_SERVER;
 	}
 
-    gchar *argv[4];
-    argv[0] = (gchar *)"sntp";
-    argv[1] = (gchar *)"-d";
-    argv[2] = (gchar *)ntpServer.c_str();
-    argv[3] = 0;
+	std::string ntpServerTimeout;
+	if (!PrefsDb::instance()->getPref("NTPServerTimeout", ntpServerTimeout))
+	{
+		ntpServerTimeout = "2"; // seconds
+	}
+
+	gchar *argv[] = {
+		(gchar *)"sntp",
+		(gchar *)"-t",
+		(gchar *)ntpServerTimeout.c_str(),
+		(gchar *)"-d",
+		(gchar *)ntpServer.c_str(),
+		0
+	};
 
     qDebug("%s: [NITZ , NTP] running sntp on %s",__FUNCTION__,ntpServer.c_str());
 	GError * gerr = NULL;
