@@ -517,6 +517,7 @@ void TimePrefsHandler::valueChanged(const std::string& key, json_object* value)
 			
 			transitionNITZValidState((this->getLastNITZValidity() == TimePrefsHandler::NITZ_Valid),true);
 			
+			// TODO: consider moving to systemSetTimeZone
 			postSystemTimeChange();	
             if (isSystemTimeBroadcastEffective()) postBroadcastEffectiveTimeChange();
 			//launch any apps that wanted to be launched when the time/zone changed
@@ -1556,6 +1557,10 @@ bool TimePrefsHandler::systemSetTime(struct timeval * pTimeVal)
 		m_broadcastTime.adjust(deltaTime);
 
 		systemTimeChanged.fire(deltaTime);
+
+		postSystemTimeChange();
+		if (isSystemTimeBroadcastEffective()) postBroadcastEffectiveTimeChange();
+		launchAppsOnTimeChange();
     }
 
 	// if we had valid NTP in our system-time we destroy it here
@@ -1565,6 +1570,8 @@ bool TimePrefsHandler::systemSetTime(struct timeval * pTimeVal)
 
 void TimePrefsHandler::updateSystemTime()
 {
+    // right now this method is a start point for active requests to different
+    // time-souces like NTP servers etc.
     if (isManualTimeUsed())
     {
         qWarning("updateSystemTime() should never be called when using manual time (ignored)");
@@ -1584,6 +1591,7 @@ void TimePrefsHandler::updateSystemTime()
             return;
         }
 
+        // TODO: make it asynchronous
         //get NTP time if possible
         time_t ntpUtc;
         bool haveNTP = (getUTCTimeFromNTP(ntpUtc) == 0);
@@ -1607,41 +1615,7 @@ void TimePrefsHandler::updateSystemTime()
         }
     }
 
-    // lets see other passive sources
-    // TODO: NITZ should be checked here as well
-
-    // see if we have m_broadcastTime
-    if (m_broadcastTime.avail())
-    {
-        if (driftedStamp < m_broadcastTime.stamp())
-        {
-            qDebug("Broadcast is still valid (ignoring updateSystemTime())");
-            return;
-        }
-
-        time_t utc, local;
-        if (m_broadcastTime.get(utc, local))
-        {
-            // we want to sync system localtime to broadcast localtime
-            // lets pull out calendar time while pretending that time is in UTC
-            tm tmLocal;
-            gmtime_r(&local, &tmLocal);
-
-            // now lets-get actual UTC from local calendar time according to system
-            // time-zone
-            utc = timelocal(&tmLocal);
-
-            qDebug("Using broadcast local time %ld (adjusted as utc %ld)", local, utc);
-            (void) systemSetTime( utc );
-            return;
-        }
-        else
-        {
-            qDebug("Failed to get broadcast time by unknown reason");
-        }
-    }
-
-    qWarning("No time source was used for system time update in response to updateSystemTime()");
+    qWarning("No time source were requested for system time update in response to updateSystemTime()");
 }
 
 
@@ -1869,8 +1843,6 @@ bool TimePrefsHandler::setNITZTimeEnable(bool time_en) {	//returns old value
 
 	bool rv = (m_nitzSetting & TimePrefsHandler::NITZ_TimeEnable);
 
-	isManualTimeChanged.fire(!time_en);
-
 #if defined(HAVE_LUNA_PREFS)	
 	LPAppHandle lpHandle = 0;
 	if (LPAppGetHandle("com.palm.systemservice", &lpHandle) == LP_ERR_NONE)
@@ -1894,6 +1866,13 @@ bool TimePrefsHandler::setNITZTimeEnable(bool time_en) {	//returns old value
 		// update from NTP server through turning off/on useNetworkTime
 		m_lastNtpUpdate = 0;
 	}
+
+	// assume that current time isn't automatically synchronized and should be
+	// overriden with next clockChange after entering back to auto mode
+	m_currentTimeSourcePriority = lowestTimeSourcePriority;
+
+	// notify after we've changed our internal flag
+	isManualTimeChanged.fire(!time_en);
 
 	return rv;
 }
@@ -2203,6 +2182,15 @@ bool TimePrefsHandler::cbSetSystemTime(LSHandle* lshandle, LSMessage *message,
 	//a new time was specified
 	g_warning("%s: settimeofday: %u",__FUNCTION__,(unsigned int)utcTimeInSecs);
 
+	// XXX: Old behaviour would be to set time regardless of "useNetworkTime"
+	//      and presence of information from time-source with higher priority.
+	//
+	// So we should keep that for a while until major version will be changed.
+	// To ensure that manual clock source wouldn't be opted-out we'll mark
+	// currently set system time with a lowest priority we can.
+	// P.S. We are single-threaded so no races should appear here.
+	th->m_currentTimeSourcePriority = lowestTimeSourcePriority;
+
 	// We know that /time/setSystemTime was used both for setting time from
 	// settings (manual time) and for setting time form different services on
 	// boot or whatever.
@@ -2210,19 +2198,8 @@ bool TimePrefsHandler::cbSetSystemTime(LSHandle* lshandle, LSMessage *message,
 	// set time.
 	th->deprecatedClockChange.fire(utcTimeInSecs - time(0), ClockHandler::manual);
 
-	// Old behaviour would be to set time regardless of "useNetworkTime". So
-	// we'll keep that for a while until major version will be changed.
-	if (!th->systemSetTime(utcTimeInSecs))
-	{
-		errorText = "Failed to set system time";
-		goto Done_cbSetSystemTime;
-	}
-
 	// TODO: consider moving this code to systemSetTime
 	TimePrefsHandler::transitionNITZValidState((th->getLastNITZValidity() & TimePrefsHandler::NITZ_Valid),true);
-	th->postSystemTimeChange();
-    if (th->isSystemTimeBroadcastEffective()) th->postBroadcastEffectiveTimeChange();
-	th->launchAppsOnTimeChange();
 
 Done_cbSetSystemTime:
 
@@ -2616,7 +2593,8 @@ int  TimePrefsHandler::nitzHandlerTimeValue(NitzParameters& nitz,int& flags,std:
 		}
 		else
 		{
-			(void) systemSetTime(utc);
+			// route to proper handler
+			deprecatedClockChange.fire(utc - time(0), "nitz");
 			nitz._timevalid = true;
 		}
 	}
@@ -2862,9 +2840,15 @@ Done_timeoutFunc:
 		//should be phased out slowly though from here on in)
 		m_immNitzTimeValid = nitzParam._timevalid;
 		m_immNitzZoneValid = (nitzParam._tzvalid && nitzParam._dstvalid);
-		postSystemTimeChange();
-        if (isSystemTimeBroadcastEffective()) postBroadcastEffectiveTimeChange();
-		launchAppsOnTimeChange();
+
+		// notify about time-zone update if we had some
+		if (m_immNitzZoneValid)
+		{
+			// TODO: consider moving to systemSetTimeZone
+			postSystemTimeChange();
+			if (isSystemTimeBroadcastEffective()) postBroadcastEffectiveTimeChange();
+			launchAppsOnTimeChange();
+		}
 	}
 	
 	//then finish, indicating I'd like the periodic source to go away 
@@ -3938,6 +3922,8 @@ bool TimePrefsHandler::cbGetNTPTime(LSHandle* lsHandle, LSMessage *message,
 	LSErrorInit(&lsError);
 
 	time_t utc=0;
+
+	// TODO: make it asynchronous
 	TimePrefsHandler::getUTCTimeFromNTP(utc);
 
 	struct json_object * jsonOutput = json_object_new_object();
@@ -4466,7 +4452,7 @@ bool TimePrefsHandler::cbTelephonyPlatformQuery(LSHandle* lsHandle, LSMessage *m
     return false;
 }
 
-void TimePrefsHandler::clockChanged(const std::string &clockTag, int priority, time_t systemOffset)
+void TimePrefsHandler::clockChanged(const std::string &clockTag, int priority, time_t systemOffset, time_t lastUpdate)
 {
 	const time_t timeDriftPeriod = 4*60*60; // TODO: make configurable rather than 4 hours
 
@@ -4508,6 +4494,7 @@ void TimePrefsHandler::clockChanged(const std::string &clockTag, int priority, t
 	if (systemSetTime(currentTime + systemOffset))
 	{
 		m_currentTimeSourcePriority = priority;
-		m_nextSyncTime = currentTime + timeDriftPeriod; // when we should sync our time again
+		// note that lastUpdate is outdated already so we need to adjust it
+		m_nextSyncTime = lastUpdate + systemOffset + timeDriftPeriod; // when we should sync our time again
 	}
 }

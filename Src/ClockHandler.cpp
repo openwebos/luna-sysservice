@@ -75,7 +75,42 @@ void ClockHandler::adjust(time_t offset)
 	{
 		if (it->second.systemOffset == invalidOffset) continue;
 		it->second.systemOffset -= offset; // maintain absolute time presented in diff from current one
-		// it->second.lastUpdate += offset; // maintain same distance from current time
+		if (it->second.lastUpdate != invalidTime)
+		{
+			it->second.lastUpdate += offset; // maintain same distance from current time
+		}
+	}
+}
+void ClockHandler::manualOverride(bool enabled)
+{
+	if (m_manualOverride == enabled)
+	{
+		return; // nothing to change
+	}
+
+	m_manualOverride = enabled;
+
+	if (!enabled)
+	{
+		// re-send clock changes again if switched to auto
+		for (ClocksMap::const_iterator it = m_clocks.begin();
+		     it != m_clocks.end(); ++it)
+		{
+			// skip those for which there was no update was called
+			// even if they have initial offset set
+			if (it->second.lastUpdate == invalidTime) continue;
+
+			const Clock &clock = it->second;
+
+			assert( clock.lastUpdate == invalidTime ||
+			        clock.systemOffset != invalidOffset ); // invariant of Clock
+
+			PmLogDebug(sysServiceLogContext(),
+				"Re-sending %s with %ld offset and %ld last update mark",
+				it->first.c_str(), clock.systemOffset, clock.lastUpdate
+			);
+			clockChanged.fire(it->first, clock.priority, clock.systemOffset, clock.lastUpdate);
+		}
 	}
 }
 
@@ -91,11 +126,18 @@ void ClockHandler::setup(const std::string &clockTag, int priority, time_t offse
 		              "Trying to register already existing clock (overriding old params)" );
 
 		it->second.priority = priority;
-		if (offset != invalidOffset) it->second.systemOffset = offset;
+		if (offset != invalidOffset)
+		{
+			it->second.systemOffset = offset;
+			// That's a good question what time to set for lastUpdate.
+			// Follow rule that if we specified offset than we want it to be
+			// considered so set it to current time.
+			it->second.lastUpdate = time(0);
+		}
 	}
 	else
 	{
-		m_clocks.insert(ClocksMap::value_type(clockTag, (Clock){ priority, offset /* , invalidTime */ }));
+		m_clocks.insert(ClocksMap::value_type(clockTag, (Clock){ priority, offset, invalidTime }));
 	}
 
 	PmLogDebug(sysServiceLogContext(), "Registered clock %s with priority %d", clockTag.c_str(), priority);
@@ -117,10 +159,12 @@ bool ClockHandler::update(time_t offset, const std::string &clockTag /* = manual
 		              "Trying to update clock that is not registered" );
 		return false;
 	}
-	it->second.systemOffset = offset;
-	// it->second.lastUpdate = time(0);
 
-	clockChanged.fire( it->first, it->second.priority, offset );
+	Clock &clock = it->second;
+	clock.lastUpdate = time(0);
+	clock.systemOffset = offset;
+
+	clockChanged.fire( it->first, clock.priority, offset, clock.lastUpdate );
 
 	return true;
 }

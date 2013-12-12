@@ -58,8 +58,11 @@ public:
 	/**
 	 * Notify about about change of manual-time mode
 	 * true - for manual time settings
+	 *
+	 * Note that as a side effect of switching to "false" will result in
+	 * sending clockChanged for all available clocks.
 	 */
-	void manualOverride(bool enabled) { m_manualOverride = enabled; }
+	void manualOverride(bool enabled);
 
 	/**
 	 * Register clock with specific priority and optionally initial offset
@@ -79,8 +82,12 @@ public:
 	/**
 	 * Signal emmited when some clock was changed (i.e. offset from system time
 	 * changed)
+	 * First - time source tag
+	 * Second - priority
+	 * Third - offset from system time
+	 * Fourth - last system time it was updated
 	 */
-	Signal<const std::string &, int, time_t> clockChanged;
+	Signal<const std::string &, int, time_t, time_t> clockChanged;
 
 	/**
 	 * Pre-defined clock tag for manual adjusted time
@@ -125,7 +132,7 @@ private:
 		 * Time since some moment of time (valid at least for single boot
 		 * session)
 		 */
-		// time_t lastUpdate;
+		time_t lastUpdate;
 	};
 
 	typedef std::map<std::string, ClockHandler::Clock> ClocksMap;

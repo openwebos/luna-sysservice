@@ -253,7 +253,7 @@ public:
 	}
 
 	void fire(Arg0 arg0, Arg1 arg1, Arg2 arg2, Arg3 arg3) {
-		(this->m_receiver->*(this->m_function))(arg0, arg1, arg2, arg3);
+		(static_cast<Receiver*>(this->m_receiver)->*(this->m_function))(arg0, arg1, arg2, arg3);
 	}	
 };
 

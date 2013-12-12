@@ -116,7 +116,10 @@ public:
 	 * Signal emmited when system-wide time changed with time delta (positive
 	 * when time moves forward, i.e. new time is greater than old one)
 	 */
-	void clockChanged(const std::string &clockTag, int priority, time_t systemOffset);
+	void clockChanged(
+		const std::string &clockTag, int priority,
+		time_t systemOffset, time_t lastUpdate
+	);
 
 	/**
 	 * Signal emmited when system-wide time changed with time delta (positive
@@ -223,6 +226,7 @@ private:
 
     /**
      * Ask system time to be set from one of available time sources
+     * I.e. do a request to NTP server, etc
      */
     void updateSystemTime();
 
