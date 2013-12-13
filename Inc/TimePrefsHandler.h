@@ -27,6 +27,7 @@
 #include "PrefsHandler.h"
 #include "SignalSlot.h"
 #include "BroadcastTime.h"
+#include "NTPClock.h"
 
 #define		DEFAULT_NTP_SERVER	"us.pool.ntp.org"
 
@@ -144,8 +145,6 @@ public:
 	static std::string tzNameFromJsonString(const std::string& TZJson);
 	
 	static std::string getDefaultTZFromJson(TimeZoneInfo * r_pZoneInfo=NULL);
-	
-	static int getUTCTimeFromNTP(time_t& adjustedTime);
 	
 	static std::string transitionNITZValidState(bool nitzValid,bool userSetTime);
 	
@@ -337,6 +336,8 @@ private:
 	TimeSources m_timeSources;
 	int         m_currentTimeSourcePriority;
 	time_t      m_nextSyncTime;
+
+	NTPClock    m_ntpClock;
 };
 
 #endif /* TIMEPREFSHANDLER_H */

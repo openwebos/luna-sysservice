@@ -407,6 +407,7 @@ TimePrefsHandler::TimePrefsHandler(LSPalmService* service)
     , m_nitzTimeZoneAvailable(true)
 	, m_currentTimeSourcePriority(lowestTimeSourcePriority)
 	, m_nextSyncTime(0)
+	, m_ntpClock(*this)
 {
 	if (!s_inst)
 		s_inst=this;
@@ -1578,44 +1579,7 @@ void TimePrefsHandler::updateSystemTime()
         return;
     }
 
-    const time_t timeDriftPeriod = 4*60*60; // TODO: make configurable rather than 4 hours
-    time_t timeStamp = currentStamp();
-    time_t driftedStamp = timeStamp - timeDriftPeriod; // latest stamp which considered as outdated
-
-    // prefer NTP over anything else if allowed
-    if (isNTPAllowed())
-    {
-        if (m_lastNtpUpdate > 0 && driftedStamp < m_lastNtpUpdate)
-        {
-            qDebug("NTP is still valid (ignoring updateSystemTime())");
-            return;
-        }
-
-        // TODO: make it asynchronous
-        //get NTP time if possible
-        time_t ntpUtc;
-        bool haveNTP = (getUTCTimeFromNTP(ntpUtc) == 0);
-
-        // prev call may take some time so update stamps
-        timeStamp = currentStamp();
-        driftedStamp = timeStamp - timeDriftPeriod;
-
-        if (haveNTP)
-        {
-            //ok, got it from NTP...
-            qDebug("Got NTP response %ld", ntpUtc);
-
-			// route to proper handler
-			deprecatedClockChange.fire(ntpUtc - time(0), "ntp");
-            return;
-        }
-        else
-        {
-            qDebug("No valid NTP response");
-        }
-    }
-
-    qWarning("No time source were requested for system time update in response to updateSystemTime()");
+	(void) m_ntpClock.requestNTP( 0 );
 }
 
 
@@ -3918,27 +3882,8 @@ Example response for a succesful call:
 bool TimePrefsHandler::cbGetNTPTime(LSHandle* lsHandle, LSMessage *message,
 							void *user_data) 
 {
-	LSError lsError;
-	LSErrorInit(&lsError);
-
-	time_t utc=0;
-
-	// TODO: make it asynchronous
-	TimePrefsHandler::getUTCTimeFromNTP(utc);
-
-	struct json_object * jsonOutput = json_object_new_object();
-	json_object_object_add(jsonOutput, (char*) "subscribed",json_object_new_boolean(false));	//no subscriptions on this; make that explicit!
-	json_object_object_add(jsonOutput,(char *)"returnValue",json_object_new_boolean(true));
-	json_object_object_add(jsonOutput,(char *)"utc",json_object_new_int(utc));
-	const char * reply = json_object_to_json_string(jsonOutput);
-
-	if (!LSMessageReply(lsHandle, message, reply, &lsError))
-		LSErrorFree (&lsError);
-
-	json_object_put(jsonOutput);
-
-	return true;
-
+	TimePrefsHandler *th = static_cast<TimePrefsHandler*>(user_data);
+	return th->m_ntpClock.requestNTP(message);
 }
 
 /*!
@@ -4230,139 +4175,6 @@ static void tzsetWorkaround(const char * newTZ) {
  * 
  */
 
-
-/*
- * Returns -1 for failure
- * on success, adjustedTime contains the correct current utc time
- */
-//static 
-int TimePrefsHandler::getUTCTimeFromNTP(time_t& adjustedTime) 
-{
-	if ( (PrefsDb::instance()->getPref(".sysservice-dbg-time-debugEnable") == "true")
-		&& (PrefsDb::instance()->getPref(".sysservice-dbg-time-ntpBlock") == "true") )
-	{
-        qWarning("!!!!!!!!!!!!!!! USING DEBUG OVERRIDES !!!!!!!!!!!!!!");
-		return -1;
-	}
-	gchar * g_stdoutBuffer = NULL;
-	gchar * g_stderrBuffer = NULL;
-	gchar **offsetStr = NULL;
-
-	int rc=0;
-	char * pFoundStr;
-	double offsetValue;
-	long loffsetValue;
-	
-	//try and retrieve the currently set NTP server to query
-	std::string ntpServer = PrefsDb::instance()->getPref("NTPServer");
-	if (ntpServer.empty()) {
-		ntpServer = DEFAULT_NTP_SERVER;
-	}
-
-	std::string ntpServerTimeout;
-	if (!PrefsDb::instance()->getPref("NTPServerTimeout", ntpServerTimeout))
-	{
-		ntpServerTimeout = "2"; // seconds
-	}
-
-	gchar *argv[] = {
-		(gchar *)"sntp",
-		(gchar *)"-t",
-		(gchar *)ntpServerTimeout.c_str(),
-		(gchar *)"-d",
-		(gchar *)ntpServer.c_str(),
-		0
-	};
-
-    qDebug("%s: [NITZ , NTP] running sntp on %s",__FUNCTION__,ntpServer.c_str());
-	GError * gerr = NULL;
-	gint exit_status=0;
-	GSpawnFlags flags = (GSpawnFlags)(G_SPAWN_SEARCH_PATH);
-	
-	/*
-	 * gboolean            g_spawn_sync                 (const gchar *working_directory,
-			                                                         gchar **argv,
-			                                                         gchar **envp,
-			                                                         GSpawnFlags flags,
-			                                                         GSpawnChildSetupFunc child_setup,
-			                                                         gpointer user_data,
-			                                                         gchar **standard_output,
-			                                                         gchar **standard_error,
-			                                                         gint *exit_status,
-			                                                         GError **error);
-	 */
-
-	gboolean resultStatus = g_spawn_sync(NULL,
-			argv,
-			NULL,
-			flags,
-			NULL,
-			NULL,
-			&g_stdoutBuffer,
-			&g_stderrBuffer,
-			&exit_status,
-			&gerr);
-
-	if ((!resultStatus) || (!g_stdoutBuffer)) {
-		rc = -1;
-		goto Done_getUTCTimeFromNTP;
-	}
-
-    //success, maybe...parse the output
-    pFoundStr = strstr(g_stdoutBuffer,"offset:");
-	if (pFoundStr == NULL) {
-		//the query failed in some way
-		rc = -1;
-        qWarning() << "Failed in general output parse: raw output was:" << g_stdoutBuffer;
-		goto Done_getUTCTimeFromNTP;
-    }
-
-    //sntp -d us.pool.ntp.org returns below offset.
-    //
-    //15 Aug 21:41:33 sntp[5529]: Started sntp
-    //Starting to read KoD file /var/db/ntp-kod...
-    //sntp sendpkt: Sending packet to 173.49.198.27... Packet sent.
-    //sntp recvpkt: packet received from 173.49.198.27 is not authentic. Authentication not enforced.
-    //sntp handle_pkt: Received 48 bytes from 173.49.198.27
-    //sntp offset_calculation:	t21: 0.099049		 t34: -0.110320
-    //        delta: 0.209369	 offset: -0.005636
-    //get time offset from sntp's return output : "offset: -0.005636"
-	offsetStr = g_strsplit(pFoundStr," ",2);
-	if (offsetStr[0] == NULL || offsetStr[1] == NULL) {
-	//parse error...couldn't find the time offset in the string
-		rc = -1;
-		qWarning() << "Failed in specific (offset) output parse: raw output was:" << g_stdoutBuffer;
-		goto Done_getUTCTimeFromNTP;
-	}
-	offsetValue = atoi(offsetStr[1]);
-	
-	/*
-	 * Note the following works only if the system clock is set to UTC, or in other words only 1 system time is maintained.
-	 *  (this way, changing the system's local time is reflected in subsequent calls to time().
-	 * 	On the desktop (ubuntu) environment, changing the local time will not affect what time() returns )  
-	 * 
-	 */
-	loffsetValue = (long)(offsetValue >= 0.0 ? (offsetValue+0.5) : (offsetValue-0.5));
-	//grab the current time
-	adjustedTime = time(NULL);
-	//..and adjust
-	adjustedTime += loffsetValue;
-	
-Done_getUTCTimeFromNTP:
-
-	if (g_stdoutBuffer)
-		g_free(g_stdoutBuffer);
-	if (g_stderrBuffer)
-		g_free(g_stderrBuffer);
-	if (gerr) {
-        qCritical() << "getUTCTimeFromNTP(): error -" << gerr->message;
-		g_error_free(gerr);
-	}
-
-	g_strfreev(offsetStr);
-	return rc;
-}
-
 std::list<std::string> TimePrefsHandler::getTimeZonesForOffset(int offset)
 {
 	std::list<std::string> timeZones;
@@ -4491,7 +4303,8 @@ void TimePrefsHandler::clockChanged(const std::string &clockTag, int priority, t
 	}
 
 	// so we actually going to apply this update to our system time
-	if (systemSetTime(currentTime + systemOffset))
+	// or keep it the same if offset is zero
+	if (systemOffset == 0 || systemSetTime(currentTime + systemOffset))
 	{
 		m_currentTimeSourcePriority = priority;
 		// note that lastUpdate is outdated already so we need to adjust it

@@ -131,6 +131,7 @@ set(SOURCE_FILES Src/Logging.cpp
     Src/ImageHelpers.cpp
     Src/EraseHandler.cpp
     Src/ClockHandler.cpp
+    Src/NTPClock.cpp
     Src/OsInfoService.cpp
     Src/DeviceInfoService.cpp
     )
