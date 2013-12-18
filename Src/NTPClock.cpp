@@ -36,11 +36,11 @@ void NTPClock::postNTP(time_t offset)
 	// send replies if any request waits for some
 	if (!requestMessages.empty())
 	{
-		struct json_object * jsonOutput = json_object_new_object();
-		json_object_object_add(jsonOutput, (char*) "subscribed",json_object_new_boolean(false));	//no subscriptions on this; make that explicit!
-		json_object_object_add(jsonOutput,(char *)"returnValue",json_object_new_boolean(true));
-		json_object_object_add(jsonOutput,(char *)"utc",json_object_new_int(time(0) + offset));
-		const char * reply = json_object_to_json_string(jsonOutput);
+		struct json_object *jsonOutput = json_object_new_object();
+		json_object_object_add(jsonOutput, "subscribed", json_object_new_boolean(false));  //no subscriptions on this; make that explicit!
+		json_object_object_add(jsonOutput, "returnValue", json_object_new_boolean(true));
+		json_object_object_add(jsonOutput, "utc", json_object_new_int(time(0) + offset));
+		const char *reply = json_object_to_json_string(jsonOutput);
 
 		PmLogDebug(sysServiceLogContext(), "NTP reply: %s", reply);
 
@@ -203,7 +203,8 @@ void NTPClock::cbChild(GPid pid, gint status, NTPClock *ntpClock)
 	//        delta: 0.209369	 offset: -0.005636
 	//get time offset from sntp's return output : "offset: -0.005636"
 
-	const char *offsetStr = "offset: ";
+	static const char * const offsetStr = "offset: ";
+
 	size_t offsetIndex = sntpOutput.find(offsetStr);
 	if (offsetIndex == std::string::npos) {
 		//the query failed in some way

@@ -1579,7 +1579,23 @@ void TimePrefsHandler::updateSystemTime()
         return;
     }
 
-	(void) m_ntpClock.requestNTP( 0 );
+	bool isAnyRequestSent = false;
+	if (isNTPAllowed())
+	{
+		(void) m_ntpClock.requestNTP( 0 );
+		isAnyRequestSent = true;
+	}
+	else
+	{
+		PmLogDebug(sysServiceLogContext(), "Automatic NTP requests are prohibited");
+	}
+
+	if (!isAnyRequestSent)
+	{
+		PmLogDebug(sysServiceLogContext(),
+			"No time source were requested for system time update in response to updateSystemTime()"
+		);
+	}
 }
 
 
@@ -3883,7 +3899,34 @@ bool TimePrefsHandler::cbGetNTPTime(LSHandle* lsHandle, LSMessage *message,
 							void *user_data) 
 {
 	TimePrefsHandler *th = static_cast<TimePrefsHandler*>(user_data);
-	return th->m_ntpClock.requestNTP(message);
+	if (th->isNTPAllowed())
+	{
+		return th->m_ntpClock.requestNTP(message);
+	}
+	else
+	{
+		const char * const denyReply = "{\"subscribed\":false,"
+		                               "\"returnValue\":false,"
+		                               "\"errorText\":\"NTP requests are prohibited at the moment\"}";
+
+		PmLogWarning(sysServiceLogContext(), "NTP_REQUEST_DENY", 0,
+			"Got NTP request while it is not allowed"
+		);
+
+		LS::Error lsError;
+		if (!LSMessageRespond(message, denyReply, &lsError))
+		{
+			PmLogError(sysServiceLogContext(), "NTP_DENY_RESPOND_FAIL", 1,
+				PMLOGKS("REASON", lsError.message),
+				"Failed to send response for NTP query call"
+			);
+			return false;
+		}
+		else
+		{
+			return true;
+		}
+	}
 }
 
 /*!
@@ -4288,6 +4331,13 @@ void TimePrefsHandler::clockChanged(const std::string &clockTag, int priority, t
 			return;
 		}
 	}
+	else if (!isNTPAllowed() && clockTag == "ntp")
+	{
+		PmLogWarning(sysServiceLogContext(), "NTP_SYNC_DENY", 0,
+			"NTP clock source is masked. Ignoring synchronization with system time.");
+		return;
+	}
+
 
 	time_t currentTime = time(0);
 
