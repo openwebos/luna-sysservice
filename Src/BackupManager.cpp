@@ -281,9 +281,9 @@ bool BackupManager::preBackupCallback( LSHandle* lshandle, LSMessage *message, v
     	return false;
     }
     json_object* tempDirLabel = json_object_object_get (root, "tempDir");
-    std::string tempDir;
+    char const *tempDir;
     bool myTmp = false;
-    if ((!tempDirLabel) || is_error(tempDirLabel))
+    if (!tempDirLabel || is_error(tempDirLabel))
     {
         qWarning () << "No tempDir specified in preBackup message";
     	tempDir = PrefsDb::s_prefsPath;
@@ -301,8 +301,12 @@ bool BackupManager::preBackupCallback( LSHandle* lshandle, LSMessage *message, v
     	pThis->m_p_backupDb = 0;
     }
 
-    //try and create it
-    std::string dbfile = ( (tempDir.at(tempDir.length()-1) == '/') ? (tempDir+PrefsDb::s_tempBackupDbFilenameOnly) : (tempDir+std::string("/")+PrefsDb::s_tempBackupDbFilenameOnly));
+	// try and create it
+	std::string dbfile = tempDir;
+	if (dbfile.empty() || *dbfile.rbegin() != '/')
+		dbfile += '/';
+	dbfile += PrefsDb::s_tempBackupDbFilenameOnly;
+
     pThis->m_p_backupDb = PrefsDb::createStandalone(dbfile);
     if (!pThis->m_p_backupDb)
     {
