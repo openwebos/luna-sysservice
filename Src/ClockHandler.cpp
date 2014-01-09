@@ -28,6 +28,7 @@
 #include "JSONUtils.h"
 
 #include "ClockHandler.h"
+#include "TimePrefsHandler.h"
 
 namespace {
 	LSMethod s_methods[]  = {
@@ -39,6 +40,7 @@ namespace {
 } // anonymous namespace
 
 const std::string ClockHandler::manual = "manual";
+const std::string ClockHandler::micom = "micom";
 const std::string ClockHandler::system = "system";
 const time_t ClockHandler::invalidTime = (time_t)-1;
 const time_t ClockHandler::invalidOffset = (time_t)LONG_MIN;
@@ -296,6 +298,7 @@ bool ClockHandler::cbGetTime(LSHandle* lshandle, LSMessage *message, void *user_
 		offset.put("source", system);
 		reply.put("offset", offset);
 		reply.put("utc", (int64_t)time(0));
+		reply.put("systemTimeSource", TimePrefsHandler::instance()->getSystemTimeSource());
 	}
 	else if (it == handler.m_clocks.end())
 	{

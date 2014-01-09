@@ -101,6 +101,7 @@ public:
 	bool isNITZTimeEnabled() { return (m_nitzSetting & NITZ_TimeEnable); }
 	bool isNITZTZEnabled() { return (m_nitzSetting & NITZ_TZEnable) && m_nitzTimeZoneAvailable; }
 	bool isNITZDisabled() { return ((!(m_nitzSetting & NITZ_TimeEnable)) && (!(m_nitzSetting & NITZ_TZEnable))); }
+	const std::string &getSystemTimeSource() const { return m_systemTimeSourceTag; }
 	bool setNITZTimeEnable(bool time_en);	//returns old value
 	bool setNITZTZEnable(bool tz_en);	//returns old value
 	
@@ -336,6 +337,7 @@ private:
 	TimeSources m_timeSources;
 	int         m_currentTimeSourcePriority;
 	time_t      m_nextSyncTime;
+	std::string m_systemTimeSourceTag;
 
 	NTPClock    m_ntpClock;
 };

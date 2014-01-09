@@ -95,6 +95,11 @@ public:
 	static const std::string manual;
 
 	/**
+	 * Pre-defined clock tag for micom time
+	 */
+	static const std::string micom;
+
+	/**
 	 * Pre-defined clock tag for system-wide time
 	 */
 	static const std::string system;

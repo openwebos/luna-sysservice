@@ -49,6 +49,7 @@ static const char*    s_tzFilePath = WEBOS_INSTALL_SYSMGR_LOCALSTATEDIR "/prefer
 static const char*    s_zoneInfoFolder = "/usr/share/zoneinfo/";
 static const int      s_sysTimeNotificationThreshold = 3000; // 5 mins
 static const char*    s_logChannel = "TimePrefsHandler";
+static const char*    s_factoryTimeSource = "factory";
 
 #define				  	ORIGIN_NITZ			"nitz"
 #define					HOURFORMAT_12		"HH12"
@@ -407,6 +408,7 @@ TimePrefsHandler::TimePrefsHandler(LSPalmService* service)
     , m_nitzTimeZoneAvailable(true)
 	, m_currentTimeSourcePriority(lowestTimeSourcePriority)
 	, m_nextSyncTime(0)
+	, m_systemTimeSourceTag(s_factoryTimeSource)
 	, m_ntpClock(*this)
 {
 	if (!s_inst)
@@ -1012,6 +1014,10 @@ void TimePrefsHandler::readCurrentTimeSettings()
 			"No timeSources preference defined falling back to hard-coded"
 		);
 	}
+
+	// this clock value is stored in micom. if it is set to "factory", LSS wasn't used to set system time.
+	PrefsDb::instance()->getPref("lastSystemTimeSource", m_systemTimeSourceTag);
+
 	if (!convertUnique(__FUNCTION__, timeSourcesJson.c_str(), m_timeSources))
 	{
 		// converUnique will log error
@@ -2176,7 +2182,7 @@ bool TimePrefsHandler::cbSetSystemTime(LSHandle* lshandle, LSMessage *message,
 	// boot or whatever.
 	// But right now we can't distinguish them, so assume that this is manual
 	// set time.
-	th->deprecatedClockChange.fire(utcTimeInSecs - time(0), ClockHandler::manual);
+	th->deprecatedClockChange.fire(utcTimeInSecs - time(0), th->isManualTimeUsed() ? ClockHandler::manual : ClockHandler::micom);
 
 	// TODO: consider moving this code to systemSetTime
 	TimePrefsHandler::transitionNITZValidState((th->getLastNITZValidity() & TimePrefsHandler::NITZ_Valid),true);
@@ -3510,6 +3516,8 @@ bool TimePrefsHandler::cbGetSystemTime(LSHandle* lsHandle, LSMessage *message,
 
 	json_object_object_add(json, (char*) "timeZoneFile", json_object_new_string(const_cast<char*>(s_tzFilePath)));
 
+	json_object_object_add(json, "systemTimeSource", json_object_new_string(th->getSystemTimeSource().c_str()));
+
 	nitzValidity = PrefsDb::instance()->getPref("nitzValidity");
 
 	if (nitzValidity == NITZVALIDITY_STATE_NITZVALID)
@@ -4359,5 +4367,11 @@ void TimePrefsHandler::clockChanged(const std::string &clockTag, int priority, t
 		m_currentTimeSourcePriority = priority;
 		// note that lastUpdate is outdated already so we need to adjust it
 		m_nextSyncTime = lastUpdate + systemOffset + timeDriftPeriod; // when we should sync our time again
+
+		if (clockTag != ClockHandler::micom)
+		{
+			m_systemTimeSourceTag = clockTag;
+			PrefsDb::instance()->setPref("lastSystemTimeSource", m_systemTimeSourceTag);
+		}
 	}
 }
