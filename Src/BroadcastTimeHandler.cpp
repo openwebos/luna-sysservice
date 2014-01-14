@@ -95,7 +95,11 @@ namespace {
                     "type": "integer",
                     "description": "Local time in seconds since epoch"
                 },
-                "localtime": SCHEMA_LOCALTIME
+                "localtime": SCHEMA_LOCALTIME,
+                "systemTimeSource": {
+                    "type": "string",
+                    "description": "Tag for clock system-time were synchronized with"
+                }
             },
             "required": [ "returnValue", "local" ],
             "additionalProperties": false
@@ -212,11 +216,13 @@ namespace {
                                                                const BroadcastTime &broadcastTime)
     {
         time_t adjustedUtc, local;
+        bool systemTimeUsed = false;
         if (timePrefsHandler.isSystemTimeBroadcastEffective())
         {
             // just use system local time (set by user)
             adjustedUtc = time(0);
             local = toLocal(adjustedUtc);
+            systemTimeUsed = true;
         }
         else
         {
@@ -225,6 +231,7 @@ namespace {
                 qWarning() << "Internal logic error (failed to get broadcast time while it is reported avaialble)";
                 adjustedUtc = time(0);
                 local = toLocal(adjustedUtc);
+                systemTimeUsed = true;
             }
             else
             {
@@ -248,6 +255,13 @@ namespace {
         answer.put("adjustedUtc", toJValue(adjustedUtc));
         answer.put("local", toJValue(local));
         addLocalTime(answer, local);
+
+        if (systemTimeUsed)
+        {
+            // add additional information associated with system time
+            answer.put("systemTimeSource", TimePrefsHandler::instance()->getSystemTimeSource());
+        }
+
         return true;
     }
 }
