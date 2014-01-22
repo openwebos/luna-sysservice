@@ -1,5 +1,5 @@
 /**
- *  Copyright (c) 2010-2013 LG Electronics, Inc.
+ *  Copyright (c) 2010-2014 LG Electronics, Inc.
  * 
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -1014,9 +1014,6 @@ void TimePrefsHandler::readCurrentTimeSettings()
 			"No timeSources preference defined falling back to hard-coded"
 		);
 	}
-
-	// this clock value is stored in micom. if it is set to "factory", LSS wasn't used to set system time.
-	PrefsDb::instance()->getPref("lastSystemTimeSource", m_systemTimeSourceTag);
 
 	if (!convertUnique(__FUNCTION__, timeSourcesJson.c_str(), m_timeSources))
 	{
@@ -4368,10 +4365,21 @@ void TimePrefsHandler::clockChanged(const std::string &clockTag, int priority, t
 		// note that lastUpdate is outdated already so we need to adjust it
 		m_nextSyncTime = lastUpdate + systemOffset + timeDriftPeriod; // when we should sync our time again
 
-		if (clockTag != ClockHandler::micom)
+		if (clockTag == ClockHandler::micom)
+		{
+			// We've received micom time which actually stores time
+			// synchronized with lastSystemTimeSource.
+			if (!PrefsDb::instance()->getPref("lastSystemTimeSource", m_systemTimeSourceTag))
+			{
+				// if no lastSystemTimeSource were set before assume factory
+				m_systemTimeSourceTag = s_factoryTimeSource;
+			}
+		}
+		else
 		{
 			m_systemTimeSourceTag = clockTag;
 			PrefsDb::instance()->setPref("lastSystemTimeSource", m_systemTimeSourceTag);
+			// next time "micom" will come we'll use this clock tag instead
 		}
 	}
 }
