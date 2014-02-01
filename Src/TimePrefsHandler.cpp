@@ -172,45 +172,8 @@ _json_get_string(struct json_object *object, const char *label)
 }
 
 
-class TimeZoneInfo
+struct TimeZoneInfo
 {
-public:
-	TimeZoneInfo() {
-		name = "";
-		jsonStringValue = "";
-	}
-
-	TimeZoneInfo(const std::string& _name,const std::string& _json,int _offset,int dst)
-	: name(_name) , jsonStringValue(_json) , dstSupported(dst) , offsetToUTC(_offset) , preferred(false)
-	{
-	}
-
-	TimeZoneInfo(const TimeZoneInfo& c)
-	{
-		name = c.name;
-		countryCode = c.countryCode;
-		jsonStringValue = c.jsonStringValue;
-		dstSupported = c.dstSupported;
-		offsetToUTC = c.offsetToUTC;
-		preferred = c.preferred;
-	}
-
-	TimeZoneInfo& operator=(const TimeZoneInfo& c)
-	{
-		if (this == &c)
-			return *this;
-		name = c.name;
-		countryCode = c.countryCode;
-		jsonStringValue = c.jsonStringValue;
-		dstSupported = c.dstSupported;
-		offsetToUTC = c.offsetToUTC;
-		preferred = c.preferred;
-		return *this;
-	}
-
-	~TimeZoneInfo() {
-	}
-
 	bool operator==(const struct TimeZoneInfo& c) const {
 		return (name == c.name);
 	}
@@ -224,34 +187,35 @@ public:
 
 };
 
-const TimeZoneInfo TimePrefsHandler::s_failsafeDefaultZone("Etc/GMT-0",
-        "{\"Country\":\"\",\"CountryCode\":\"\",\"ZoneID\":\"Etc/GMT-0\",\"City\":\"\",\"Description\":\"GMT\",\"offsetFromUTC\": 0,\"supportsDST\":0}",
-		0,
-		0);
+namespace {
+	TimeZoneInfo buildFailsafeDefaultZone()
+	{
+		TimeZoneInfo tz;
+		tz.name = "Etc/GMT-0";
+		tz.countryCode = "";
+		tz.jsonStringValue =  "{"
+			"\"Country\":\"\",\"CountryCode\":\"\","
+			"\"ZoneID\":\"Etc/GMT-0\",\"City\":\"\","
+			"\"Description\":\"GMT\",\"offsetFromUTC\": 0,"
+			"\"supportsDST\":0"
+			"}";
+		tz.dstSupported = 0;
+		tz.offsetToUTC = 0;
+		tz.preferred = false;
+		return tz;
+	}
+} // anonymous namespace
+
+const TimeZoneInfo TimePrefsHandler::s_failsafeDefaultZone = buildFailsafeDefaultZone();
 
 ///just a simple container
-class PreferredZones
+struct PreferredZones
 {
-public:
 	PreferredZones() : dstPref(NULL), nonDstPref(NULL), dstFallback(NULL), nonDstFallback(NULL) {}
-	PreferredZones(const PreferredZones& c) {
-		offset = c.offset;
-		dstPref = c.dstPref;
-		nonDstPref = c.nonDstPref;
-		dstFallback = c.dstFallback;
-		nonDstFallback = c.nonDstFallback;
-	}
 
-	PreferredZones& operator=(const PreferredZones& c) {
-		if (this == &c)
-			return *this;
-		offset = c.offset;
-		dstPref = c.dstPref;
-		nonDstPref = c.nonDstPref;
-		dstFallback = c.dstFallback;
-		nonDstFallback = c.nonDstFallback;
-		return *this;
-	}
+	/* PreferredZones(const PreferredZones& c) = default; */
+
+	/* PreferredZones& operator=(const PreferredZones& c) = default; */
 
 	int 		   offset;
 	TimeZoneInfo * dstPref;
