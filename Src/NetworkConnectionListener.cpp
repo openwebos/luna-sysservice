@@ -112,17 +112,16 @@ bool NetworkConnectionListener::connectionManagerConnectCallback(LSHandle *sh, L
 		return true;
 	}
 
-	bool ret = false;
 	LSError error;
 	LSErrorInit(&error);
 
 	LSPalmService* palmService = PrefsFactory::instance()->serviceHandle();
 	LSHandle* service = LSPalmServiceGetPrivateConnection(palmService);
 	
-	ret = LSCall(service, "palm://com.palm.connectionmanager/getstatus",
-				 "{\"subscribe\":true}",
-				 connectionManagerGetStatusCallback, NULL, NULL, &error);
-	if (!ret) {
+	if (!LSCall(service, "palm://com.palm.connectionmanager/getstatus",
+	                     "{\"subscribe\":true}",
+	                     connectionManagerGetStatusCallback, NULL, NULL, &error))
+	{
         qCritical() << "Failed in calling palm://com.palm.connectionmanager/getstatus:" << error.message;
 		LSErrorFree(&error);
 	}

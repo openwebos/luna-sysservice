@@ -1323,7 +1323,7 @@ void TimePrefsHandler::scanTimeZoneJson()
 	}
 
 	//go through the temp map and assign values to the final dst and non-dst maps
-	for (tmpPrefZoneMapIter = tmpPrefZoneMap.begin();tmpPrefZoneMapIter != tmpPrefZoneMap.end();tmpPrefZoneMapIter++) {
+	for (tmpPrefZoneMapIter = tmpPrefZoneMap.begin();tmpPrefZoneMapIter != tmpPrefZoneMap.end();++tmpPrefZoneMapIter) {
 		int off_key = (*tmpPrefZoneMapIter).second.offset;
 
 		//if there is only a dstPref, then use that for both dst and non-dst
@@ -1787,7 +1787,7 @@ void TimePrefsHandler::launchAppsOnTimeChange()
 		if (label)
 			launchStr = std::string("{ \"id\":\"")+appId+std::string("\", \"params\":")+json_object_to_json_string(label)+std::string(" }");
 		else
-			launchStr = launchStr = std::string("{ \"id\":\"")+appId+std::string("\", \"params\":\"\" }");
+			launchStr = std::string("{ \"id\":\"")+appId+std::string("\", \"params\":\"\" }");
 
 		LSErrorInit(&lsError);
 		rc = LSCall(getPrivateHandle(),

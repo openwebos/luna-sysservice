@@ -503,7 +503,7 @@ bool BackupManager::postRestoreCallback( LSHandle* lshandle, LSMessage *message,
             qWarning() << "array object [" << index << "] is a file path that is empty (skipping)";
     		continue;
     	}
-    	if (path.find("/") != 0)
+    	if (path[0] != '/')
     	{
     		//not an absolute path apparently...try taking on tempdir
     		path = tempDir + std::string("/") + path;

@@ -281,7 +281,7 @@ void PrefsFactory::runConsistencyChecksOnAllHandlers()
 {
 	//go through all the handlers
 	
-	for (PrefsHandlerMap::iterator it = m_handlersMaps.begin();it != m_handlersMaps.end();it++) {
+	for (PrefsHandlerMap::iterator it = m_handlersMaps.begin();it != m_handlersMaps.end();++it) {
 		std::string key = it->first;
 		PrefsHandler * handler = it->second;
 		if (handler) {

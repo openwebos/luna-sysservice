@@ -162,7 +162,7 @@ bool WallpaperPrefsHandler::validate(const std::string& key, json_object* value)
 	scanForWallpapers();
 	
 	//try to match the given wallpaper to one of the ones found in the scan
-	for (std::list<std::string>::iterator it = m_wallpapers.begin();it != m_wallpapers.end();it++) {
+	for (std::list<std::string>::iterator it = m_wallpapers.begin();it != m_wallpapers.end();++it) {
 		if (wallpaperName == (*it))
 			return true;
 	}
@@ -193,7 +193,7 @@ json_object* WallpaperPrefsHandler::valuesForKey(const std::string& key)
 	
 	json_object* json = json_object_new_object();
 	json_object* arrayObj = json_object_new_array();
-	for (std::list<std::string>::iterator it = wallpaperFilenames.begin();it != wallpaperFilenames.end();it++) {
+	for (std::list<std::string>::iterator it = wallpaperFilenames.begin();it != wallpaperFilenames.end();++it) {
 		json_object * element = json_object_new_object();
 		char * filename_cstr = const_cast<char*>((*it).c_str());
 		json_object_object_add(element,(char *)"wallpaperName",json_object_new_string(filename_cstr));
@@ -398,7 +398,7 @@ bool WallpaperPrefsHandler::importWallpaperViaImage2(const std::string& imageFil
 		if (*iter == file)
 			iter = m_wallpapers.erase(iter);
 		else
-			iter++;
+			++iter;
 	}
 
 	json_object * requestObject = json_object_new_object();
@@ -472,7 +472,7 @@ bool WallpaperPrefsHandler::importWallpaper(std::string& ret_wallpaperName, cons
         if (*iter == sourceFile)
             iter = m_wallpapers.erase(iter);
         else
-            iter++;
+            ++iter;
     }
 
     //fix scale factor just in case it's negative
@@ -564,7 +564,7 @@ bool WallpaperPrefsHandler::importWallpaper_lowMem(std::string& ret_wallpaperNam
         if (*iter == sourceFile)
             iter = m_wallpapers.erase(iter);
         else
-            iter++;
+            ++iter;
     }
 
     //fix scale factor just in case it's negative
@@ -748,7 +748,7 @@ bool WallpaperPrefsHandler::deleteWallpaper(std::string wallpaperName) {
 			iter = m_wallpapers.erase(iter);
 		}
 		else
-			iter++;
+			++iter;
 	}
 
 	return found;
@@ -1112,7 +1112,7 @@ bool WallpaperPrefsHandler::getWallpaperSpecFromName(const std::string& wallpape
 	
 	//try to match the given wallpaper to one of the ones in the list
 	std::list<std::string>::iterator it;
-	for (it = m_wallpapers.begin();it != m_wallpapers.end();it++) {
+	for (it = m_wallpapers.begin();it != m_wallpapers.end();++it) {
 		if (wallpaperName == (*it))
 			break;
 	}
@@ -1133,7 +1133,7 @@ bool WallpaperPrefsHandler::getWallpaperSpecFromFilename(std::string& wallpaperN
 	wallpaperName = url.resource;
 	//try to match the given wallpaper to one of the ones in the list
 	std::list<std::string>::iterator it;
-	for (it = m_wallpapers.begin();it != m_wallpapers.end();it++) {
+	for (it = m_wallpapers.begin();it != m_wallpapers.end();++it) {
 		if (wallpaperName == (*it))
 			break;
 	}

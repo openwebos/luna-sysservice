@@ -192,8 +192,7 @@ bool EraseHandler::Erase(LSHandle* pHandle, LSMessage* pMessage, EraseType_t typ
     }
 
     if (!error_text) {
-        nyx_error_t ret = NYX_ERROR_NONE;
-        ret = nyx_system_erase_partition(nyxSystem, nyx_type/*, error_text*/);
+        nyx_error_t ret = nyx_system_erase_partition(nyxSystem, nyx_type/*, error_text*/);
         if (ret != NYX_ERROR_NONE) {
             qCritical("Failed to execute nyx_system_erase_partition, ret : %d",ret);
             error_text = g_strdup_printf("Failed to execute NYX erase API");

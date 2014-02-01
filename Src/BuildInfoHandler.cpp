@@ -81,7 +81,7 @@ void BuildInfoHandler::init()
 	
 	for(std::map<std::string,std::string>::iterator it = KVpairs.begin();
 		it != KVpairs.end();
-		it++) 
+		++it)
 	{
 		//only one I care about right now is "build"
 		if (it->first == std::string("build"))
@@ -116,13 +116,11 @@ int BuildInfoHandler::readBuildInfoFile(std::map<std::string,std::string>& KVpai
 		std::string line(lp);
 		Utils::trimWhitespace_inplace(line);
 		std::list<std::string> splits;
-		if (!Utils::splitStringOnKey(splits,line,std::string("=")))
-			continue;
-		if (splits.size() < 2)
+		if (Utils::splitStringOnKey(splits,line,std::string("=")) < 2)
 			continue;
 		std::list<std::string>::iterator it = splits.begin();
 		key = *it;
-		it++;
+		++it;
 		value = *it;
 		KVpairs[key] = value;
 		++n;
