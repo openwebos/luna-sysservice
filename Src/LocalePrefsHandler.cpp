@@ -76,9 +76,9 @@ bool LocalePrefsHandler::validateLocale(json_object* value)
 		countryCode = ccode.c_str();
 	}
 
-	bool found = false;
-
 	if ((languageCode) && (countryCode)) {
+		bool found = false;
+
 		for (LocaleEntryList::const_iterator it = m_localeEntryList.begin();
 		it != m_localeEntryList.end(); ++it) {
 
@@ -125,9 +125,9 @@ bool LocalePrefsHandler::validateRegion(json_object* value)
 		regionCode = rcode.c_str();
 	}
 
-	bool found = false;
-
 	if (regionCode) {
+		bool found = false;
+
 		for (RegionEntryList::const_iterator it = m_regionEntryList.begin();
 		it != m_regionEntryList.end(); ++it) {
 

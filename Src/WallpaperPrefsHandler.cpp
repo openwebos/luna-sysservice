@@ -660,8 +660,6 @@ bool WallpaperPrefsHandler::convertImage(const std::string& pathToSourceFile,
                                          double centerX, double centerY, double scale,
                                          std::string& r_errorText)
 {
-	int destHeight,destWidth;
-
     QImageReader reader(QString::fromStdString(pathToSourceFile));
     if(!reader.canRead()) {
 		r_errorText = reader.errorString().toStdString();
@@ -704,8 +702,6 @@ bool WallpaperPrefsHandler::convertImage(const std::string& pathToSourceFile,
         qDebug("convertImage(): Calling clipImageBufferToScreenSizeWithFocus...");
         image = clipImageToScreenSizeWithFocus(image, image.width() * centerX, image.height() * centerY);
 
-        destWidth = SCREEN_WIDTH;
-        destHeight = SCREEN_HEIGHT;
         qDebug("convertImage(): clipImageBufferToScreenSizeWithFocus Ok\n");
     }
 
@@ -1234,7 +1230,6 @@ static bool cbImportWallpaper(LSHandle* lsHandle, LSMessage *message,
 
     bool        retVal = false;
 	LSError     lsError;
-	std::string result;
 	const char* reply = 0;
 	json_object * jsonReplyObject = 0;
 
@@ -1493,7 +1488,6 @@ static bool cbConvertImage(LSHandle* lsHandle, LSMessage *message,
 
 	bool        retVal=false;
 	LSError     lsError;
-	std::string result;
 	const char* reply = 0;
 
 	bool success = false;
@@ -1718,11 +1712,8 @@ static bool cbRefreshWallpaperIndex(LSHandle* lsHandle, LSMessage *message,
     EMPTY_SCHEMA_RETURN(lsHandle,message);
 
 	LSError     lsError;
-	std::string result;
 	const char* reply = 0;
 	json_object * json;
-
-	std::string errorText;
 
 	LSErrorInit( &lsError );
 	WallpaperPrefsHandler* wh = (WallpaperPrefsHandler*) user_data;
@@ -1820,7 +1811,6 @@ static bool cbGetWallpaperSpec(LSHandle* lsHandle, LSMessage *message,
 {
 	bool        retVal;
 	LSError     lsError;
-	std::string result;
 	const char* reply = 0;
 	json_object * json;
 	json_object * inner_json;
@@ -1977,7 +1967,6 @@ static bool cbDeleteWallpaper(LSHandle* lsHandle, LSMessage *message,
 {
 	bool        retVal;
 	LSError     lsError;
-	std::string result;
 	const char* reply = 0;
 	json_object * json;
 	json_object * inner_json;

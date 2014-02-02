@@ -192,15 +192,11 @@ TzTransitionList parseTimeZone(const char* tzName)
               The number of characters of "time zone abbreviation strings" stored in the file.
 	*/
 	
-	long isGmt = 0;
-	long isStd = 0;  
 	long leapCnt = 0;
 	long timeCnt = 0;
 	long typeCnt = 0;	
 	long charCnt = 0;
 
-	(void) isGmt;
-	(void) isStd;
 	(void) leapCnt;
 	(void) timeCnt;
 	(void) typeCnt;
@@ -219,8 +215,6 @@ TzTransitionList parseTimeZone(const char* tzName)
 		
 		struct tzhead* head = (struct tzhead*) (buf + index);
 
-		isGmt   = detzcode(head->tzh_ttisgmtcnt);
-		isStd   = detzcode(head->tzh_ttisstdcnt);
 		leapCnt = detzcode(head->tzh_leapcnt);
 		timeCnt = detzcode(head->tzh_timecnt);
 		typeCnt = detzcode(head->tzh_typecnt);
@@ -237,8 +231,8 @@ TzTransitionList parseTimeZone(const char* tzName)
 
 		index += sizeof(struct tzhead);
 	
-		DBG("tzh_ttisgmtcnt: %ld\n", isGmt);
-		DBG("tzh_ttisstdcnt: %ld\n", isStd);
+		DBG("tzh_ttisgmtcnt: %ld\n", detzcode(head->tzh_ttisgmtcnt));
+		DBG("tzh_ttisstdcnt: %ld\n", detzcode(head->tzh_ttisstdcnt));
 		DBG("tzh_leapcnt: %ld\n", leapCnt);
 		DBG("tzh_timecnt: %ld\n", timeCnt);
 		DBG("tzh_typecnt: %ld\n", typeCnt);

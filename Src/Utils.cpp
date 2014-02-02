@@ -313,6 +313,11 @@ int fileCopy(const char * srcFileAndPath,const char * dstFileAndPath)
 	fflush(outfp);	//apparently our filesystem doesn't like to commit even on close
 	fclose(infp);
 	fclose(outfp);
+	if (!success) // incomplete copy
+	{
+		// XXX: (void) unlink(dstFileAndPath);
+		return -1;
+	}
 	return 1;
 }
 
@@ -373,7 +378,6 @@ static inline bool is_base64(unsigned char c) {
 std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_len) {
   std::string ret;
   int i = 0;
-  int j = 0;
   unsigned char char_array_3[3];
   unsigned char char_array_4[4];
 
@@ -393,7 +397,7 @@ std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_
 
   if (i)
   {
-    for(j = i; j < 3; j++)
+    for(int j = i; j < 3; j++)
       char_array_3[j] = '\0';
 
     char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
@@ -401,7 +405,7 @@ std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_
     char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
     char_array_4[3] = char_array_3[2] & 0x3f;
 
-    for (j = 0; (j < i + 1); j++)
+    for (int j = 0; (j < i + 1); j++)
       ret += base64_chars[char_array_4[j]];
 
     while((i++ < 3))
@@ -416,7 +420,6 @@ std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_
 std::string base64_decode(std::string const& encoded_string) {
   int in_len = encoded_string.size();
   int i = 0;
-  int j = 0;
   int in_ = 0;
   unsigned char char_array_4[4], char_array_3[3];
   std::string ret;
@@ -438,17 +441,17 @@ std::string base64_decode(std::string const& encoded_string) {
   }
 
   if (i) {
-    for (j = i; j <4; j++)
+    for (int j = i; j <4; j++)
       char_array_4[j] = 0;
 
-    for (j = 0; j <4; j++)
+    for (int j = 0; j <4; j++)
       char_array_4[j] = base64_chars.find(char_array_4[j]);
 
     char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
     char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
     char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
-    for (j = 0; (j < i - 1); j++) ret += char_array_3[j];
+    for (int j = 0; (j < i - 1); j++) ret += char_array_3[j];
   }
 
   return ret;

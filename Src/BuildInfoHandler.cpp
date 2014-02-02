@@ -101,7 +101,6 @@ int BuildInfoHandler::readBuildInfoFile(std::map<std::string,std::string>& KVpai
 		return 0;
 	
 	char lineb[2048];
-	char * lp = NULL;
 	int lc=0;
 	int n=0;
 	std::string key;
@@ -110,7 +109,7 @@ int BuildInfoHandler::readBuildInfoFile(std::map<std::string,std::string>& KVpai
 	while (!feof(fp)) 
 	{
 		++lc;	//count lines...helps debug efforts
-		lp = fgets(lineb,2048,fp);
+		char *lp = fgets(lineb,2048,fp);
 		if (lp == NULL)
 			continue;
 		std::string line(lp);

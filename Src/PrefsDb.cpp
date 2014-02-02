@@ -638,7 +638,6 @@ void PrefsDb::synchronizeDefaults() {
 
 	json_object* root = 0;
 	json_object* label = 0;
-	std::string ccnumber;
 	int ret;
 	gchar* queryStr;
 
@@ -668,7 +667,6 @@ void PrefsDb::synchronizeDefaults() {
 		//check the key to see if it exists in the db already
 
 		std::string cv = getPref(key);
-		std::string dbv(p_cDbv);
 
 		if ((cv.length() == 0) || ((strncmp(key,".sysservice",11) == 0))) {		//allow special keys to be overriden
 			queryStr = g_strdup_printf("INSERT INTO Preferences "
@@ -704,7 +702,6 @@ void PrefsDb::synchronizePlatformDefaults() {
 
 	json_object* root = 0;
 	json_object* label = 0;
-	std::string ccnumber;
 	int ret;
 	gchar* queryStr;
 
@@ -731,7 +728,6 @@ void PrefsDb::synchronizePlatformDefaults() {
 		//check the key to see if it exists in the db already
 
 		std::string cv = getPref(key);
-		std::string dbv(p_cDbv);
 
 		if (cv.length() == 0) {
 			queryStr = g_strdup_printf("INSERT INTO Preferences "
@@ -766,7 +762,6 @@ void PrefsDb::synchronizeCustomerCareInfo() {
 	}
 
 	json_object* root = 0;
-	std::string ccnumber;
 	int ret;
 	gchar* queryStr;
 
@@ -825,7 +820,6 @@ void PrefsDb::updateWithCustomizationPrefOverrides()
 
 	json_object* root = 0;
 	json_object* label = 0;
-	std::string ccnumber;
 	int ret;
 	gchar* queryStr;
 
@@ -884,7 +878,6 @@ void PrefsDb::loadDefaultPrefs()
 
 	json_object* root = 0;
 	json_object* label = 0;
-	std::string ccnumber;
 	std::string ccurl;
 	std::string ccstring;
 	int ret;
@@ -1054,7 +1047,6 @@ void PrefsDb::loadDefaultPlatformPrefs()
 
 	json_object* root = 0;
 	json_object* label = 0;
-	std::string ccnumber;
 	std::string ccurl;
 	std::string ccstring;
 	int ret;

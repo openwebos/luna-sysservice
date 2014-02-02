@@ -553,7 +553,7 @@ bool TimePrefsHandler::isValidTimeZoneName(const std::string& tzName)
 		return false;
 	}
 	for (int i = 0; i < array_list_length(srcJsonArray); i++) {
-		json_object* obj = (json_object*) array_list_get_idx(srcJsonArray, i);
+		json_object* obj = static_cast<json_object*>(array_list_get_idx(srcJsonArray, i));
 
 		//parse out the TZ name
 		label = json_object_object_get(obj,(char*)"ZoneID");
@@ -578,7 +578,7 @@ bool TimePrefsHandler::isValidTimeZoneName(const std::string& tzName)
 		return false;
 	}
 	for (int i = 0; i < array_list_length(srcJsonArray); i++) {
-		json_object* obj = (json_object*) array_list_get_idx(srcJsonArray, i);
+		json_object* obj = static_cast<json_object*>(array_list_get_idx(srcJsonArray, i));
 
 		//parse out the TZ name
 		label = json_object_object_get(obj,(char*)"ZoneID");
@@ -700,7 +700,7 @@ std::string TimePrefsHandler::getDefaultTZFromJson(TimeZoneInfo * r_pZoneInfo)
 		return s_failsafeDefaultZone.jsonStringValue;
 	}
 	for (int i = 0; i < array_list_length(srcJsonArray); i++) {
-		json_object* obj = (json_object*) array_list_get_idx(srcJsonArray, i);
+		json_object* obj = static_cast<json_object*>(array_list_get_idx(srcJsonArray, i));
 
 		//look for "default" boolean
 		label = json_object_object_get(obj,(char*)"default");
@@ -1048,7 +1048,7 @@ std::string TimePrefsHandler::getQualifiedTZIdFromName(const std::string& tzName
 		return std::string("");
 	}
 	for (int i = 0; i < array_list_length(srcJsonArray); i++) {
-		json_object* obj = (json_object*) array_list_get_idx(srcJsonArray, i);
+		json_object* obj = static_cast<json_object*>(array_list_get_idx(srcJsonArray, i));
 
 		label = json_object_object_get(obj,(char*)"ZoneID");
 		if ((!label) || (is_error(label)))
@@ -1074,7 +1074,7 @@ std::string TimePrefsHandler::getQualifiedTZIdFromName(const std::string& tzName
 		return std::string("");
 	}	
 	for (int i = 0; i < array_list_length(srcJsonArray); i++) {
-		json_object* obj = (json_object*) array_list_get_idx(srcJsonArray, i);
+		json_object* obj = static_cast<json_object*>(array_list_get_idx(srcJsonArray, i));
 
 		label = json_object_object_get(obj,(char*)"ZoneID");
 		if ((!label) || (is_error(label)))
@@ -1123,7 +1123,7 @@ std::string TimePrefsHandler::getQualifiedTZIdFromJson(const std::string& jsonTz
 		return std::string("");
 	}
 	for (int i = 0; i < array_list_length(srcJsonArray); i++) {
-		json_object* obj = (json_object*) array_list_get_idx(srcJsonArray, i);
+		json_object* obj = static_cast<json_object*>(array_list_get_idx(srcJsonArray, i));
 
 		label = json_object_object_get(obj,(char*)"ZoneID");
 		if ((!label) || (is_error(label)))
@@ -1149,7 +1149,7 @@ std::string TimePrefsHandler::getQualifiedTZIdFromJson(const std::string& jsonTz
 		return std::string("");
 	}	
 	for (int i = 0; i < array_list_length(srcJsonArray); i++) {
-		json_object* obj = (json_object*) array_list_get_idx(srcJsonArray, i);
+		json_object* obj = static_cast<json_object*>(array_list_get_idx(srcJsonArray, i));
 
 		label = json_object_object_get(obj,(char*)"ZoneID");
 		if ((!label) || (is_error(label)))
@@ -1198,7 +1198,7 @@ void TimePrefsHandler::scanTimeZoneJson()
 	}
 
 	for (int i = 0; i < array_list_length(srcJsonArray); i++) {
-		json_object* obj = (json_object*) array_list_get_idx(srcJsonArray, i);
+		json_object* obj = static_cast<json_object*>(array_list_get_idx(srcJsonArray, i));
 
 		if ((!obj) || (is_error(obj)))
 			continue;
@@ -1347,7 +1347,7 @@ void TimePrefsHandler::scanTimeZoneJson()
 	}
 
 	for (int i = 0; i < array_list_length(srcJsonArray); i++) {
-		json_object* obj = (json_object*) array_list_get_idx(srcJsonArray, i);
+		json_object* obj = static_cast<json_object*>(array_list_get_idx(srcJsonArray, i));
 
 		if ((!obj) || (is_error(obj)))
 			continue;
@@ -1397,7 +1397,7 @@ void TimePrefsHandler::scanTimeZoneJson()
 	}
 
 	for (int i = 0; i < array_list_length(srcJsonArray); i++) {
-		json_object* obj = (json_object*) array_list_get_idx(srcJsonArray, i);
+		json_object* obj = static_cast<json_object*>(array_list_get_idx(srcJsonArray, i));
 
 		if ((!obj) || (is_error(obj)))
 			continue;
@@ -1627,7 +1627,6 @@ void TimePrefsHandler::postSystemTimeChange()
 	LSError lsError;
 	json_object* json = 0;
 	json_object* localtime_json = 0;
-	char tzoneabbr_cstr[16] = {0};
 	LSErrorInit(&lsError);
 	std::string tzAbbr;
 	
@@ -1651,6 +1650,7 @@ void TimePrefsHandler::postSystemTimeChange()
 	if (currentTimeZone()) {
 		json_object_object_add(json, (char*) "timezone", json_object_new_string(currentTimeZone()->name.c_str()));
 		//get current time zone abbreviation
+		char tzoneabbr_cstr[16] = {0};
 		strftime (tzoneabbr_cstr,16,"%Z",localtime(&utctime));
 		tzAbbr = std::string(tzoneabbr_cstr);
 	}
@@ -3419,7 +3419,6 @@ bool TimePrefsHandler::cbGetSystemTime(LSHandle* lsHandle, LSMessage *message,
     bool        retVal;
 	LSError     lsError;
 	const char* reply = 0;
-	char tzoneabbr_cstr[16] = {0};
 	std::string tzAbbr;
 	json_object* json = 0;
 	json_object* localtime_json = 0;
@@ -3466,6 +3465,7 @@ bool TimePrefsHandler::cbGetSystemTime(LSHandle* lsHandle, LSMessage *message,
 	if (th->currentTimeZone()) {
 		json_object_object_add(json, (char*) "timezone", json_object_new_string(th->currentTimeZone()->name.c_str()));
 		//get current time zone abbreviation
+		char tzoneabbr_cstr[16] = {0};
 		strftime (tzoneabbr_cstr,16,"%Z",localtime(&utctime));
 		tzAbbr = std::string(tzoneabbr_cstr);
 	}
