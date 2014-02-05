@@ -1539,23 +1539,21 @@ void TimePrefsHandler::systemSetTimeZone(const std::string &tzFileActual, const 
     __qMessage("TZ env is now [%s]", getenv("TZ"));
 }
 
-bool TimePrefsHandler::systemSetTime(time_t utc)
+bool TimePrefsHandler::systemSetTime(time_t deltaTime, const std::string &source)
 {
 	struct timeval timeVal;
-	timeVal.tv_sec = utc;
+	timeVal.tv_sec = time(0) + deltaTime;
 	timeVal.tv_usec = 0;
-	return systemSetTime(&timeVal);
-}
+	qDebug("%s: settimeofday: %u",__FUNCTION__,(unsigned int)timeVal.tv_sec);
 
-bool TimePrefsHandler::systemSetTime(struct timeval * pTimeVal)
-{
-    time_t originalTime = time(0);
-    qDebug("%s: settimeofday: %u",__FUNCTION__,(unsigned int)pTimeVal->tv_sec);
-	int rc=settimeofday(pTimeVal, 0);
+	int rc = deltaTime == 0 ? 0 : settimeofday(&timeVal, 0);
 	qDebug("settimeofday %s", ( rc == 0 ? "succeeded" : "failed"));
     if (rc == 0)
     {
-		time_t deltaTime = pTimeVal->tv_sec - originalTime;
+		// remember last synchronized with time
+		m_systemTimeSourceTag = source;
+		PrefsDb::instance()->setPref("lastSystemTimeSource", m_systemTimeSourceTag);
+		// next time "micom" will come we'll use this clock tag instead
 
 		// TODO: drop direct broadcastTime adjust in favor of signal and clocks
 		m_broadcastTime.adjust(deltaTime);
@@ -4357,29 +4355,29 @@ void TimePrefsHandler::clockChanged(const std::string &clockTag, int priority, t
 		return;
 	}
 
+	std::string effectiveClockTag;
+	if (clockTag == ClockHandler::micom)
+	{
+		// We've received micom time which actually stores time
+		// synchronized with lastSystemTimeSource.
+		if (!PrefsDb::instance()->getPref("lastSystemTimeSource", effectiveClockTag))
+		{
+			// if no lastSystemTimeSource were set before assume factory
+			effectiveClockTag = s_factoryTimeSource;
+		}
+	}
+	else
+	{
+		// use original
+		effectiveClockTag = clockTag;
+	}
+
 	// so we actually going to apply this update to our system time
 	// or keep it the same if offset is zero
-	if (systemOffset == 0 || systemSetTime(currentTime + systemOffset))
+	if (systemSetTime(systemOffset, effectiveClockTag))
 	{
 		m_currentTimeSourcePriority = priority;
 		// note that lastUpdate is outdated already so we need to adjust it
 		m_nextSyncTime = lastUpdate + systemOffset + timeDriftPeriod; // when we should sync our time again
-
-		if (clockTag == ClockHandler::micom)
-		{
-			// We've received micom time which actually stores time
-			// synchronized with lastSystemTimeSource.
-			if (!PrefsDb::instance()->getPref("lastSystemTimeSource", m_systemTimeSourceTag))
-			{
-				// if no lastSystemTimeSource were set before assume factory
-				m_systemTimeSourceTag = s_factoryTimeSource;
-			}
-		}
-		else
-		{
-			m_systemTimeSourceTag = clockTag;
-			PrefsDb::instance()->setPref("lastSystemTimeSource", m_systemTimeSourceTag);
-			// next time "micom" will come we'll use this clock tag instead
-		}
 	}
 }

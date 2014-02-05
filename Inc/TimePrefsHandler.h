@@ -221,8 +221,7 @@ private:
 	void setTimeZone(const TimeZoneInfo * pZoneInfo);       //this one sets it in the prefs db and then calls systemSetTimeZone
 	void systemSetTimeZone(const std::string &tzFileActual,
 	                       const TimeZoneInfo &zoneInfo);   //this one does the OS work to set the timezone
-	bool systemSetTime(time_t utc);
-	bool systemSetTime(struct timeval * pTimeVal);
+	bool systemSetTime(time_t deltaTime, const std::string &source);
 
     /**
      * Ask system time to be set from one of available time sources
