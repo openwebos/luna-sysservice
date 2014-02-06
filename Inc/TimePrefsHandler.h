@@ -229,6 +229,12 @@ private:
      */
     void updateSystemTime();
 
+	/**
+	 * Attach system-time information to json object.
+	 * Useful for building getSystemTime response
+	 */
+	void attachSystemTime(json_object *json);
+
 	static bool jsonUtil_ZoneFromJson(json_object * json,TimeZoneInfo& r_zoneInfo);
 	
 	/// PIECEWISE NITZ HANDLING - (new , 11/2009)

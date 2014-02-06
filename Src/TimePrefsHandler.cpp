@@ -1656,50 +1656,12 @@ void TimePrefsHandler::postSystemTimeChange()
 	if (!m_cpCurrentTimeZone)
 		return;
 
-	std::string nitzValidity = PrefsDb::instance()->getPref("nitzValidity");
-	
 	LSError lsError;
 	json_object* json = 0;
-	json_object* localtime_json = 0;
-	char tzoneabbr_cstr[16] = {0};
 	LSErrorInit(&lsError);
-	std::string tzAbbr;
-	
-	time_t utctime = time(NULL);
-	struct tm * p_localtime_s = localtime(&utctime);
 
 	json = json_object_new_object();
-	json_object_object_add(json, (char*) "utc", json_object_new_int((int)time(NULL)));
-	localtime_json = json_object_new_object();
-	json_object_object_add(localtime_json,(char *)"year",json_object_new_int(p_localtime_s->tm_year + 1900));
-	json_object_object_add(localtime_json,(char *)"month",json_object_new_int(p_localtime_s->tm_mon + 1));
-	json_object_object_add(localtime_json,(char *)"day",json_object_new_int(p_localtime_s->tm_mday));
-	json_object_object_add(localtime_json,(char *)"hour",json_object_new_int(p_localtime_s->tm_hour));
-	json_object_object_add(localtime_json,(char *)"minute",json_object_new_int(p_localtime_s->tm_min));
-	json_object_object_add(localtime_json,(char *)"second",json_object_new_int(p_localtime_s->tm_sec));
-	json_object_object_add(json,(char *)"localtime",localtime_json);
-
-	json_object_object_add(json, (char*) "offset", json_object_new_int(offsetToUtcSecs()/60));
-
-
-	if (currentTimeZone()) {
-		json_object_object_add(json, (char*) "timezone", json_object_new_string(currentTimeZone()->name.c_str()));
-		//get current time zone abbreviation
-		strftime (tzoneabbr_cstr,16,"%Z",localtime(&utctime));
-		tzAbbr = std::string(tzoneabbr_cstr);
-	}
-	else {
-		json_object_object_add(json, (char*) "timezone", json_object_new_string((char*) "UTC"));
-		tzAbbr = std::string("UTC");		//default to something
-	}
-	json_object_object_add(json, (char*) "TZ", json_object_new_string(tzAbbr.c_str()));
-
-	json_object_object_add(json, (char*) "timeZoneFile", json_object_new_string(const_cast<char*>(s_tzFilePath)));
-
-	if (nitzValidity == NITZVALIDITY_STATE_NITZVALID)
-		json_object_object_add(json,(char*) "NITZValid", json_object_new_boolean(true));
-	else if (nitzValidity == NITZVALIDITY_STATE_NITZINVALIDUSERNOTSET)
-		json_object_object_add(json,(char*) "NITZValid", json_object_new_boolean(false));
+	attachSystemTime(json);
 
 	//the new "sub"keys for nitz validity...
 	//the new "sub"keys for nitz validity...
@@ -1716,6 +1678,54 @@ void TimePrefsHandler::postSystemTimeChange()
 
 	json_object_put(json);    
 }
+
+void TimePrefsHandler::attachSystemTime(json_object *json)
+{
+	time_t utctime = time(NULL);
+	struct tm localTm;
+
+	// tzset() already called on initialization
+	struct tm * pLocalTm = localtime_r(&utctime, &localTm);
+	assert( pLocalTm == &localTm );
+	(void) pLocalTm; // unused variable (in release)
+
+	json_object_object_add(json, "utc", json_object_new_int(utctime));
+	json_object *localtime_json = json_object_new_object();
+	json_object_object_add(localtime_json, "year", json_object_new_int(localTm.tm_year + 1900));
+	json_object_object_add(localtime_json, "month", json_object_new_int(localTm.tm_mon + 1));
+	json_object_object_add(localtime_json, "day", json_object_new_int(localTm.tm_mday));
+	json_object_object_add(localtime_json, "hour", json_object_new_int(localTm.tm_hour));
+	json_object_object_add(localtime_json, "minute", json_object_new_int(localTm.tm_min));
+	json_object_object_add(localtime_json, "second", json_object_new_int(localTm.tm_sec));
+	json_object_object_add(json, "localtime", localtime_json);
+
+	json_object_object_add(json, "offset", json_object_new_int(offsetToUtcSecs()/60));
+
+	if (currentTimeZone()) {
+		json_object_object_add(json, "timezone", json_object_new_string(currentTimeZone()->name.c_str()));
+		//get current time zone abbreviation
+		char tzoneabbr_cstr[16];
+		strftime(tzoneabbr_cstr, 16,"%Z", &localTm);
+		json_object_object_add(json, "TZ", json_object_new_string(tzoneabbr_cstr));
+	}
+	else {
+		//default to something
+		json_object_object_add(json, "timezone", json_object_new_string("UTC"));
+		json_object_object_add(json, "TZ", json_object_new_string("UTC"));
+	}
+
+	json_object_object_add(json, "timeZoneFile", json_object_new_string(s_tzFilePath));
+
+	json_object_object_add(json, "systemTimeSource", json_object_new_string(getSystemTimeSource().c_str()));
+
+	std::string nitzValidity = PrefsDb::instance()->getPref("nitzValidity");
+
+	if (nitzValidity == NITZVALIDITY_STATE_NITZVALID)
+		json_object_object_add(json, "NITZValid", json_object_new_boolean(true));
+	else if (nitzValidity == NITZVALIDITY_STATE_NITZINVALIDUSERNOTSET)
+		json_object_object_add(json, "NITZValid", json_object_new_boolean(false));
+}
+
 
 void TimePrefsHandler::postNitzValidityStatus()
 {
@@ -3453,13 +3463,7 @@ bool TimePrefsHandler::cbGetSystemTime(LSHandle* lsHandle, LSMessage *message,
     bool        retVal;
 	LSError     lsError;
 	const char* reply = 0;
-	char tzoneabbr_cstr[16] = {0};
-	std::string tzAbbr;
 	json_object* json = 0;
-	json_object* localtime_json = 0;
-	struct tm * p_localtime_s;
-	time_t utctime;
-	std::string nitzValidity;
 	
 	TimePrefsHandler* th = (TimePrefsHandler*) user_data;
 
@@ -3481,44 +3485,8 @@ bool TimePrefsHandler::cbGetSystemTime(LSHandle* lsHandle, LSMessage *message,
 			subscribed=true;
 	}
 
-	utctime = time(NULL);
-	p_localtime_s = localtime(&utctime);
-
 	json = json_object_new_object();
-	json_object_object_add(json, (char*) "utc", json_object_new_int((int)time(NULL)));
-	localtime_json = json_object_new_object();
-	json_object_object_add(localtime_json,(char *)"year",json_object_new_int(p_localtime_s->tm_year + 1900));
-	json_object_object_add(localtime_json,(char *)"month",json_object_new_int(p_localtime_s->tm_mon + 1));
-	json_object_object_add(localtime_json,(char *)"day",json_object_new_int(p_localtime_s->tm_mday));
-	json_object_object_add(localtime_json,(char *)"hour",json_object_new_int(p_localtime_s->tm_hour));
-	json_object_object_add(localtime_json,(char *)"minute",json_object_new_int(p_localtime_s->tm_min));
-	json_object_object_add(localtime_json,(char *)"second",json_object_new_int(p_localtime_s->tm_sec));
-	json_object_object_add(json,(char *)"localtime",localtime_json);
-
-	json_object_object_add(json, (char*) "offset", json_object_new_int(th->offsetToUtcSecs()/60));
-
-	if (th->currentTimeZone()) {
-		json_object_object_add(json, (char*) "timezone", json_object_new_string(th->currentTimeZone()->name.c_str()));
-		//get current time zone abbreviation
-		strftime (tzoneabbr_cstr,16,"%Z",localtime(&utctime));
-		tzAbbr = std::string(tzoneabbr_cstr);
-	}
-	else {
-		json_object_object_add(json, (char*) "timezone", json_object_new_string((char*) "UTC"));
-		tzAbbr = std::string("UTC");		//default to something
-	}
-	json_object_object_add(json, (char*) "TZ", json_object_new_string(tzAbbr.c_str()));
-
-	json_object_object_add(json, (char*) "timeZoneFile", json_object_new_string(const_cast<char*>(s_tzFilePath)));
-
-	json_object_object_add(json, "systemTimeSource", json_object_new_string(th->getSystemTimeSource().c_str()));
-
-	nitzValidity = PrefsDb::instance()->getPref("nitzValidity");
-
-	if (nitzValidity == NITZVALIDITY_STATE_NITZVALID)
-		json_object_object_add(json,(char*) "NITZValid", json_object_new_boolean(true));
-	else if (nitzValidity == NITZVALIDITY_STATE_NITZINVALIDUSERNOTSET)
-		json_object_object_add(json,(char*) "NITZValid", json_object_new_boolean(false));
+	th->attachSystemTime(json);
 
 	reply = json_object_to_json_string(json);
 
