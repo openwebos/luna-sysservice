@@ -2142,6 +2142,7 @@ bool TimePrefsHandler::cbSetSystemTime(LSHandle* lshandle, LSMessage *message,
 		return false;
 
 	time_t utcTimeInSecs = 0;
+	time_t currentTime;
 	std::string errorText;
 
 	TimePrefsHandler* th = (TimePrefsHandler*) user_data;
@@ -2187,7 +2188,12 @@ bool TimePrefsHandler::cbSetSystemTime(LSHandle* lshandle, LSMessage *message,
 	// boot or whatever.
 	// But right now we can't distinguish them, so assume that this is manual
 	// set time.
-	th->deprecatedClockChange.fire(utcTimeInSecs - time(0), th->isManualTimeUsed() ? ClockHandler::manual : ClockHandler::micom);
+	currentTime = time(0);
+	th->deprecatedClockChange.fire(
+		utcTimeInSecs - currentTime,
+		th->isManualTimeUsed() ? ClockHandler::manual : ClockHandler::micom,
+		currentTime
+	);
 
 	// TODO: consider moving this code to systemSetTime
 	TimePrefsHandler::transitionNITZValidState((th->getLastNITZValidity() & TimePrefsHandler::NITZ_Valid),true);
@@ -2585,7 +2591,8 @@ int  TimePrefsHandler::nitzHandlerTimeValue(NitzParameters& nitz,int& flags,std:
 		else
 		{
 			// route to proper handler
-			deprecatedClockChange.fire(utc - time(0), "nitz");
+			time_t currentTime = time(0);
+			deprecatedClockChange.fire(utc - currentTime, "nitz", currentTime);
 			nitz._timevalid = true;
 		}
 	}
@@ -4280,6 +4287,24 @@ bool TimePrefsHandler::cbTelephonyPlatformQuery(LSHandle* lsHandle, LSMessage *m
 
 void TimePrefsHandler::clockChanged(const std::string &clockTag, int priority, time_t systemOffset, time_t lastUpdate)
 {
+	if (clockTag == ClockHandler::micom)
+	{
+		// micom isn't a real time-source it is rather a cell where some other time is hold
+
+		std::string effectiveClockTag;
+		// We've received micom time which actually stores time
+		// synchronized with lastSystemTimeSource.
+		if (!PrefsDb::instance()->getPref("lastSystemTimeSource", effectiveClockTag))
+		{
+			// if no lastSystemTimeSource were set before assume factory
+			effectiveClockTag = s_factoryTimeSource;
+		}
+
+		// just simulate that we've received update from effectiveClockTag
+		// instead of normal processing
+		return deprecatedClockChange.fire( systemOffset, effectiveClockTag, lastUpdate );
+	}
+
 	const time_t timeDriftPeriod = 4*60*60; // TODO: make configurable rather than 4 hours
 
 	int effectivePriority = priority;
@@ -4309,7 +4334,6 @@ void TimePrefsHandler::clockChanged(const std::string &clockTag, int priority, t
 		return;
 	}
 
-
 	time_t currentTime = time(0);
 
 	// note that we only allow to increase priority or re-sync time if we
@@ -4323,26 +4347,9 @@ void TimePrefsHandler::clockChanged(const std::string &clockTag, int priority, t
 		return;
 	}
 
-	std::string effectiveClockTag;
-	if (clockTag == ClockHandler::micom)
-	{
-		// We've received micom time which actually stores time
-		// synchronized with lastSystemTimeSource.
-		if (!PrefsDb::instance()->getPref("lastSystemTimeSource", effectiveClockTag))
-		{
-			// if no lastSystemTimeSource were set before assume factory
-			effectiveClockTag = s_factoryTimeSource;
-		}
-	}
-	else
-	{
-		// use original
-		effectiveClockTag = clockTag;
-	}
-
 	// so we actually going to apply this update to our system time
 	// or keep it the same if offset is zero
-	if (systemSetTime(systemOffset, effectiveClockTag))
+	if (systemSetTime(systemOffset, clockTag))
 	{
 		m_currentTimeSourcePriority = priority;
 		// note that lastUpdate is outdated already so we need to adjust it

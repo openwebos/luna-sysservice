@@ -138,7 +138,7 @@ public:
 	/**
 	 * Signal emmited when deprecated API used to update time-source
 	 */
-	Signal<time_t, const std::string &> deprecatedClockChange;
+	Signal<time_t, const std::string &, time_t> deprecatedClockChange;
 
 	static std::string getQualifiedTZIdFromName(const std::string& tzName);
 	static std::string getQualifiedTZIdFromJson(const std::string& jsonTz);

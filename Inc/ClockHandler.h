@@ -77,7 +77,7 @@ public:
 	/**
 	 * Update specific clock with new offset (from system time)
 	 */
-	bool update(time_t offset, const std::string &clockTag = manual);
+	bool update(time_t offset, const std::string &clockTag = manual, time_t timeStamp = invalidTime);
 
 	/**
 	 * Signal emmited when some clock was changed (i.e. offset from system time

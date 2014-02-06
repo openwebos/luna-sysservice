@@ -221,6 +221,25 @@ public:
 	}
 };
 
+template <class Receiver, typename Result, typename Arg0, typename Arg1, typename Arg2>
+class VoidSlot<Receiver, Result, Arg0, Arg1, Arg2, void, void> :
+	public SlotBase<Arg0, Arg1, Arg2>,
+	public FunctionWrapper<Result (Receiver::*)(Arg0,Arg1,Arg2)>
+{
+public:
+
+	typedef Result (Receiver::*Function)(Arg0, Arg1, Arg2);
+
+	VoidSlot(Receiver* rec, Function func) {
+		this->m_receiver = rec;
+		this->m_function = func;
+	}
+
+	void fire(Arg0 arg0, Arg1 arg1, Arg2 arg2) {
+		(void)(static_cast<Receiver*>(this->m_receiver)->*(this->m_function))(arg0, arg1, arg2);
+	}
+};
+
 template <class Receiver, class Arg0, class Arg1, class Arg2>
 class Slot<Receiver, Arg0, Arg1, Arg2, void, void> : public SlotBase<Arg0, Arg1, Arg2>,
 													 public FunctionWrapper<void (Receiver::*)(Arg0,Arg1,Arg2)>
@@ -397,6 +416,11 @@ public:
 	template <class Receiver>
 	void connect(Receiver* rec, void (Receiver::*func)(Arg0, Arg1, Arg2)) {
 		SignalBase<Arg0, Arg1, Arg2>::connect(rec, new Slot<Receiver, Arg0, Arg1, Arg2>(rec, func));
+	}
+
+	template <class Receiver, typename Result>
+	void connectVoid(Receiver* rec, Result (Receiver::*func)(Arg0, Arg1, Arg2)) {
+		SignalBase<Arg0, Arg1, Arg2>::connect(rec, new VoidSlot<Receiver, Result, Arg0, Arg1, Arg2>(rec, func));
 	}
 
 	void fire(Arg0 arg0, Arg1 arg1, Arg2 arg2) {

@@ -145,7 +145,7 @@ void ClockHandler::setup(const std::string &clockTag, int priority, time_t offse
 	PmLogDebug(sysServiceLogContext(), "Registered clock %s with priority %d", clockTag.c_str(), priority);
 }
 
-bool ClockHandler::update(time_t offset, const std::string &clockTag /* = manual */)
+bool ClockHandler::update(time_t offset, const std::string &clockTag /* = manual */, time_t timeStamp /* = invalidTime */)
 {
 	PmLogDebug(sysServiceLogContext(),
 		"ClockHandler::update(%ld, %s)",
@@ -163,7 +163,7 @@ bool ClockHandler::update(time_t offset, const std::string &clockTag /* = manual
 	}
 
 	Clock &clock = it->second;
-	clock.lastUpdate = time(0);
+	clock.lastUpdate = (timeStamp == invalidTime) ? time(0) : timeStamp;
 	clock.systemOffset = offset;
 
 	clockChanged.fire( it->first, clock.priority, offset, clock.lastUpdate );
