@@ -1503,23 +1503,21 @@ void TimePrefsHandler::systemSetTimeZone(const std::string &tzFileActual, const 
     __qMessage("TZ env is now [%s]", getenv("TZ"));
 }
 
-bool TimePrefsHandler::systemSetTime(time_t utc)
+bool TimePrefsHandler::systemSetTime(time_t deltaTime, const std::string &source)
 {
 	struct timeval timeVal;
-	timeVal.tv_sec = utc;
+	timeVal.tv_sec = time(0) + deltaTime;
 	timeVal.tv_usec = 0;
-	return systemSetTime(&timeVal);
-}
+	qDebug("%s: settimeofday: %u",__FUNCTION__,(unsigned int)timeVal.tv_sec);
 
-bool TimePrefsHandler::systemSetTime(struct timeval * pTimeVal)
-{
-    time_t originalTime = time(0);
-    qDebug("%s: settimeofday: %u",__FUNCTION__,(unsigned int)pTimeVal->tv_sec);
-	int rc=settimeofday(pTimeVal, 0);
+	int rc = deltaTime == 0 ? 0 : settimeofday(&timeVal, 0);
 	qDebug("settimeofday %s", ( rc == 0 ? "succeeded" : "failed"));
     if (rc == 0)
     {
-		time_t deltaTime = pTimeVal->tv_sec - originalTime;
+		// remember last synchronized with time
+		m_systemTimeSourceTag = source;
+		PrefsDb::instance()->setPref("lastSystemTimeSource", m_systemTimeSourceTag);
+		// next time "micom" will come we'll use this clock tag instead
 
 		// TODO: drop direct broadcastTime adjust in favor of signal and clocks
 		m_broadcastTime.adjust(deltaTime);
@@ -1622,50 +1620,12 @@ void TimePrefsHandler::postSystemTimeChange()
 	if (!m_cpCurrentTimeZone)
 		return;
 
-	std::string nitzValidity = PrefsDb::instance()->getPref("nitzValidity");
-	
 	LSError lsError;
 	json_object* json = 0;
-	json_object* localtime_json = 0;
 	LSErrorInit(&lsError);
-	std::string tzAbbr;
-	
-	time_t utctime = time(NULL);
-	struct tm * p_localtime_s = localtime(&utctime);
 
 	json = json_object_new_object();
-	json_object_object_add(json, (char*) "utc", json_object_new_int((int)time(NULL)));
-	localtime_json = json_object_new_object();
-	json_object_object_add(localtime_json,(char *)"year",json_object_new_int(p_localtime_s->tm_year + 1900));
-	json_object_object_add(localtime_json,(char *)"month",json_object_new_int(p_localtime_s->tm_mon + 1));
-	json_object_object_add(localtime_json,(char *)"day",json_object_new_int(p_localtime_s->tm_mday));
-	json_object_object_add(localtime_json,(char *)"hour",json_object_new_int(p_localtime_s->tm_hour));
-	json_object_object_add(localtime_json,(char *)"minute",json_object_new_int(p_localtime_s->tm_min));
-	json_object_object_add(localtime_json,(char *)"second",json_object_new_int(p_localtime_s->tm_sec));
-	json_object_object_add(json,(char *)"localtime",localtime_json);
-
-	json_object_object_add(json, (char*) "offset", json_object_new_int(offsetToUtcSecs()/60));
-
-
-	if (currentTimeZone()) {
-		json_object_object_add(json, (char*) "timezone", json_object_new_string(currentTimeZone()->name.c_str()));
-		//get current time zone abbreviation
-		char tzoneabbr_cstr[16] = {0};
-		strftime (tzoneabbr_cstr,16,"%Z",localtime(&utctime));
-		tzAbbr = std::string(tzoneabbr_cstr);
-	}
-	else {
-		json_object_object_add(json, (char*) "timezone", json_object_new_string((char*) "UTC"));
-		tzAbbr = std::string("UTC");		//default to something
-	}
-	json_object_object_add(json, (char*) "TZ", json_object_new_string(tzAbbr.c_str()));
-
-	json_object_object_add(json, (char*) "timeZoneFile", json_object_new_string(const_cast<char*>(s_tzFilePath)));
-
-	if (nitzValidity == NITZVALIDITY_STATE_NITZVALID)
-		json_object_object_add(json,(char*) "NITZValid", json_object_new_boolean(true));
-	else if (nitzValidity == NITZVALIDITY_STATE_NITZINVALIDUSERNOTSET)
-		json_object_object_add(json,(char*) "NITZValid", json_object_new_boolean(false));
+	attachSystemTime(json);
 
 	//the new "sub"keys for nitz validity...
 	//the new "sub"keys for nitz validity...
@@ -1682,6 +1642,54 @@ void TimePrefsHandler::postSystemTimeChange()
 
 	json_object_put(json);    
 }
+
+void TimePrefsHandler::attachSystemTime(json_object *json)
+{
+	time_t utctime = time(NULL);
+	struct tm localTm;
+
+	// tzset() already called on initialization
+	struct tm * pLocalTm = localtime_r(&utctime, &localTm);
+	assert( pLocalTm == &localTm );
+	(void) pLocalTm; // unused variable (in release)
+
+	json_object_object_add(json, "utc", json_object_new_int(utctime));
+	json_object *localtime_json = json_object_new_object();
+	json_object_object_add(localtime_json, "year", json_object_new_int(localTm.tm_year + 1900));
+	json_object_object_add(localtime_json, "month", json_object_new_int(localTm.tm_mon + 1));
+	json_object_object_add(localtime_json, "day", json_object_new_int(localTm.tm_mday));
+	json_object_object_add(localtime_json, "hour", json_object_new_int(localTm.tm_hour));
+	json_object_object_add(localtime_json, "minute", json_object_new_int(localTm.tm_min));
+	json_object_object_add(localtime_json, "second", json_object_new_int(localTm.tm_sec));
+	json_object_object_add(json, "localtime", localtime_json);
+
+	json_object_object_add(json, "offset", json_object_new_int(offsetToUtcSecs()/60));
+
+	if (currentTimeZone()) {
+		json_object_object_add(json, "timezone", json_object_new_string(currentTimeZone()->name.c_str()));
+		//get current time zone abbreviation
+		char tzoneabbr_cstr[16];
+		strftime(tzoneabbr_cstr, 16,"%Z", &localTm);
+		json_object_object_add(json, "TZ", json_object_new_string(tzoneabbr_cstr));
+	}
+	else {
+		//default to something
+		json_object_object_add(json, "timezone", json_object_new_string("UTC"));
+		json_object_object_add(json, "TZ", json_object_new_string("UTC"));
+	}
+
+	json_object_object_add(json, "timeZoneFile", json_object_new_string(s_tzFilePath));
+
+	json_object_object_add(json, "systemTimeSource", json_object_new_string(getSystemTimeSource().c_str()));
+
+	std::string nitzValidity = PrefsDb::instance()->getPref("nitzValidity");
+
+	if (nitzValidity == NITZVALIDITY_STATE_NITZVALID)
+		json_object_object_add(json, "NITZValid", json_object_new_boolean(true));
+	else if (nitzValidity == NITZVALIDITY_STATE_NITZINVALIDUSERNOTSET)
+		json_object_object_add(json, "NITZValid", json_object_new_boolean(false));
+}
+
 
 void TimePrefsHandler::postNitzValidityStatus()
 {
@@ -2098,6 +2106,7 @@ bool TimePrefsHandler::cbSetSystemTime(LSHandle* lshandle, LSMessage *message,
 		return false;
 
 	time_t utcTimeInSecs = 0;
+	time_t currentTime;
 	std::string errorText;
 
 	TimePrefsHandler* th = (TimePrefsHandler*) user_data;
@@ -2143,7 +2152,12 @@ bool TimePrefsHandler::cbSetSystemTime(LSHandle* lshandle, LSMessage *message,
 	// boot or whatever.
 	// But right now we can't distinguish them, so assume that this is manual
 	// set time.
-	th->deprecatedClockChange.fire(utcTimeInSecs - time(0), th->isManualTimeUsed() ? ClockHandler::manual : ClockHandler::micom);
+	currentTime = time(0);
+	th->deprecatedClockChange.fire(
+		utcTimeInSecs - currentTime,
+		th->isManualTimeUsed() ? ClockHandler::manual : ClockHandler::micom,
+		currentTime
+	);
 
 	// TODO: consider moving this code to systemSetTime
 	TimePrefsHandler::transitionNITZValidState((th->getLastNITZValidity() & TimePrefsHandler::NITZ_Valid),true);
@@ -2541,7 +2555,8 @@ int  TimePrefsHandler::nitzHandlerTimeValue(NitzParameters& nitz,int& flags,std:
 		else
 		{
 			// route to proper handler
-			deprecatedClockChange.fire(utc - time(0), "nitz");
+			time_t currentTime = time(0);
+			deprecatedClockChange.fire(utc - currentTime, "nitz", currentTime);
 			nitz._timevalid = true;
 		}
 	}
@@ -3419,12 +3434,7 @@ bool TimePrefsHandler::cbGetSystemTime(LSHandle* lsHandle, LSMessage *message,
     bool        retVal;
 	LSError     lsError;
 	const char* reply = 0;
-	std::string tzAbbr;
 	json_object* json = 0;
-	json_object* localtime_json = 0;
-	struct tm * p_localtime_s;
-	time_t utctime;
-	std::string nitzValidity;
 	
 	TimePrefsHandler* th = (TimePrefsHandler*) user_data;
 
@@ -3446,45 +3456,8 @@ bool TimePrefsHandler::cbGetSystemTime(LSHandle* lsHandle, LSMessage *message,
 			subscribed=true;
 	}
 
-	utctime = time(NULL);
-	p_localtime_s = localtime(&utctime);
-
 	json = json_object_new_object();
-	json_object_object_add(json, (char*) "utc", json_object_new_int((int)time(NULL)));
-	localtime_json = json_object_new_object();
-	json_object_object_add(localtime_json,(char *)"year",json_object_new_int(p_localtime_s->tm_year + 1900));
-	json_object_object_add(localtime_json,(char *)"month",json_object_new_int(p_localtime_s->tm_mon + 1));
-	json_object_object_add(localtime_json,(char *)"day",json_object_new_int(p_localtime_s->tm_mday));
-	json_object_object_add(localtime_json,(char *)"hour",json_object_new_int(p_localtime_s->tm_hour));
-	json_object_object_add(localtime_json,(char *)"minute",json_object_new_int(p_localtime_s->tm_min));
-	json_object_object_add(localtime_json,(char *)"second",json_object_new_int(p_localtime_s->tm_sec));
-	json_object_object_add(json,(char *)"localtime",localtime_json);
-
-	json_object_object_add(json, (char*) "offset", json_object_new_int(th->offsetToUtcSecs()/60));
-
-	if (th->currentTimeZone()) {
-		json_object_object_add(json, (char*) "timezone", json_object_new_string(th->currentTimeZone()->name.c_str()));
-		//get current time zone abbreviation
-		char tzoneabbr_cstr[16] = {0};
-		strftime (tzoneabbr_cstr,16,"%Z",localtime(&utctime));
-		tzAbbr = std::string(tzoneabbr_cstr);
-	}
-	else {
-		json_object_object_add(json, (char*) "timezone", json_object_new_string((char*) "UTC"));
-		tzAbbr = std::string("UTC");		//default to something
-	}
-	json_object_object_add(json, (char*) "TZ", json_object_new_string(tzAbbr.c_str()));
-
-	json_object_object_add(json, (char*) "timeZoneFile", json_object_new_string(const_cast<char*>(s_tzFilePath)));
-
-	json_object_object_add(json, "systemTimeSource", json_object_new_string(th->getSystemTimeSource().c_str()));
-
-	nitzValidity = PrefsDb::instance()->getPref("nitzValidity");
-
-	if (nitzValidity == NITZVALIDITY_STATE_NITZVALID)
-		json_object_object_add(json,(char*) "NITZValid", json_object_new_boolean(true));
-	else if (nitzValidity == NITZVALIDITY_STATE_NITZINVALIDUSERNOTSET)
-		json_object_object_add(json,(char*) "NITZValid", json_object_new_boolean(false));
+	th->attachSystemTime(json);
 
 	reply = json_object_to_json_string(json);
 
@@ -4278,6 +4251,24 @@ bool TimePrefsHandler::cbTelephonyPlatformQuery(LSHandle* lsHandle, LSMessage *m
 
 void TimePrefsHandler::clockChanged(const std::string &clockTag, int priority, time_t systemOffset, time_t lastUpdate)
 {
+	if (clockTag == ClockHandler::micom)
+	{
+		// micom isn't a real time-source it is rather a cell where some other time is hold
+
+		std::string effectiveClockTag;
+		// We've received micom time which actually stores time
+		// synchronized with lastSystemTimeSource.
+		if (!PrefsDb::instance()->getPref("lastSystemTimeSource", effectiveClockTag))
+		{
+			// if no lastSystemTimeSource were set before assume factory
+			effectiveClockTag = s_factoryTimeSource;
+		}
+
+		// just simulate that we've received update from effectiveClockTag
+		// instead of normal processing
+		return deprecatedClockChange.fire( systemOffset, effectiveClockTag, lastUpdate );
+	}
+
 	const time_t timeDriftPeriod = 4*60*60; // TODO: make configurable rather than 4 hours
 
 	int effectivePriority = priority;
@@ -4307,7 +4298,6 @@ void TimePrefsHandler::clockChanged(const std::string &clockTag, int priority, t
 		return;
 	}
 
-
 	time_t currentTime = time(0);
 
 	// note that we only allow to increase priority or re-sync time if we
@@ -4323,27 +4313,10 @@ void TimePrefsHandler::clockChanged(const std::string &clockTag, int priority, t
 
 	// so we actually going to apply this update to our system time
 	// or keep it the same if offset is zero
-	if (systemOffset == 0 || systemSetTime(currentTime + systemOffset))
+	if (systemSetTime(systemOffset, clockTag))
 	{
 		m_currentTimeSourcePriority = priority;
 		// note that lastUpdate is outdated already so we need to adjust it
 		m_nextSyncTime = lastUpdate + systemOffset + timeDriftPeriod; // when we should sync our time again
-
-		if (clockTag == ClockHandler::micom)
-		{
-			// We've received micom time which actually stores time
-			// synchronized with lastSystemTimeSource.
-			if (!PrefsDb::instance()->getPref("lastSystemTimeSource", m_systemTimeSourceTag))
-			{
-				// if no lastSystemTimeSource were set before assume factory
-				m_systemTimeSourceTag = s_factoryTimeSource;
-			}
-		}
-		else
-		{
-			m_systemTimeSourceTag = clockTag;
-			PrefsDb::instance()->setPref("lastSystemTimeSource", m_systemTimeSourceTag);
-			// next time "micom" will come we'll use this clock tag instead
-		}
 	}
 }

@@ -280,7 +280,8 @@ bool TimePrefsHandler::cbSetBroadcastTime(LSHandle* handle, LSMessage *message,
     time_t utc = toTimeT(request["utc"]);
     time_t local = toTimeT(request["local"]);
 
-    time_t utcOffset = utc - time(0);
+    time_t utcCurrent = time(0);
+    time_t utcOffset = utc - utcCurrent;
 
     // assume that broadcast local time is correct and allow user to set wrong time-zone
     time_t adjustedUtcOffset = toUtc(local) - time(0);
@@ -292,8 +293,8 @@ bool TimePrefsHandler::cbSetBroadcastTime(LSHandle* handle, LSMessage *message,
     if (!timePrefsHandler->isManualTimeUsed()) timePrefsHandler->postBroadcastEffectiveTimeChange();
 
     // TODO: add handling of local clocks in ClockHandler
-    timePrefsHandler->deprecatedClockChange.fire(adjustedUtcOffset, "broadcast-adjusted");
-    timePrefsHandler->deprecatedClockChange.fire(utcOffset, "broadcast");
+    timePrefsHandler->deprecatedClockChange.fire(adjustedUtcOffset, "broadcast-adjusted", utcCurrent);
+    timePrefsHandler->deprecatedClockChange.fire(utcOffset, "broadcast", utcCurrent);
 
     return reply(handle, message, createJsonReply(true));
 }

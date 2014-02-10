@@ -138,7 +138,7 @@ public:
 	/**
 	 * Signal emmited when deprecated API used to update time-source
 	 */
-	Signal<time_t, const std::string &> deprecatedClockChange;
+	Signal<time_t, const std::string &, time_t> deprecatedClockChange;
 
 	static std::string getQualifiedTZIdFromName(const std::string& tzName);
 	static std::string getQualifiedTZIdFromJson(const std::string& jsonTz);
@@ -221,14 +221,19 @@ private:
 	void setTimeZone(const TimeZoneInfo * pZoneInfo);       //this one sets it in the prefs db and then calls systemSetTimeZone
 	void systemSetTimeZone(const std::string &tzFileActual,
 	                       const TimeZoneInfo &zoneInfo);   //this one does the OS work to set the timezone
-	bool systemSetTime(time_t utc);
-	bool systemSetTime(struct timeval * pTimeVal);
+	bool systemSetTime(time_t deltaTime, const std::string &source);
 
     /**
      * Ask system time to be set from one of available time sources
      * I.e. do a request to NTP server, etc
      */
     void updateSystemTime();
+
+	/**
+	 * Attach system-time information to json object.
+	 * Useful for building getSystemTime response
+	 */
+	void attachSystemTime(json_object *json);
 
 	static bool jsonUtil_ZoneFromJson(json_object * json,TimeZoneInfo& r_zoneInfo);
 	

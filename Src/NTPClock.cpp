@@ -26,6 +26,7 @@
 
 #include "PrefsDb.h"
 #include "TimePrefsHandler.h"
+#include "ClockHandler.h"
 #include "NTPClock.h"
 
 
@@ -64,7 +65,7 @@ void NTPClock::postNTP(time_t offset)
 	}
 
 	// post as a new value for "ntp"
-	timePrefsHandler.deprecatedClockChange.fire(offset, "ntp");
+	timePrefsHandler.deprecatedClockChange.fire(offset, "ntp", ClockHandler::invalidTime);
 }
 
 void NTPClock::postError()
