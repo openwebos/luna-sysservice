@@ -486,7 +486,7 @@ void TimePrefsHandler::valueChanged(const std::string& key, json_object* value)
 			
 			// TODO: consider moving to systemSetTimeZone
 			postSystemTimeChange();	
-            if (isSystemTimeBroadcastEffective()) postBroadcastEffectiveTimeChange();
+			postBroadcastEffectiveTimeChange();
 			//launch any apps that wanted to be launched when the time/zone changed
 			launchAppsOnTimeChange();
 		}
@@ -2808,7 +2808,7 @@ Done_timeoutFunc:
 		{
 			// TODO: consider moving to systemSetTimeZone
 			postSystemTimeChange();
-			if (isSystemTimeBroadcastEffective()) postBroadcastEffectiveTimeChange();
+			postBroadcastEffectiveTimeChange();
 			launchAppsOnTimeChange();
 		}
 	}
