@@ -651,8 +651,8 @@ void PrefsDb::synchronizeDefaults() {
 	delete [] jsonStr;
 
 	label = json_object_object_get(root, "preferences");
-	if (!label || is_error(label)) {
-        qWarning() << "Failed to get preferences entry from file";
+	if (!label || is_error(label) || !json_object_is_type(label, json_type_object)) {
+		qWarning() << "Failed to get valid preferences entry from file";
 		json_object_put(root);
 		return;
 	}
@@ -712,8 +712,8 @@ void PrefsDb::synchronizePlatformDefaults() {
 	}
 
 	label = json_object_object_get(root, "preferences");
-	if (!label || is_error(label)) {
-        qWarning() << "Failed to get preferences entry from file";
+	if (!label || is_error(label) || !json_object_is_type(label, json_type_object)) {
+		qWarning() << "Failed to get valid preferences entry from file";
 		json_object_put(root);
 		return;
 	}
@@ -766,8 +766,8 @@ void PrefsDb::synchronizeCustomerCareInfo() {
 	gchar* queryStr;
 
 	root = json_tokener_parse(jsonStr);
-	if (!root || is_error(root)) {
-        qWarning() << "Failed to parse file contents into json";
+	if (!root || is_error(root) || !json_object_is_type(root, json_type_object)) {
+		qWarning() << "Failed to parse file contents into valid json";
 		return;
 	}
 	
@@ -833,8 +833,8 @@ void PrefsDb::updateWithCustomizationPrefOverrides()
 	delete [] jsonStr;
 
 	label = json_object_object_get(root, "preferences");
-	if (!label || is_error(label)) {
-        qWarning() << "Failed to get preferences entry from file";
+	if (!label || is_error(label) || !json_object_is_type(label, json_type_object)) {
+		qWarning() << "Failed to get valid preferences entry from file";
 		json_object_put(root);
 		return;
 	}
@@ -891,8 +891,8 @@ void PrefsDb::loadDefaultPrefs()
 	}
 
 	label = json_object_object_get(root, "preferences");
-	if (!label || is_error(label)) {
-        qWarning() << "Failed to get preferences entry from file";
+	if (!label || is_error(label) || !json_object_is_type(label, json_type_object)) {
+		qWarning() << "Failed to get valid preferences entry from file";
 		goto Stage1a;
 	}
 
@@ -954,8 +954,8 @@ Stage2:
 	}
 
 	root = json_tokener_parse(jsonStr);
-	if (!root || is_error(root)) {
-        qWarning() << "Failed to parse customer care # file contents into json";
+	if (!root || is_error(root) || !json_object_is_type(root, json_type_object)) {
+		qWarning() << "Failed to parse customer care # file contents into valid json";
 		goto Stage3;
 	}
 
@@ -1059,8 +1059,8 @@ void PrefsDb::loadDefaultPlatformPrefs()
 	}
 
 	label = json_object_object_get(root, "preferences");
-	if (!label || is_error(label)) {
-        qWarning() << "Failed to get preferences entry from file";
+	if (!label || is_error(label) || !json_object_is_type(label, json_type_object)) {
+		qWarning() << "Failed to get valid preferences entry from file";
 		goto Done;
 	}
 

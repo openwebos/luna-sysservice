@@ -267,7 +267,7 @@ bool TimeZoneService::cbGetTimeZoneRules(LSHandle* lsHandle, LSMessage *message,
 			for (int j = 0; j < json_object_array_length(l); j++) {
 				json_object* o = json_object_array_get_idx(l, j);
 
-				if (!json_object_is_type(o, json_type_int)) {
+				if (!o || !json_object_is_type(o, json_type_int)) {
 					reply = "{\"returnValue\": false,"
 							" \"errorText\": \"entry in years array is not integer\"}";
 					goto Done;
@@ -555,6 +555,12 @@ bool TimeZoneService::cbGetTimeZoneFromEasData(LSHandle* lsHandle, LSMessage *me
 	if (!root || is_error(root)) {
 		reply = "{\"returnValue\": false, "
 				" \"errorText\": \"Cannot parse json payload\"}";
+		goto Done;
+	}
+
+	if (!json_object_is_type(root, json_type_object)) {
+		reply = "{\"returnValue\": false, "
+		        " \"errorText\": \"Cannot validate json payload\"}";
 		goto Done;
 	}
 

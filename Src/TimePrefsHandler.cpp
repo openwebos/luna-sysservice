@@ -2347,6 +2347,10 @@ bool TimePrefsHandler::cbSetSystemNetworkTime(LSHandle * lshandle, LSMessage *me
 		errorText = std::string("unable to parse json");
 		goto Done_cbSetSystemNetworkTime;
 	}
+	if (!json_object_is_type(root, json_type_object)) {
+		errorText = std::string("unable to validate json");
+		goto Done_cbSetSystemNetworkTime;
+	}
 
 	memset(&timeStruct,0,sizeof(struct tm));
 	qDebug("NITZ message received from Telephony Service: %s",str);
@@ -3313,6 +3317,10 @@ bool TimePrefsHandler::cbServiceStateTracker(LSHandle* lsHandle, LSMessage *mess
 		root = NULL;
 		return true;
 	}
+	if (!json_object_is_type(root, json_type_object)) {
+		json_object_put(root);
+		return true;
+	}
 
 	json_object * label = Utils::JsonGetObject(root,"serviceName");
 	if (!label)
@@ -3651,6 +3659,11 @@ bool TimePrefsHandler::cbSetTimeChangeLaunch(LSHandle* lsHandle, LSMessage *mess
 		errorText = "couldn't parse json parameters";
 		goto Done;
 	}
+	if (!json_object_is_type(jsonInput, json_type_object))
+	{
+		errorText = "couldn't validate json parameters";
+		goto Done;
+	}
 
 	label = Utils::JsonGetObject(jsonInput,"appId");
 	if (label == NULL) {
@@ -3952,8 +3965,13 @@ bool TimePrefsHandler::cbConvertDate(LSHandle* pHandle, LSMessage* pMessage, voi
     //json_t* json_o = json_parse_document(str);
     struct json_object *json_o = json_tokener_parse(str);
 
-	if (!json_o) {
+	if (!json_o || is_error(json_o)) {
+		json_o = 0;
 		error_text = g_strdup("bad payload (no json)");
+		goto respond;
+	}
+	if (!json_object_is_type(json_o, json_type_object)) {
+		error_text = g_strdup("bad payload (not a json object)");
 		goto respond;
 	}
 
@@ -4218,6 +4236,12 @@ bool TimePrefsHandler::cbTelephonyPlatformQuery(LSHandle* lsHandle, LSMessage *m
 
     if (!root || is_error(root))
         return false;
+
+    if (!json_object_is_type(root, json_type_object))
+    {
+        json_object_put(root);
+        return false;
+    }
 
     label = json_object_object_get(root, "extended");
     if (!label || is_error(label)) {

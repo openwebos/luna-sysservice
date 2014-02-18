@@ -375,6 +375,13 @@ static bool cbSetPreferences(LSHandle* lsHandle, LSMessage* message,
 		errorText = std::string("couldn't parse json");
 		goto Done;
 	}
+
+	if (!json_object_is_type(root, json_type_object))
+	{
+		success = false;
+		errorText = std::string("invalid payload type (should be object)");
+		goto Done;
+	}
 	
 	callerId = (LSMessageGetApplicationID(message) != 0 ? LSMessageGetApplicationID(message) : "" );
 

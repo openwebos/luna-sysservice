@@ -71,8 +71,8 @@ SystemRestore::SystemRestore() : m_msmState(Phone)
 	}
 
 	label = json_object_object_get(root, "preferences");
-	if (!label || is_error(label)) {
-        qWarning() << "Failed to get preferences entry from file";
+	if (!label || is_error(label) || !json_object_is_type(label, json_type_object)) {
+		qWarning() << "Failed to get valid preferences entry from file";
 		goto Platform;
 	}
 	{
@@ -112,8 +112,8 @@ Platform:
 	}
 
 	label = json_object_object_get(root, "preferences");
-	if (!label || is_error(label)) {
-        qWarning() << "Failed to get preferences entry from file";
+	if (!label || is_error(label) || !json_object_is_type(label, json_type_object)) {
+		qWarning() << "Failed to get valid preferences entry from file";
 		goto Exit;
 	}
 	

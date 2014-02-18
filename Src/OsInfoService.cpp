@@ -194,15 +194,15 @@ bool OsInfoService::cbGetOsInformation(LSHandle* lsHandle, LSMessage *message, v
 	}
 
 	payload = json_tokener_parse(payload_data);
-	if (!payload || is_error(payload)) {
+	if (!payload || is_error(payload) || !json_object_is_type(payload, json_type_object)) {
 		reply = "{\"returnValue\": false, "
-			" \"errorText\": \"Cannot parse json payload\"}";
+		        " \"errorText\": \"Cannot parse/validate json payload\"}";
 		goto Done;
 	}
 
 	if (json_object_object_get_ex(payload, "parameters", &payloadParameterList))
 	{
-		if (!json_object_is_type(payloadParameterList, json_type_array)) {
+		if (!payloadParameterList || !json_object_is_type(payloadParameterList, json_type_array)) {
 			reply = "{\"returnValue\": false, "
 				" \"errorText\": \"`parameters` needs to be an array\"}";
 			goto Done;
