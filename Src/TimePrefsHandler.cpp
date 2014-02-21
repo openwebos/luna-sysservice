@@ -63,8 +63,9 @@ static const char*    s_factoryTimeSource = "factory";
 
 #define ABSV(x) ((x) < 0 ? (x*-1) : (x))
 #define DIFFTIME(x,y) ((x) > (y) ? ((x)-(y)) : ((y)-(x)))
-//#define LSREPORT(lse) g_critical( "in %s: %s => %s", __func__, \
-//        (lse).func, (lse).message )
+
+#undef LSREPORT
+//#define LSREPORT(lse) g_critical( "in %s: %s => %s", __func__, (lse).func, (lse).message )
 #define LSREPORT(lse) qCritical( "in %s: %s => %s", __func__, (lse).func, (lse).message )
 
 #define TIMEOUT_INTERVAL_SEC	5
@@ -114,7 +115,7 @@ namespace {
 
 		unique.clear();
 		unique.reserve(array.arraySize());
-		for (size_t i = 0; i < array.arraySize(); ++i)
+		for (ssize_t i = 0; i < array.arraySize(); ++i)
 		{
 			unique.push_back(array[i].asString());
 		}
@@ -1317,7 +1318,7 @@ void TimePrefsHandler::scanTimeZoneJson()
 			m_preferredTimeZoneMapNoDST[off_key] = (*tmpPrefZoneMapIter).second.dstFallback;
 	}
 
-	qDebug("found %d timezones",m_zoneList.size());
+	qDebug("found %zu timezones",m_zoneList.size());
 
 	for (TimeZoneMapIterator it = m_preferredTimeZoneMapDST.begin();it != m_preferredTimeZoneMapDST.end();it++) {
 	PMLOG_TRACE("DST-MAP: preferred zone found: [%s] , offset = %d , dstSupport = %s",

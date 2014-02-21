@@ -135,7 +135,7 @@ static bool parseCommandlineOptions(int argc, char** argv)
 		case G_LOG_LEVEL_ERROR: pmLogLevel = kPmLogLevel_Error; break;
 		case G_LOG_LEVEL_CRITICAL: pmLogLevel = kPmLogLevel_Critical; break;
 		case G_LOG_LEVEL_WARNING: pmLogLevel = kPmLogLevel_Warning; break;
-		case G_LOG_LEVEL_MESSAGE: pmLogLevel = kPmLogLevel_Notice; break;
+		case G_LOG_LEVEL_MESSAGE: pmLogLevel = kPmLogLevel_Info; break;
 		case G_LOG_LEVEL_INFO: pmLogLevel = kPmLogLevel_Info; break;
 		case G_LOG_LEVEL_DEBUG: pmLogLevel = kPmLogLevel_Debug; break;
 		default: pmLogLevel = kPmLogLevel_Info; break;

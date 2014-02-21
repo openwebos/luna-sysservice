@@ -187,6 +187,8 @@ bool EraseHandler::Erase(LSHandle* pHandle, LSMessage* pMessage, EraseType_t typ
             break;
 
         default:
+            // initialize nyx_type with a value to suppress warning. It will not be used, because error_text is initialized
+            nyx_type = NYX_SYSTEM_TEST_ERASE;
             error_text = g_strdup_printf("Invalid type %d", type);
             break;
     }

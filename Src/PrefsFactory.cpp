@@ -622,7 +622,7 @@ static bool cbGetPreferences(LSHandle* lsHandle, LSMessage* message,
 		 it != resultMap.end(); ++it) {
 		json_object* value = json_tokener_parse((*it).second.c_str());
 		if (value && (!is_error(value))) {
-			qDebug("resultMap: [%s] -> [---, length %d]",(*it).first.c_str(),(*it).second.size());
+			qDebug("resultMap: [%s] -> [---, length %zu]",(*it).first.c_str(),(*it).second.size());
 			json_object_object_add(replyRoot,
 					(char*) (*it).first.c_str(), value);
 		}

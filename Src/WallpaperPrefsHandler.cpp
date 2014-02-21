@@ -1644,7 +1644,7 @@ static bool cbConvertImage(LSHandle* lsHandle, LSMessage *message,
 	json_object_object_add(json, (char*) "returnValue", json_object_new_boolean(success));
 	if (!success) {
 		json_object_object_add(json,(char*) "errorText",json_object_new_string(const_cast<char*>(errorText.c_str())));
-        qWarning(errorText.c_str());
+		qWarning("%s", errorText.c_str());
 	}
 	else {
 		json_object * inner_json = json_object_new_object();
@@ -1878,7 +1878,7 @@ Done:
 	json_object_object_add(json, (char*) "returnValue", json_object_new_boolean(retVal));
 	if (!retVal) {
 		json_object_object_add(json,(char*) "errorText",json_object_new_string(const_cast<char*>(errorText.c_str())));
-        qWarning(errorText.c_str());
+		qWarning("%s", errorText.c_str());
 	}
 	else {
 		inner_json = json_object_new_object();
@@ -2023,7 +2023,7 @@ static bool cbDeleteWallpaper(LSHandle* lsHandle, LSMessage *message,
 	json_object_object_add(json, (char*) "returnValue", json_object_new_boolean(retVal));
 	if (!retVal) {
 		json_object_object_add(json,(char*) "errorText",json_object_new_string(const_cast<char*>(errorText.c_str())));
-        qWarning(errorText.c_str());
+		qWarning("%s", errorText.c_str());
 	}
 	else {
 		inner_json = json_object_new_object();

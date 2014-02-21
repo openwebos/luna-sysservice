@@ -535,10 +535,10 @@ bool ImageServices::lsImageInfo(LSHandle* lsHandle, LSMessage* message,void* use
 	json_object * root = NULL;
 	const char* str;
 	std::string srcfile;
-	int srcWidth;
-	int srcHeight;
-	int srcBpp;
-    const char* srcType;
+	int srcWidth = 0;
+	int srcHeight = 0;
+	int srcBpp = 0;
+	const char* srcType = "";
     // {"src": string}
     VALIDATE_SCHEMA_AND_RETURN(lsHandle,
                                message,

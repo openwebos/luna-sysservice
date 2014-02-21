@@ -100,7 +100,7 @@ void outputQtMessages(QtMsgType type, const char *str) {
 
     // before Qt 5.0 we had no context information (no filename and line number)
     // so lets use one predefined MSGID
-    static char *msgId = "QTLOG";
+    static const char *msgId = "QTLOG";
 
     switch (type) {
     case QtDebugMsg:

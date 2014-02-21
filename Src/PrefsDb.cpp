@@ -150,7 +150,7 @@ bool PrefsDb::setPref(const std::string& key, const std::string& value)
 
 	sqlite3_free(queryStr);
 
-	qDebug("set ( [%s] , [---, length %d] )", key.c_str(), value.size());
+	qDebug("set ( [%s] , [---, length %zu] )", key.c_str(), value.size());
 	return true;    
 }
 

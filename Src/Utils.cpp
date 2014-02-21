@@ -533,8 +533,12 @@ int createTempFile(const std::string& baseDir,const std::string& tag,const std::
 		return 0;
 	}
 	//write nothing and close, to assure file is on disk; this will prevent mkstemp from assigning the same name by chance (if the filename isn't used to create a file in the meantime)
-	(void) write (fd,"",0);
+	if (write (fd,"",0) == -1) {
+		close(fd);
+		return 0;
+	}
 	close(fd);
+
 	r_fileAndPath = templateStr+extension;
 	if (rename(templateStr.c_str(),r_fileAndPath.c_str()) == -1) {
 		//error...unlink the base file

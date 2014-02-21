@@ -33,7 +33,7 @@ extern "C" {
 PmLogContext sysServiceLogContext();
 
 #define SYSSERVICELOG_MESSAGE_MAX 500
-inline void sysServiceFmtMsg(char *logMsg, char *fmt, ...)
+inline void sysServiceFmtMsg(char *logMsg, const char *fmt, ...)
 {
   va_list args;
   va_start (args, fmt);

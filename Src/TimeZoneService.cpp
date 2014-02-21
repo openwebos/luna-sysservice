@@ -14,6 +14,7 @@
  *  limitations under the License.
  */
 
+#define __STDC_FORMAT_MACROS
 
 #include <glib.h>
 #include <cjson/json.h>
@@ -670,7 +671,7 @@ bool TimeZoneService::cbGetTimeZoneFromEasData(LSHandle* lsHandle, LSMessage *me
 				const TimeZoneResult& tzResult = tzResultList.front();
 	
 				printf("For timezone: %s\n", tzEntry.tz.c_str());
-				printf("year: %d, utcOffset: %lld, dstOffset: %lld, dstStart: %lld, dstEnd: %lld\n",
+				printf("year: %d, utcOffset: %"PRIu64", dstOffset: %"PRIu64", dstStart: %"PRIu64", dstEnd: %"PRIu64"\n",
 					   tzResult.year, tzResult.utcOffset, tzResult.dstOffset,
 					   tzResult.dstStart, tzResult.dstEnd);
 
