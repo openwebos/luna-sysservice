@@ -2111,6 +2111,13 @@ bool TimePrefsHandler::cbSetSystemTime(LSHandle* lshandle, LSMessage *message,
 
 	TimePrefsHandler* th = (TimePrefsHandler*) user_data;
 
+	PmLogInfo(sysServiceLogContext(), "SET_SYSTEM_TIME", 2,
+		PMLOGKS("SENDER", LSMessageGetSenderServiceName(message)),
+		PMLOGKFV("MANUAL", "%s", th->isManualTimeUsed() ? "true" : "false"),
+		"/time/setSystemTime received with %s",
+		parser.getPayload()
+	);
+
 	if (!convert(parser.get()["utc"], utcTimeInSecs))
 	{
 		std::string utcTimeInSecsStr;
@@ -2316,6 +2323,12 @@ bool TimePrefsHandler::cbSetSystemNetworkTime(LSHandle * lshandle, LSMessage *me
     */
     const char* pSchema = SCHEMA_15(REQUIRED(sec, string), REQUIRED(min, string), REQUIRED(hour, string), REQUIRED(mday, string), REQUIRED(mon, string), REQUIRED(year, string), REQUIRED(offset, string), REQUIRED(mcc, string), REQUIRED(mnc, string), REQUIRED(tzvalid, boolean), REQUIRED(timevalid, boolean), REQUIRED(dstvalid, boolean), REQUIRED(dst, integer), REQUIRED(timestamp, string), REQUIRED(tilIgnore, boolean));
     VALIDATE_SCHEMA_AND_RETURN(lshandle, message, pSchema);
+
+	PmLogInfo(sysServiceLogContext(), "SET_SYSTEM_NET_TIME", 1,
+		PMLOGKS("SENDER", LSMessageGetSenderServiceName(message)),
+		"/time/setSystemNetworkTime received with %s",
+		LSMessageGetPayload(message)
+	);
 
 	LSError lserror;
 	std::string errorText;
@@ -3203,6 +3216,13 @@ bool TimePrefsHandler::cbSetTimeWithNTP(LSHandle* lsHandle, LSMessage *message,
 		return true;
 
 	const char* str = parser.getPayload();
+
+	PmLogInfo(sysServiceLogContext(), "REQUEST_NTP_SYNC", 1,
+		PMLOGKS("SENDER", LSMessageGetSenderServiceName(message)),
+		"/time/setTimeWithNTP received with %s",
+		str
+	);
+
 	if ( !str )
 	{
 		PmLogDebug(sysServiceLogContext(), "Received LSMessage with NULL payload (in call)");
@@ -3854,6 +3874,12 @@ bool TimePrefsHandler::cbGetNTPTime(LSHandle* lsHandle, LSMessage *message,
 							void *user_data) 
 {
 	TimePrefsHandler *th = static_cast<TimePrefsHandler*>(user_data);
+	PmLogInfo(sysServiceLogContext(), "REQUEST_NTP_TIME", 2,
+		PMLOGKS("SENDER", LSMessageGetSenderServiceName(message)),
+		PMLOGKFV("ALLOWED", "%s", th->isNTPAllowed() ? "true" : "false"),
+		"/time/getNTPTime received with %s", LSMessageGetPayload(message)
+	);
+
 	if (th->isNTPAllowed())
 	{
 		return th->m_ntpClock.requestNTP(message);
@@ -4309,9 +4335,11 @@ void TimePrefsHandler::clockChanged(const std::string &clockTag, int priority, t
 		else
 		{
 			// only user can override in manual mode
-			PmLogDebug(sysServiceLogContext(),
-			           "In manual mode we ignore time source %s (%d) with their offset %ld",
-			           clockTag.c_str(), priority, systemOffset);
+			PmLogInfo(sysServiceLogContext(), "IGNORE_AUTO_CLOCK", 3,
+			          PMLOGKS("SOURCE", clockTag.c_str()),
+			          PMLOGKFV("PRIORITY", "%d", priority),
+			          PMLOGKFV("UTC_OFFSET", "%ld", systemOffset),
+			          "In manual mode we ignore external time sources");
 			return;
 		}
 	}
@@ -4329,11 +4357,21 @@ void TimePrefsHandler::clockChanged(const std::string &clockTag, int priority, t
 	if ( effectivePriority < m_currentTimeSourcePriority &&
 	     currentTime < m_nextSyncTime )
 	{
-		PmLogDebug(sysServiceLogContext(),
-		           "Ignoring time-source %s (%d) in favor of current (%d)",
-		           clockTag.c_str(), priority, m_currentTimeSourcePriority);
+		PmLogInfo(sysServiceLogContext(), "IGNORE_WORSE_CLOCK", 4,
+		          PMLOGKS("SOURCE", clockTag.c_str()),
+		          PMLOGKFV("PRIORITY", "%d", priority),
+		          PMLOGKFV("HIGHER_PRIORITY", "%d", m_currentTimeSourcePriority),
+		          PMLOGKFV("UTC_OFFSET", "%ld", systemOffset),
+		          "Ignoring time-source with lower priority");
 		return;
 	}
+
+	PmLogInfo(sysServiceLogContext(), "APPLY_CLOCK", 4,
+	          PMLOGKS("SOURCE", clockTag.c_str()),
+	          PMLOGKFV("PRIORITY", "%d", priority),
+	          PMLOGKFV("CURRENT_PRIORITY", "%d", m_currentTimeSourcePriority),
+	          PMLOGKFV("UTC_OFFSET", "%ld", systemOffset),
+	          "Applying time from time-source update");
 
 	// so we actually going to apply this update to our system time
 	// or keep it the same if offset is zero
@@ -4342,5 +4380,11 @@ void TimePrefsHandler::clockChanged(const std::string &clockTag, int priority, t
 		m_currentTimeSourcePriority = priority;
 		// note that lastUpdate is outdated already so we need to adjust it
 		m_nextSyncTime = lastUpdate + systemOffset + timeDriftPeriod; // when we should sync our time again
+
+		PmLogInfo(sysServiceLogContext(), "SYSTEM_TIME_UPDATED", 3,
+		          PMLOGKS("SOURCE", clockTag.c_str()),
+		          PMLOGKFV("PRIORITY", "%d", m_currentTimeSourcePriority),
+		          PMLOGKFV("NEXT_SYNC", "%ld", m_nextSyncTime),
+		          "Updated system time");
 	}
 }

@@ -1,7 +1,7 @@
 /****************************************************************
  * @@@LICENSE
  *
- *  Copyright (c) 2013 LG Electronics, Inc.
+ *  Copyright (c) 2013-2014 LG Electronics, Inc.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -147,9 +147,11 @@ void ClockHandler::setup(const std::string &clockTag, int priority, time_t offse
 
 bool ClockHandler::update(time_t offset, const std::string &clockTag /* = manual */, time_t timeStamp /* = invalidTime */)
 {
-	PmLogDebug(sysServiceLogContext(),
-		"ClockHandler::update(%ld, %s)",
-		offset, clockTag.c_str()
+	PmLogInfo(sysServiceLogContext(), "CLOCK_UPDATE", 2,
+		PMLOGKS("SOURCE", clockTag.c_str()),
+		PMLOGKFV("SYSTEM_OFFSET", "%ld", offset),
+		"ClockHandler::update() with time-stamp %ld",
+		timeStamp
 	);
 
 	ClocksMap::iterator it = m_clocks.find(clockTag);
@@ -195,6 +197,14 @@ bool ClockHandler::cbSetTime(LSHandle* lshandle, LSMessage *message, void *user_
 	(void) parser.get("utc", utcInteger);
 
 	time_t systemOffset = (time_t)utcInteger - time(0);
+
+	PmLogInfo(sysServiceLogContext(), "SET_TIME", 3,
+		PMLOGKS("SENDER", LSMessageGetSenderServiceName(message)),
+		PMLOGKS("SOURCE", source.c_str()),
+		PMLOGKFV("UTC_OFFSET", "%ld", systemOffset),
+		"/clock/setTime received with %s",
+		parser.getPayload()
+	);
 
 	ClockHandler &handler = *static_cast<ClockHandler*>(user_data);
 
@@ -304,7 +314,7 @@ bool ClockHandler::cbGetTime(LSHandle* lshandle, LSMessage *message, void *user_
 	{
 		PmLogError( sysServiceLogContext(), "WRONG_CLOCK_GETTIME", 2,
 		            PMLOGKS("CLOCK_TAG", source.c_str()),
-		            PMLOGKS("FALLBACK", haveFallback ? "true" : "false"),
+		            PMLOGKFV("FALLBACK", "%s", haveFallback ? "true" : "false"),
 		            "Trying to fetch clock that is not registered" );
 		reply = createJsonReply(false, 0, "Requested clock is not registered");
 		reply.put("source", source);
