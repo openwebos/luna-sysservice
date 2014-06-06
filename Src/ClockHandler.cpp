@@ -32,8 +32,12 @@
 
 namespace {
 	LSMethod s_methods[]  = {
-		{ "setTime", &ClockHandler::cbSetTime },
 		{ "getTime", &ClockHandler::cbGetTime },
+		{ 0, 0 },
+	};
+
+	LSMethod s_private_methods[]  = {
+		{ "setTime", &ClockHandler::cbSetTime },
 		{ 0, 0 },
 	};
 
@@ -57,7 +61,8 @@ bool ClockHandler::setServiceHandle(LSPalmService* service)
 {
 	LSError lsError;
 	LSErrorInit(&lsError);
-	bool result = LSPalmServiceRegisterCategory( service, "/clock", s_methods, NULL,
+	bool result = LSPalmServiceRegisterCategory( service, "/clock",
+	                                             s_methods, s_private_methods,
 	                                             NULL, this, &lsError );
 	if (!result) {
 		PmLogError( sysServiceLogContext(), "CLOCK_REGISTER_FAIL", 1,

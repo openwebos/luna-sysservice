@@ -303,9 +303,6 @@ static void tzsetWorkaround(const char * newTZ) __attribute__((unused));
  *   - \ref com_palm_systemservice_time_convert_date
  */
 static LSMethod s_methods[]  = {
-	{ "setSystemTime",     TimePrefsHandler::cbSetSystemTime },
-	{ "setSystemNetworkTime", TimePrefsHandler::cbSetSystemNetworkTime},
-	{ "setBroadcastTime", TimePrefsHandler::cbSetBroadcastTime },
 	{ "getSystemTime",     TimePrefsHandler::cbGetSystemTime },
 	{ "getSystemTimezoneFile", TimePrefsHandler::cbGetSystemTimezoneFile},
 	{ "getBroadcastTime", TimePrefsHandler::cbGetBroadcastTime },
@@ -313,9 +310,16 @@ static LSMethod s_methods[]  = {
 	{ "setTimeChangeLaunch",	TimePrefsHandler::cbSetTimeChangeLaunch},
 	{ "launchTimeChangeApps", TimePrefsHandler::cbLaunchTimeChangeApps},
 	{ "getNTPTime",			TimePrefsHandler::cbGetNTPTime},
-	{ "setTimeWithNTP",		TimePrefsHandler::cbSetTimeWithNTP},
 	{ "convertDate",		TimePrefsHandler::cbConvertDate},
     { 0, 0 },
+};
+
+static LSMethod s_private_methods[]  = {
+	{ "setSystemTime",        TimePrefsHandler::cbSetSystemTime },
+	{ "setSystemNetworkTime", TimePrefsHandler::cbSetSystemNetworkTime },
+	{ "setBroadcastTime",     TimePrefsHandler::cbSetBroadcastTime },
+	{ "setTimeWithNTP",       TimePrefsHandler::cbSetTimeWithNTP },
+	{ 0, 0 },
 };
 
 typedef json_object * (*valuesForKeyFnPtr)(TimePrefsHandler * pTimePrefsHandler);
@@ -813,7 +817,7 @@ void TimePrefsHandler::init()
     	m_keyList.push_back(std::string(timePrefKeys[i].keyName));
     }
     
-    result = LSPalmServiceRegisterCategory( m_service, "/time", s_methods, NULL,
+    result = LSPalmServiceRegisterCategory( m_service, "/time", s_methods, s_private_methods,
     		NULL, this, &lsError);
     if (!result) {
         //luna_critical(s_logChannel, "Failed in registering time handler method: %s", lsError.message);
