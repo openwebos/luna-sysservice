@@ -122,6 +122,18 @@ namespace {
 
 		return true;
 	}
+
+	// return moment of bootStart in current system time (i.e. always valid
+	// even if time were changed since boot)
+	time_t bootStart()
+	{
+		timespec ts_epoch, ts_boot;
+		bool haveTimes = (clock_gettime(CLOCK_REALTIME, &ts_epoch) == 0) &&
+		                 (clock_gettime(CLOCK_BOOTTIME, &ts_boot) == 0);
+		// Note: we use beginning of epoch as a fake boot time if no way to get
+		//       one of required clocks
+		return haveTimes ? (ts_epoch.tv_sec - ts_boot.tv_sec) : (time_t)0;
+	}
 } // anonymous namespace
 
 static void
@@ -4326,8 +4338,9 @@ void TimePrefsHandler::clockChanged(const std::string &clockTag, int priority, t
 		}
 
 		// just simulate that we've received update from effectiveClockTag
-		// instead of normal processing
-		return deprecatedClockChange.fire( systemOffset, effectiveClockTag, lastUpdate );
+		// instead of normal processing but with time that refers to the
+		// boot time
+		return deprecatedClockChange.fire( systemOffset, effectiveClockTag, bootStart() );
 	}
 
 	const time_t timeDriftPeriod = 4*60*60; // TODO: make configurable rather than 4 hours
