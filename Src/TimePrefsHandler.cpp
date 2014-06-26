@@ -439,6 +439,12 @@ void TimePrefsHandler::valueChanged(const std::string& key, json_object* value)
 			//kick off an update cycle right now (* see the function for restrictions; It won't do anything in some cases)
 			startBootstrapCycle(3);
 		}
+		else
+		{
+			// on switching from auto-time update manual time right away as if
+			// user set it
+			systemSetTime(0, ClockHandler::manual);
+		}
 	}
 	else if (key == "useNetworkTimeZone") {
 		if (value) {
