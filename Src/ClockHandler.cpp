@@ -169,8 +169,23 @@ bool ClockHandler::update(time_t offset, const std::string &clockTag /* = manual
 		return false;
 	}
 
+	time_t prevTimeStamp = it->second.lastUpdate;
+	if (timeStamp == invalidTime)
+	{
+		timeStamp = time(0);
+	}
+	else if (prevTimeStamp != invalidTime && prevTimeStamp >= timeStamp)
+	{
+		PmLogInfo( sysServiceLogContext(), "CLOCK_UPDATE_OUTDATED", 2,
+		           PMLOGKS("SOURCE", clockTag.c_str()),
+		           PMLOGKFV("SYSTEM_OFFSET", "%ld", offset),
+		           "ClockHandler::update() silently ignores updates with outdated time-stamp %ld < %ld",
+		           timeStamp, it->second.lastUpdate );
+		return true;
+	}
+
 	Clock &clock = it->second;
-	clock.lastUpdate = (timeStamp == invalidTime) ? time(0) : timeStamp;
+	clock.lastUpdate = timeStamp;
 	clock.systemOffset = offset;
 
 	clockChanged.fire( it->first, clock.priority, offset, clock.lastUpdate );
