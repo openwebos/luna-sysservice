@@ -183,3 +183,64 @@ void CLSError::Print(const char * where, int line, GLogLevelFlags logLevel)
     }
 }
 
+jvalue_ref convert_schema_v2_to_v4(const char *schema_v2)
+{
+	JSchemaInfo schema_info;
+	jschema_info_init(&schema_info, jschema_all(), NULL, NULL);
+	jvalue_ref schema_v4 = jdom_parse(j_cstr_to_buffer(schema_v2), DOMOPT_NOOPT, &schema_info);
+
+	if (jis_null(schema_v4))
+		return jnull();
+
+	if (!jis_object(schema_v4)) {
+		j_release(&schema_v4);
+		return jnull();
+	}
+
+	const raw_buffer rawbuffer_properties = j_cstr_to_buffer("properties");
+	jvalue_ref properties_v2 = jobject_get(schema_v4, rawbuffer_properties);
+	if (jis_null(properties_v2)) {
+		j_release(&schema_v4);
+		return jnull();
+	}
+
+	const raw_buffer rawbuffer_required = j_cstr_to_buffer("required");
+	const raw_buffer rawbuffer_optional = j_cstr_to_buffer("optional");
+
+	jvalue_ref required_array = jarray_create(NULL);
+	jvalue_ref properties_v4 = jobject_create();
+
+	jobject_iter it;
+	jobject_key_value key_value;
+	jobject_iter_init(&it, properties_v2);
+	while (jobject_iter_next(&it, &key_value)) {
+		jvalue_ref value = jvalue_duplicate(key_value.value);
+
+		bool is_optional = false;
+		jvalue_ref optional = jobject_get(value, rawbuffer_optional);
+		if (!jis_null(optional) && jis_boolean(optional))
+			jboolean_get(optional, &is_optional);
+
+		jobject_remove(value, rawbuffer_optional);
+
+		if (!is_optional)
+			jarray_append(required_array, jvalue_duplicate(key_value.key));
+
+		jobject_put(properties_v4, jvalue_duplicate(key_value.key), value);
+	}
+
+	jobject_remove(schema_v4, rawbuffer_properties);
+	jobject_set(schema_v4, rawbuffer_properties, properties_v4);
+
+	if (jarray_size(required_array) > 0) {
+		jobject_remove(schema_v4, rawbuffer_required);
+		jobject_set(schema_v4, rawbuffer_required, required_array);
+	}
+
+	if (!jis_null(required_array))
+		j_release(&required_array);
+	if (!jis_null(properties_v4))
+		j_release(&properties_v4);
+
+	return schema_v4;
+};
